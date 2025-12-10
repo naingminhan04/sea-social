@@ -47,12 +47,14 @@ const Register = () => {
     >
       <div className="relative">
         <input
+        id="name"
           type="text"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
           {...register("name", { required: "Please enter your name" })}
         />
         <label
+        htmlFor="name"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
@@ -65,12 +67,14 @@ const Register = () => {
 
       <div className="relative">
         <input
+        id="email"
           type="text"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
           {...register("email", { required: "Please enter your email" })}
         />
         <label
+        htmlFor="email"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
@@ -83,12 +87,14 @@ const Register = () => {
 
       <div className="relative">
         <input
+        id="password"
           type="password"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
           {...register("password", { required: "Please enter your password" })}
         />
         <label
+        htmlFor="password"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
@@ -101,6 +107,7 @@ const Register = () => {
 
       <div className="relative">
         <input
+        id="confirmPassword"
           type="password"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
@@ -111,6 +118,7 @@ const Register = () => {
           })}
         />
         <label
+        htmlFor="confirmPassword"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
