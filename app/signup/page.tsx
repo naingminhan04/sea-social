@@ -1,8 +1,8 @@
+import Register from "@/components/Register";
 import Image from "next/image";
-import Login from "@/components/Login";
 import Link from "next/link";
 
-const Home = () => {
+const Signup = () => {
   return (
     <main className="min-h-dvh w-dvw flex flex-col justify-center items-center p-5">
       <div className="flex flex-col items-center justify-center w-full pb-5">
@@ -13,22 +13,23 @@ const Home = () => {
           height={100}
           className="rounded-full mb-5"
         />
-        <h1 className="text-2xl font-bold mb-1">Welcome Back</h1>
+        <h1 className="text-2xl font-bold mb-1">Create Account</h1>
         <p className="text-gray-300 text-sm">
-          Sign in to continue your learning journey
+          Join Star Education Academy and Start Your Journey
         </p>
       </div>
       <div className="mt-4 w-full flex justify-center">
-        <Login />
+        <Register />
       </div>
       <div className="flex justify-center items-center gap-1 mt-5">
-        <p className="text-sm text-gray-300">Don&apos;t have an account?</p>
-        <Link href="/signup" className="text-blue-300 text-sm">
-          Sign Up
+        <p className="text-sm text-gray-300">Already have an account?</p>
+        <Link href="/" className="text-blue-300 text-sm">
+          Login
         </Link>
       </div>
     </main>
   );
 };
 
-export default Home;
+export default Signup;
+
