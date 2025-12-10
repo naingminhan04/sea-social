@@ -4,6 +4,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/libs/axios";
 import { useAuthStore } from "@/store/auth";
+import { useRouter } from "next/navigation";
 
 type Inputs = {
   name: string;
@@ -15,6 +16,7 @@ type Inputs = {
 type RegisterPayload = Omit<Inputs, "confirmPassword">;
 
 const Register = () => {
+  const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
   const {
     register,
@@ -28,16 +30,20 @@ const Register = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      setUser(data);
-      console.log("Register Successful:", data);
+      setUser(data.user);
+      router.push("/verify");
     },
     onError: (err: Error) => {
       console.error("Register failed:", err.message);
     },
   });
 
-  const onSubmit: SubmitHandler<RegisterPayload> = ({ name, email, password}) => {
-    mutation.mutate({ name, email, password});
+  const onSubmit: SubmitHandler<RegisterPayload> = ({
+    name,
+    email,
+    password,
+  }) => {
+    mutation.mutate({ name, email, password });
   };
 
   return (
@@ -47,14 +53,14 @@ const Register = () => {
     >
       <div className="relative">
         <input
-        id="name"
+          id="name"
           type="text"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
           {...register("name", { required: "Please enter your name" })}
         />
         <label
-        htmlFor="name"
+          htmlFor="name"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
@@ -67,14 +73,14 @@ const Register = () => {
 
       <div className="relative">
         <input
-        id="email"
+          id="email"
           type="text"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
           {...register("email", { required: "Please enter your email" })}
         />
         <label
-        htmlFor="email"
+          htmlFor="email"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
@@ -87,14 +93,14 @@ const Register = () => {
 
       <div className="relative">
         <input
-        id="password"
+          id="password"
           type="password"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
           {...register("password", { required: "Please enter your password" })}
         />
         <label
-        htmlFor="password"
+          htmlFor="password"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
@@ -107,7 +113,7 @@ const Register = () => {
 
       <div className="relative">
         <input
-        id="confirmPassword"
+          id="confirmPassword"
           type="password"
           placeholder=" "
           className="peer w-full border border-neutral-700 outline-0 focus:border-white p-4 text-white"
@@ -118,14 +124,16 @@ const Register = () => {
           })}
         />
         <label
-        htmlFor="confirmPassword"
+          htmlFor="confirmPassword"
           className="absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
         "
         >
           Confirm Password
         </label>
         {errors.confirmPassword && (
-          <p className="text-red-500 text-sm px-1">{errors.confirmPassword.message}</p>
+          <p className="text-red-500 text-sm px-1">
+            {errors.confirmPassword.message}
+          </p>
         )}
       </div>
 

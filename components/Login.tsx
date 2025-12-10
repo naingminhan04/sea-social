@@ -4,6 +4,7 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import api from "@/libs/axios";
 import { useAuthStore } from "@/store/auth";
+import { useRouter } from "next/navigation";
 
 type Inputs = {
   email: string;
@@ -12,6 +13,7 @@ type Inputs = {
 
 const Login = () => {
   const setUser = useAuthStore((state) => state.setUser);
+  const router = useRouter();
   const {
     register,
     handleSubmit,
@@ -24,8 +26,12 @@ const Login = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      setUser(data);
-      console.log("Login successful:", data);
+      setUser(data.user);
+      if(data.user.isVerified) {
+        router.replace("/home")
+      } else {
+        router.push("/verify")
+      }
     },
     onError: (err: Error) => {
       console.error("Login failed:", err.message);
