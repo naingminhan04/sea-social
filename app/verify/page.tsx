@@ -15,7 +15,7 @@ const Verify = () => {
 
   useEffect(() => {
     if (!user) {
-      router.replace("/ ");
+      router.replace("/");
       return;
     }
     if (user?.isVerified) {
@@ -61,7 +61,7 @@ const Verify = () => {
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
           maxLength={6}
-          className="border w-full border-neutral-700 p-4 text-white text-3xl text-center"
+          className="w-full border border-neutral-700 outline-0 focus:border-white p-4 text-3xl text-center text-white"
         />
 
         {verifyMutation.isError && (
