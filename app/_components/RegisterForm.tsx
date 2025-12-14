@@ -2,9 +2,10 @@
 
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 import api from "@/libs/axios";
 import { useAuthStore } from "@/store/auth";
-import { useRouter } from "next/navigation";
+import { setVerifyCookies } from "../_actions/cookies";
 
 type Inputs = {
   name: string;
@@ -18,6 +19,7 @@ type RegisterPayload = Omit<Inputs, "confirmPassword">;
 const Register = () => {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
+  const setCode = useAuthStore((state) => state.setTmpVerificationCode);
   const {
     register,
     handleSubmit,
@@ -30,7 +32,9 @@ const Register = () => {
       return res.data;
     },
     onSuccess: (data) => {
+      setVerifyCookies();
       setUser(data.user);
+      setCode(data.verificationCodeForTesting);
       router.push("/verify");
     },
     onError: (err: Error) => {

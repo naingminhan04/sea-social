@@ -11,7 +11,6 @@ export interface User {
   phone: string | null;
   role: "USER" | "ADMIN";
   isVerified: boolean;
-  verificationCodeExpiresAt: string | null;
   createdAt: string;
   updatedAt: string;
   profilePic: string | null;

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Login from "@/components/Login";
+import LoginForm from "./_components/LoginForm";
 import Link from "next/link";
 
 const Home = () => {
@@ -19,7 +19,7 @@ const Home = () => {
         </p>
       </div>
       <div className="mt-4 w-full flex justify-center">
-        <Login />
+        <LoginForm />
       </div>
       <div className="flex justify-center items-center gap-1 mt-5">
         <p className="text-sm text-gray-300">Don&apos;t have an account?</p>

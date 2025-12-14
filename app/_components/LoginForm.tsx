@@ -4,43 +4,47 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
+import loginAction from "../_actions/login";
+import { useState } from "react";
 
 type Inputs = {
   email: string;
   password: string;
 };
 
-const Login = () => {
+const LoginForm = () => {
   const setUser = useAuthStore((state) => state.setUser);
+  const setCode = useAuthStore((state) => state.setTmpVerificationCode);
   const router = useRouter();
+  const [error, setError] = useState("");
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<Inputs>();
 
   const mutation = useMutation({
     mutationFn: async (data: Inputs) => {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const res = await loginAction(data);
 
-      if (!res.ok) throw new Error("Login failed");
-
-      return res.json();
+      return res;
     },
     onSuccess: (data) => {
-      setUser(data.user);
+      reset();
       if (data.user.isVerified) {
+        setCode(null);
+        setUser(data.user);
         router.replace("/home");
       } else {
+        setUser(data.user);
+        setCode(data.verificationCode);
         router.push("/verify");
       }
     },
     onError: (err: Error) => {
-      console.error("Login failed:", err.message);
+      setError(err.message);
     },
   });
 
@@ -101,13 +105,9 @@ const Login = () => {
         {mutation.isPending ? "Logging in..." : "Login"}
       </button>
 
-      {mutation.isError && (
-        <p className="text-red-500 text-sm mt-1">
-          Incorrect Email or Password.
-        </p>
-      )}
+      {mutation.isError && <p className="text-red-500 text-sm mt-1">{error}</p>}
     </form>
   );
 };
 
-export default Login;
+export default LoginForm;

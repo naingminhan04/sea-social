@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import NavBar from "@/components/NavBar";
+import NavBar from "../_components/NavBar";
 
 export const metadata : Metadata = {
   title: "Home - Star Education Academy",
