@@ -3,11 +3,7 @@
 import { setCookies, setVerifyCookies } from "./cookies";
 import api from "@/libs/axios";
 import axios from "axios";
-
-type LoginInput = {
-  email: string;
-  password: string;
-};
+import { LoginInput } from "@/types/auth";
 
 export default async function loginAction(input: LoginInput) {
   try {

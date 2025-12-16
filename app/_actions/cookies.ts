@@ -18,9 +18,10 @@ export async function clearCookies() {
   cookie.delete("access_token");
 }
 
-export async function verifyCookies() {
+export async function getToken() {
   const cookie = await cookies();
-  cookie.get("access_token");
+  
+  return cookie.get("access_token")?.value;
 }
 
 export async function setVerifyCookies() {

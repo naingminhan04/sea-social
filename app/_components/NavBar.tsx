@@ -1,26 +1,17 @@
 import { Star } from "lucide-react";
-import LogOutBtn from "./LogOutBtn";
 import MenuBtn from "./MenuBtn";
+import SideBar from "./SideBar";
 
 const NavBar = () => {
   return (
-    <header className="bg-black">
-      <nav className="flex justify-between items-center p-4">
-        <div className="flex gap-1">
+    <header className="bg-black sticky top-0 left-0 right-0 z-10 md:w-1/5">
+      <nav className="flex md:flex-col justify-between items-center p-4 md:p-0">
+        <div className="flex gap-1 md:p-5">
           <Star fill="white" />
           <h1>SEA</h1>
         </div>
-        <MenuBtn>
-          <div className="absolute top-15 right-0 w-full bg-neutral-900">
-            <ul className="cursor-pointer gap-3 px-3 py-1 flex flex-col">
-              <li>Home</li>
-              <li>Chatrooms</li>
-              <li>Chat</li>
-              <li>Profile</li>
-              <LogOutBtn />
-            </ul>
-          </div>
-        </MenuBtn>
+        <MenuBtn/>
+        <SideBar/>
       </nav>
     </header>
   );

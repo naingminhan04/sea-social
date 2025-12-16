@@ -14,5 +14,5 @@ export default function LogOutBtn() {
     router.replace("/");
   };
 
-  return <li onClick={handleLogOut}>Log-Out</li>;
+  return <div onClick={handleLogOut}>Log-Out</div>;
 }

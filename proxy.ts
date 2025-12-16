@@ -2,7 +2,7 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
 export default async function proxy(req: NextRequest) {
-  const protectedRoutes = ["/home"];
+  const protectedRoutes = ["/home","/chatroom","/chat","/profile"];
   const guestRoutes = ["/", "/signup"];
   const verifyRoute = ["/verify"];
   const path = req.nextUrl.pathname;
