@@ -24,7 +24,6 @@ const Posts = () => {
   const scrollRef = useRef<HTMLDivElement | null>(null);  
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
-  // Intersection Observer
   useEffect(() => {
     if (!scrollRef.current || !loadMoreRef.current || !hasNextPage) return;
 
@@ -34,7 +33,7 @@ const Posts = () => {
           fetchNextPage();
         }
       },
-      { root: scrollRef.current,rootMargin: "5000px" } // prefetch early
+      { root: scrollRef.current,rootMargin: "5000px" }
     );
 
     observer.observe(loadMoreRef.current);
@@ -54,7 +53,6 @@ const Posts = () => {
         ))
       )}
 
-      {/* Sentinel */}
       {hasNextPage && (
         <div
           ref={loadMoreRef}

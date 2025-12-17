@@ -10,10 +10,10 @@ export default function HomeLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="md:flex md:h-dvh md:gap-2 justify-center">
         <NavBar/>
-      <div className="md:w-4/5 lg:3/5">
+      <div className="md:w-4/5 lg:2/6">
         {children}
       </div>
-      <div className="hidden lg:flex flex-col w-1/5">
+      <div className="hidden lg:flex flex-col w-2/6">
         <ChatBar />
       </div>
     </div>

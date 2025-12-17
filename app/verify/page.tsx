@@ -3,12 +3,20 @@
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { AxiosError } from "axios";
 import api from "@/libs/axios";
 import { useMutation } from "@tanstack/react-query";
 import { setVerifyCookies, setCookies } from "../_actions/cookies";
 
+interface Error {
+  message : string,
+  error : string,
+  statusCode : string,
+}
+
 const Verify = () => {
   const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(60);
 
   const user = useAuthStore((state) => state.user);
@@ -37,12 +45,17 @@ const Verify = () => {
       return res.data;
     },
     onSuccess: (data) => {
-      setCookies(data.access_token)
+      setCookies(data.access_token);
       setUser(data.user);
       setCode(null);
       router.replace("/home");
     },
-    onError: () => {},
+    onError: (error: AxiosError<Error>) => {
+      const message =
+        error.response?.data?.message ||
+        "Verification failed. Please try again.";
+      setError(message);
+    },
   });
 
   const verifyHandler = () => {
@@ -52,7 +65,7 @@ const Verify = () => {
 
   const resendCode = useMutation({
     mutationFn: async (email: string) => {
-      const res = await api.post(`auth/resend-code/${email}`);
+      const res = await api.post(`/auth/resend-code/${email}`);
       return res.data;
     },
     onSuccess: (data) => {
@@ -84,9 +97,7 @@ const Verify = () => {
         />
 
         {verifyMutation.isError && (
-          <p className="text-xs text-red-500 text-center">
-            Please enter the correct code
-          </p>
+          <p className="text-xs text-red-500 text-center">{error}</p>
         )}
 
         <button

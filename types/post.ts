@@ -25,7 +25,7 @@ interface Author {
     name: string;
     email: string;
     nickname: string;
-    profilePic: string;
+    profilePic: string | null;
 }
 
  interface ImageType {

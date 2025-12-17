@@ -6,11 +6,10 @@ import PostContent from "./PostContent";
 const PostCard = ({ post }: { post: PostType }) => {
   const images = post.images || [];
   const moreCount = images.length > 4 ? images.length - 4 : 0;
-  const displayImages = images.slice(0, 4); // show max 5 images
+  const displayImages = images.slice(0, 4);
 
   return (
     <main className=" bg-neutral-900 p-4 space-y-4">
-      {/* Author */}
       <div className="flex items-center gap-3">
         <Image
           src={post.author.profilePic || "/default-avatar.png"}
@@ -25,12 +24,10 @@ const PostCard = ({ post }: { post: PostType }) => {
         </div>
       </div>
 
-      {/* Post content */}
       <div className="whitespace-pre-line text-sm leading-relaxed">
         <PostContent post={post} />
       </div>
 
-      {/* Images */}
       {images.length > 0 && (
         <div className={`grid gap-1 ${getGridClass(images.length)} max-h-dvh`}>
           {displayImages.map((img, index) => (
@@ -52,14 +49,12 @@ const PostCard = ({ post }: { post: PostType }) => {
         </div>
       )}
 
-      {/* Stats */}
       <div className="flex justify-between text-sm text-gray-500 pt-2">
         <span className="flex items-center gap-2"><ThumbsUp />{post.stats.reactions.total}</span>
         <span className="flex items-center gap-2"> <MessageCircle/> {post.stats.comments}</span>
         <span className="flex items-center gap-2"> <Share2 /> {post.stats.sharedCount}</span>
       </div>
 
-      {/* Actions */}
       <div className="flex justify-between border-t pt-3 text-sm font-medium text-gray-600">
         <button className="flex-1 hover:text-blue-600">Like</button>
         <button className="flex-1 hover:text-green-600">Comment</button>
