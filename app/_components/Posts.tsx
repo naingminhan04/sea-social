@@ -42,11 +42,11 @@ const Posts = () => {
   }, [fetchNextPage, hasNextPage]);
 
   if (isLoading) {
-    return <div className="flex justify-center p-10">Loading...</div>;
+    return <div className="flex items-center md:h-dvh min-h-[calc(100dvh-60px)] justify-center p-10">Loading...</div>;
   }
 
   return (
-    <div ref={scrollRef} className="flex flex-col w-full gap-2 h-dvh overflow-scroll scrollbar-none">
+    <div ref={scrollRef} className="flex flex-col w-full gap-2 md:h-dvh h-[calc(100dvh-60px)] overflow-scroll scrollbar-none">
       {data?.pages.map((page) =>
         page.posts.map((post: PostType) => (
           <PostCard key={post.id} post={post} />

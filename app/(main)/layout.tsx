@@ -8,7 +8,7 @@ export const metadata : Metadata = {
 
 export default function HomeLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="md:flex md:h-dvh md:gap-2 justify-center">
+    <div className="md:flex md:h-dvh md:gap-2 relative justify-center">
         <NavBar/>
       <div className="md:w-4/5 lg:2/6">
         {children}

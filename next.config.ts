@@ -12,6 +12,9 @@ const nextConfig: NextConfig = {
   },
   experimental : {
     turbopackFileSystemCacheForDev: true,
+    serverActions: {
+      bodySizeLimit: '10mb',
+    }
   },
   reactCompiler: true,
   cacheComponents: true,

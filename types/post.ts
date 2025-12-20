@@ -13,7 +13,7 @@ export interface PostType {
     createdAt: string;
     updatedAt: string;
     author: Author
-    images: ImageType[]
+    images: PostImageType[]
     stats: PostStats
 
 }
@@ -28,7 +28,7 @@ interface Author {
     profilePic: string | null;
 }
 
- interface ImageType {
+ interface PostImageType {
     id: string;
     path: string;
     imageId: string;
@@ -72,7 +72,28 @@ interface Author {
     posts: PostType[]
  }
 
+export interface ImageKitResponse {
+  "url": string;
+  "thumbnailUrl": string;
+  "fileId": string;
+  "name": string;
+  "size": number;
+  "type": string;
+  "height": number;
+  "width": number;
+  "path": string;
+}
 
+export interface ImageType {
+    id: string;
+    path: string;
+    fullPath: string;
+}
+export interface AddPostType {
+    content: string | null;
+    sharedPostId?: string | null;
+    images: ImageType[];
+}
  
 
 

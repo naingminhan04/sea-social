@@ -12,10 +12,11 @@
     "@tanstack/react-query": "^5.90.12",
     "axios": "^1.13.2",
     "lucide-react": "^0.556.0",
-    "next": "16.0.8",
+    "next": "^16.1.0",
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "react-hook-form": "^7.68.0",
+    "react-hot-toast": "^2.6.0",
     "zustand": "^5.0.9"
   },
   "devDependencies": {
