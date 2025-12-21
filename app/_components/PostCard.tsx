@@ -2,6 +2,7 @@ import { PostType } from "@/types/post";
 import { ThumbsUp,Share2,MessageCircle  } from "lucide-react";
 import Image from "next/image";
 import PostContent from "./PostContent";
+import ReactionBtn from "./ReactionBtn";
 
 const PostCard = ({ post }: { post: PostType }) => {
   const images = post.images || [];
@@ -50,21 +51,20 @@ const PostCard = ({ post }: { post: PostType }) => {
       )}
 
       <div className="flex justify-between text-sm text-gray-500 pt-2">
-        <span className="flex items-center gap-2"><ThumbsUp />{post.stats.reactions.total}</span>
+        <span className="flex items-center gap-2"> <ThumbsUp /> {post.stats.reactions.total} </span>
         <span className="flex items-center gap-2"> <MessageCircle/> {post.stats.comments}</span>
         <span className="flex items-center gap-2"> <Share2 /> {post.stats.sharedCount}</span>
       </div>
 
       <div className="flex justify-between border-t pt-3 text-sm font-medium text-gray-600">
-        <button className="flex-1 hover:text-blue-600">Like</button>
-        <button className="flex-1 hover:text-green-600">Comment</button>
-        <button className="flex-1 hover:text-purple-600">Share</button>
+        <button className="flex-1 w-full h-10 border"><ReactionBtn post={post}/></button>
+        <button className="flex-1 w-full h-10 border">Comment</button>
+        <button className="flex-1 w-full h-10 border">Share</button>
       </div>
     </main>
   );
 };
 
-// Helper function to return Tailwind grid classes based on number of images
 function getGridClass(length: number) {
   switch (length) {
     case 1:
@@ -72,11 +72,11 @@ function getGridClass(length: number) {
     case 2:
       return "grid-cols-2";
     case 3:
-      return "grid-cols-2 grid-rows-2"; // left 1 large, right 2 stacked
+      return "grid-cols-2 grid-rows-2";
     case 4:
       return "grid-cols-2 grid-rows-2";
     default:
-      return "grid-cols-2 grid-rows-2"; // 5+ images
+      return "grid-cols-2 grid-rows-2";
   }
 }
 

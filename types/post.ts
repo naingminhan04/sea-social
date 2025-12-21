@@ -15,6 +15,11 @@ export interface PostType {
     author: Author
     images: PostImageType[]
     stats: PostStats
+    isReacted: boolean;
+    reaction: {
+        id: string;
+        reactionType: ReactionType 
+    } | null
 
 }
 
@@ -37,7 +42,7 @@ interface Author {
  }
 
 
- interface PostStats {
+ export interface PostStats {
     reactions: {
         total: number;
         like: number;
@@ -49,15 +54,10 @@ interface Author {
     };
     comments: number;
     sharedCount: number;
-    isReacted: boolean;
-    reaction: {
-        id: string;
-        reactionType: ReactionType 
-    } | null
  }
 
 
- enum ReactionType {
+ export enum ReactionType {
     like = "LIKE",
     love = "LOVE",
     wow = "WOW",
