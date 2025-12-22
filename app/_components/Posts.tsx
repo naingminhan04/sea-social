@@ -1,7 +1,7 @@
 "use client";
 
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import PostCard from "../_components/PostCard";
 import { getPostAction } from "../_actions/post";
 import { PostType } from "@/types/post";

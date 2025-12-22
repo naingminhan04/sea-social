@@ -14,7 +14,7 @@ const Signup = () => {
           className="rounded-full mb-5"
         />
         <h1 className="text-2xl font-bold mb-1">Create Account</h1>
-        <p className="text-gray-300 text-sm">
+        <p className="text-gray-300 text-sm text-center">
           Join Star Education Academy and Start Your Journey
         </p>
       </div>

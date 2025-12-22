@@ -1,8 +1,9 @@
 import { PostType } from "@/types/post";
-import { ThumbsUp,Share2,MessageCircle  } from "lucide-react";
 import Image from "next/image";
 import PostContent from "./PostContent";
 import ReactionBtn from "./ReactionBtn";
+import { Share2, MessageCircle } from "lucide-react";
+import ViewReaction from "./ViewReaction";
 
 const PostCard = ({ post }: { post: PostType }) => {
   const images = post.images || [];
@@ -10,7 +11,8 @@ const PostCard = ({ post }: { post: PostType }) => {
   const displayImages = images.slice(0, 4);
 
   return (
-    <main className=" bg-neutral-900 p-4 space-y-4">
+    <main className="bg-neutral-900 p-4 space-y-4 rounded-xl">
+      {/* AUTHOR */}
       <div className="flex items-center gap-3">
         <Image
           src={post.author.profilePic || "/default-avatar.png"}
@@ -20,15 +22,17 @@ const PostCard = ({ post }: { post: PostType }) => {
           className="w-12 h-12 rounded-full object-cover"
         />
         <div>
-          <p className="font-semibold">{post.author.name}</p>
-          <p className="text-sm">@{post.author.username}</p>
+          <p className="font-semibold text-white">{post.author.name}</p>
+          <p className="text-sm text-gray-400">@{post.author.username}</p>
         </div>
       </div>
 
-      <div className="whitespace-pre-line text-sm leading-relaxed">
+      {/* CONTENT */}
+      <div className="whitespace-pre-line text-sm leading-relaxed text-gray-200">
         <PostContent post={post} />
       </div>
 
+      {/* IMAGES — UNCHANGED */}
       {images.length > 0 && (
         <div className={`grid gap-1 ${getGridClass(images.length)} max-h-dvh`}>
           {displayImages.map((img, index) => (
@@ -50,16 +54,37 @@ const PostCard = ({ post }: { post: PostType }) => {
         </div>
       )}
 
-      <div className="flex justify-between text-sm text-gray-500 pt-2">
-        <span className="flex items-center gap-2"> <ThumbsUp /> {post.stats.reactions.total} </span>
-        <span className="flex items-center gap-2"> <MessageCircle/> {post.stats.comments}</span>
-        <span className="flex items-center gap-2"> <Share2 /> {post.stats.sharedCount}</span>
-      </div>
+      {/* FACEBOOK STYLE INTERACTIONS */}
+      <div className="flex items-center justify-between border-t border-neutral-800 pt-2 text-sm text-gray-400">
+        {/* LEFT ACTIONS */}
+        <div className="flex items-center gap-6">
+          {/* REACT */}
+          <div className="flex items-center gap-1 hover:text-white">
+            <ReactionBtn post={post} />
+            {post.stats.reactions.total > 0 && (
+              <span>{formatCount(post.stats.reactions.total)}</span>
+            )}
+          </div>
 
-      <div className="flex justify-between border-t pt-3 text-sm font-medium text-gray-600">
-        <button className="flex-1 w-full h-10 border"><ReactionBtn post={post}/></button>
-        <button className="flex-1 w-full h-10 border">Comment</button>
-        <button className="flex-1 w-full h-10 border">Share</button>
+          {/* COMMENT */}
+          <div className="flex items-center gap-1 cursor-pointer hover:text-white">
+            <MessageCircle size={18} />
+            {post.stats.comments > 0 && (
+              <span>{formatCount(post.stats.comments)}</span>
+            )}
+          </div>
+
+          {/* SHARE */}
+          <div className="flex items-center gap-1 cursor-pointer hover:text-white">
+            <Share2 size={18} />
+            {post.stats.sharedCount > 0 && (
+              <span>{formatCount(post.stats.sharedCount)}</span>
+            )}
+          </div>
+        </div>
+
+        {/* RIGHT REACTION ICONS (NO COUNTS) */}
+        <ViewReaction post={post}/>
       </div>
     </main>
   );
@@ -72,12 +97,15 @@ function getGridClass(length: number) {
     case 2:
       return "grid-cols-2";
     case 3:
-      return "grid-cols-2 grid-rows-2";
     case 4:
-      return "grid-cols-2 grid-rows-2";
     default:
       return "grid-cols-2 grid-rows-2";
   }
+}
+
+function formatCount(num: number) {
+  if (num < 1000) return num;
+  return (num / 1000).toFixed(1).replace(".0", "") + "k";
 }
 
 export default PostCard;

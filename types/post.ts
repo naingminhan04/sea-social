@@ -43,7 +43,12 @@ interface Author {
 
 
  export interface PostStats {
-    reactions: {
+    reactions: ReactionCountType;
+    comments: number;
+    sharedCount: number;
+ }
+
+ interface ReactionCountType {
         total: number;
         like: number;
         angry: number;
@@ -51,9 +56,6 @@ interface Author {
         haha: number;
         wow: number;
         sad: number;
-    };
-    comments: number;
-    sharedCount: number;
  }
 
 
@@ -94,7 +96,33 @@ export interface AddPostType {
     sharedPostId?: string | null;
     images: ImageType[];
 }
- 
+
+export interface PostReactionType {
+    metadata : Metadata;
+    stats : ReactionCountType;
+    reactions : PostReactionUserType[]
+}
+
+export interface PostReactionUserType {
+  "id": string;
+  "userId": string;
+  "targetId": string;
+  "targetType": string;
+  "postId": string;
+  "commentId": string | null;
+  "createdAt": string;
+  "updatedAt": string;
+  "reactionType": ReactionType;
+  "user": {
+    "id": string;
+    "username": string;
+    "name": string;
+    "email": string;
+    "nickname": string | null;
+    "profilePic": string | null;
+    "coverPic": string | null;
+  };
+}
 
 
 
