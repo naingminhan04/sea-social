@@ -5,7 +5,7 @@ import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
-import { addPostAction } from "../_actions/postAction";
+import { addPostAction, uploadImageAction } from "../_actions/postAction";
 import { AddPostType, ImageType, ImageKitResponse } from "@/types/post";
 import toast from "react-hot-toast";
 
@@ -14,7 +14,6 @@ type FormValues = {
 };
 
 const MAX_IMAGES = 20;
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function AddPostBtn() {
   const [isOpen, setIsOpen] = useState(false);
@@ -24,32 +23,8 @@ export default function AddPostBtn() {
   const { register, handleSubmit, reset, watch } = useForm<FormValues>();
 
   const uploadMutation = useMutation({
-    mutationFn: async (files: File[]): Promise<ImageKitResponse[]> => {
-      const tokenResponse = await fetch("/api/upload-token");
-      if (!tokenResponse.ok) throw new Error("Failed to get auth token");
-      const { token } = await tokenResponse.json();
-
-      const uploadPromises = files.map(async (file) => {
-        const formData = new FormData();
-        formData.append("file", file);
-
-        const response = await fetch(`${API_BASE}/upload/upload`, {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const errorData = await response
-            .json()
-            .catch(() => ({ error: "Failed to upload image" }));
-          throw new Error(errorData.error || "Failed to upload image");
-        }
-        return response.json();
-      });
-
-      return Promise.all(uploadPromises);
-    },
+    mutationFn: async (files: File[]): Promise<ImageKitResponse[]> =>
+      uploadImageAction(files),
     onError: (error: Error) =>
       toast.error(`Failed to upload images: ${error.message}`),
   });
