@@ -59,12 +59,7 @@ const PostCard = ({ post }: { post: PostType }) => {
         {/* LEFT ACTIONS */}
         <div className="flex items-center gap-6">
           {/* REACT */}
-          <div className="flex items-center gap-1 hover:text-white">
             <ReactionBtn post={post} />
-            {post.stats.reactions.total > 0 && (
-              <span>{formatCount(post.stats.reactions.total)}</span>
-            )}
-          </div>
 
           {/* COMMENT */}
           <div className="flex items-center gap-1 cursor-pointer hover:text-white">
@@ -103,7 +98,7 @@ function getGridClass(length: number) {
   }
 }
 
-function formatCount(num: number) {
+export function formatCount(num: number) {
   if (num < 1000) return num;
   return (num / 1000).toFixed(1).replace(".0", "") + "k";
 }

@@ -1,7 +1,8 @@
-'use client'
+"use client";
 
 import { PostType, ReactionType, PostsResponseType } from "@/types/post";
-  import { addReactionAction, removeReactionAction } from "../_actions/reaction";
+import { addReactionAction, removeReactionAction } from "../_actions/reaction";
+import { formatCount } from "./PostCard";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ThumbsUp, Heart } from "lucide-react";
@@ -20,7 +21,6 @@ const reactionHoverMap: Record<ReactionType, string> = {
   LOVE: "hover:bg-red-500",
 };
 
-// Map reaction types to PNG assets in /public
 const reactionImageMap: Record<ReactionType, string> = {
   LIKE: "/like.png",
   HAHA: "/haha.png",
@@ -32,262 +32,180 @@ const reactionImageMap: Record<ReactionType, string> = {
 
 const ReactionBtn = ({ post }: ReactionBtnProps) => {
   const [open, setOpen] = useState(false);
-
   const [reactionState, setReactionState] = useState<ReactionType | null>(
     post.isReacted ? post.reaction?.reactionType || null : null
   );
 
-    useEffect(() => {
-      document.body.style.overflow = open ? "hidden" : "";
-      return () => {
-        document.body.style.overflow = "";
-      };
-    }, [open]);
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [open]);
 
-    const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
 
-    const addMutation = useMutation<
-      unknown,
-      Error,
-      { postId: string; reaction: ReactionType },
-      { previous?: { pages: PostsResponseType[] } }
-    >({
-      mutationFn: ({
-        postId,
-        reaction,
-      }: {
-        postId: string;
-        reaction: ReactionType;
-      }) => addReactionAction(postId, reaction),
-      onMutate: async (vars: { postId: string; reaction: ReactionType }) => {
-        const { postId, reaction } = vars;
-        await queryClient.cancelQueries({ queryKey: ["posts"] });
+  const addMutation = useMutation({
+    mutationFn: ({ postId, reaction }: { postId: string; reaction: ReactionType }) =>
+      addReactionAction(postId, reaction),
+    onMutate: async ({ postId, reaction }) => {
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(["posts"]);
+      const newData = previous ? structuredClone(previous) : previous;
 
-        const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(
-          ["posts"]
-        );
-
-        const newData = previous ? structuredClone(previous) : previous;
-
-        if (newData?.pages) {
-          for (const page of newData.pages) {
-            const p = page.posts.find((x: PostType) => x.id === postId);
-            if (p) {
-              const prevReaction = p.reaction?.reactionType || null;
-
-              if (prevReaction) {
-                const prevKey = prevReaction.toLowerCase();
-                const rxKeyPrev = prevKey as keyof typeof p.stats.reactions;
-                if (p.stats?.reactions?.[rxKeyPrev] != null) {
-                  p.stats.reactions[rxKeyPrev] = Math.max(
-                    0,
-                    p.stats.reactions[rxKeyPrev] - 1
-                  );
-                }
-              } else {
-                p.stats.reactions.total = (p.stats.reactions.total || 0) + 1;
-              }
-
-              const newKey = reaction.toLowerCase();
-              const rxKeyNew = newKey as keyof typeof p.stats.reactions;
-              if (p.stats?.reactions?.[rxKeyNew] != null) {
-                p.stats.reactions[rxKeyNew] =
-                  (p.stats.reactions[rxKeyNew] || 0) + 1;
-              }
-
-              p.isReacted = true;
-              p.reaction = { id: "optimistic", reactionType: reaction } as {
-                id: string;
-                reactionType: ReactionType;
-              };
+      if (newData?.pages) {
+        for (const page of newData.pages) {
+          const p = page.posts.find((x: PostType) => x.id === postId);
+          if (p) {
+            const prevReaction = p.reaction?.reactionType || null;
+            if (prevReaction) {
+              const rxKeyPrev = prevReaction.toLowerCase() as keyof typeof p.stats.reactions;
+              if (p.stats?.reactions?.[rxKeyPrev] != null) p.stats.reactions[rxKeyPrev] = Math.max(0, p.stats.reactions[rxKeyPrev] - 1);
+            } else {
+              p.stats.reactions.total = (p.stats.reactions.total || 0) + 1;
             }
+
+            const rxKeyNew = reaction.toLowerCase() as keyof typeof p.stats.reactions;
+            if (p.stats?.reactions?.[rxKeyNew] != null) p.stats.reactions[rxKeyNew] = (p.stats.reactions[rxKeyNew] || 0) + 1;
+
+            p.isReacted = true;
+            p.reaction = { id: "optimistic", reactionType: reaction } as { id: string; reactionType: ReactionType };
           }
         }
+      }
 
-        queryClient.setQueryData(["posts"], newData);
+      queryClient.setQueryData(["posts"], newData);
+      setReactionState(reaction);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(["posts"], context.previous);
+      setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
+    },
+    onSettled: () => {
+      // invalidate only the post reactions query
+      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
+    },
+  });
 
-        setReactionState(reaction);
+  const removeMutation = useMutation({
+    mutationFn: (postId: string) => removeReactionAction(postId),
+    onMutate: async (postId: string) => {
+      await queryClient.cancelQueries({ queryKey: ["posts"] });
+      const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(["posts"]);
+      const newData = previous ? structuredClone(previous) : previous;
 
-        return { previous };
-      },
-      onError: (
-        err: unknown,
-        variables: { postId: string; reaction: ReactionType },
-        context: { previous?: { pages: PostsResponseType[] } } | undefined
-      ) => {
-        if (context?.previous) {
-          queryClient.setQueryData(["posts"], context.previous);
-        }
-        setReactionState(
-          post.isReacted ? post.reaction?.reactionType || null : null
-        );
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ["posts"] });
-      },
-    });
-
-    const removeMutation = useMutation<
-      unknown,
-      Error,
-      string,
-      { previous?: { pages: PostsResponseType[] } }
-    >({
-      mutationFn: (postId: string) => removeReactionAction(postId),
-      onMutate: async (postId: string) => {
-        await queryClient.cancelQueries({ queryKey: ["posts"] });
-
-        const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(
-          ["posts"]
-        );
-
-        const newData = previous ? structuredClone(previous) : previous;
-
-        if (newData?.pages) {
-          for (const page of newData.pages) {
-            const p = page.posts.find((x: PostType) => x.id === postId);
-            if (p && p.reaction) {
-              const prevReaction = p.reaction.reactionType;
-              const prevKey = prevReaction.toLowerCase();
-              const rxKeyPrev = prevKey as keyof typeof p.stats.reactions;
-
-              if (p.stats?.reactions?.[rxKeyPrev] != null) {
-                p.stats.reactions[rxKeyPrev] = Math.max(
-                  0,
-                  p.stats.reactions[rxKeyPrev] - 1
-                );
-              }
-
-              p.stats.reactions.total = Math.max(
-                0,
-                (p.stats.reactions.total || 1) - 1
-              );
-
-              p.isReacted = false;
-              p.reaction = null;
-            }
+      if (newData?.pages) {
+        for (const page of newData.pages) {
+          const p = page.posts.find((x: PostType) => x.id === postId);
+          if (p && p.reaction) {
+            const prevKey = p.reaction.reactionType.toLowerCase() as keyof typeof p.stats.reactions;
+            if (p.stats?.reactions?.[prevKey] != null) p.stats.reactions[prevKey] = Math.max(0, p.stats.reactions[prevKey] - 1);
+            p.stats.reactions.total = Math.max(0, (p.stats.reactions.total || 1) - 1);
+            p.isReacted = false;
+            p.reaction = null;
           }
         }
+      }
 
-        queryClient.setQueryData(["posts"], newData);
+      queryClient.setQueryData(["posts"], newData);
+      setReactionState(null);
+      return { previous };
+    },
+    onError: (_err, _vars, context) => {
+      if (context?.previous) queryClient.setQueryData(["posts"], context.previous);
+      setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
+    },
+  });
 
-        setReactionState(null);
+  const handleReaction = (reaction: ReactionType) => {
+    setOpen(false);
+    addMutation.mutate({ postId: post.id, reaction });
+  };
 
-        return { previous };
-      },
-      onError: (
-        err: unknown,
-        variables: string,
-        context: { previous?: { pages: PostsResponseType[] } } | undefined
-      ) => {
-        if (context?.previous) {
-          queryClient.setQueryData(["posts"], context.previous);
-        }
-        setReactionState(
-          post.isReacted ? post.reaction?.reactionType || null : null
-        );
-      },
-      onSettled: () => {
-        queryClient.invalidateQueries({ queryKey: ["posts"] });
-      },
-    });
+  const handleRemove = () => {
+    removeMutation.mutate(post.id);
+  };
 
-    const handleReaction = (reaction: ReactionType) => {
-      setOpen(false);
-      addMutation.mutate({ postId: post.id, reaction });
-    };
+  const userHasReacted = reactionState !== null;
+  const isBusy = addMutation.isPending || removeMutation.isPending;
 
-    const handleRemove = () => {
-      removeMutation.mutate(post.id);
-    };
-
-    const userHasReacted = reactionState !== null;
-
-    const isBusy = addMutation.isPending || removeMutation.isPending;
-
-    return (
-      <>
+  return (
+    <>
+      <div className="flex items-center hover:text-white">
         {userHasReacted ? (
           <button
             disabled={isBusy}
             onClick={() => !isBusy && handleRemove()}
-            className={`flex items-center justify-center w-full h-full cursor-pointer p-1`}
+            className="flex items-center justify-center w-full h-full gap-2 cursor-pointer"
             aria-label={reactionState ? `${reactionState} reaction` : "reaction"}
           >
             {isBusy ? (
-              <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-transparent animate-spin" aria-hidden />
-            ) : reactionState ? (
-              <Image src={reactionImageMap[reactionState]} alt={reactionState} width={20} height={20} />
+              <span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
             ) : (
-              <ThumbsUp size={18} />
+              <Image src={reactionImageMap[reactionState!]} alt={reactionState!} width={20} height={20} />
             )}
+            {post.stats.reactions.total > 0 && <span>{formatCount(post.stats.reactions.total)}</span>}
           </button>
         ) : (
           <button
-            className={`flex items-center justify-center w-full h-full cursor-pointer p-1`}
+            className="flex items-center justify-center w-full h-full gap-2 cursor-pointer"
             disabled={isBusy}
             onClick={() => !isBusy && setOpen(true)}
             aria-label="Like"
           >
-            {isBusy || addMutation.isPending ? (
-              <span className="w-4 h-4 rounded-full border-2 border-white/40 border-t-transparent animate-spin" aria-hidden />
+            {isBusy ? (
+              <span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
             ) : (
               <ThumbsUp size={18} />
             )}
+            {post.stats.reactions.total > 0 && <span>{formatCount(post.stats.reactions.total)}</span>}
           </button>
         )}
+      </div>
 
-        {open && (
-          <>
-            <div
-              className="fixed inset-0 z-40 bg-black/40"
-              onClick={() => setOpen(false)}
-            />
-
-            <div className="absolute bottom-0 left-0 right-0 z-50 bg-black text-white p-2">
-              <div className="flex-col w-full h-55">
-                <div className="flex flex-col justify-center items-center gap-1 my-3">
-                  <Heart size={30} fill="white" />
-                  <h1 className="text-xl">Choose Reaction</h1>
-                  <p className="text-xs text-gray-400">
-                    Express how you feel about the post
-                  </p>
-                </div>
-                <div className="flex w-full">
-                  {Object.values(ReactionType).map((reaction) => {
-                    const isUserReaction = reaction === reactionState;
-
-                    return (
-                      <span
-                        key={reaction}
-                        onClick={() => !isBusy && handleReaction(reaction)}
-                        className={`bg-neutral-800 rounded-2xl mx-1 sm:mx-3 w-1/5 h-15 flex justify-center items-center ${
-                          isBusy ? "opacity-70 cursor-wait" : "cursor-pointer"
-                        } ${reactionHoverMap[reaction]} ${
-                          isUserReaction ? "ring-2 ring-white" : ""
-                        } transition-colors duration-150`}
-                      >
+      {open && (
+        <>
+          <div className="fixed inset-0 z-60 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="absolute bottom-0 left-0 right-0 z-60 bg-black text-white p-2">
+            <div className="flex-col w-full h-55">
+              <div className="flex flex-col justify-center items-center gap-1 my-3">
+                <Heart size={30} fill="white" />
+                <h1 className="text-xl">Choose Reaction</h1>
+                <p className="text-xs text-gray-400">Express how you feel about the post</p>
+              </div>
+              <div className="flex w-full">
+                {Object.values(ReactionType).map((reaction) => {
+                  const isUserReaction = reaction === reactionState;
+                  return (
+                    <span
+                      key={reaction}
+                      onClick={() => !isBusy && handleReaction(reaction)}
+                      className={`bg-neutral-800 rounded-2xl mx-1 sm:mx-3 w-1/5 h-15 flex justify-center items-center ${
+                        isBusy ? "opacity-70 cursor-wait" : "cursor-pointer"
+                      } ${reactionHoverMap[reaction]} ${isUserReaction ? "ring-2 ring-white" : ""} transition-colors duration-150`}
+                    >
                       {addMutation.isPending && reaction === reactionState ? (
                         "..."
                       ) : (
                         <Image src={reactionImageMap[reaction]} alt={reaction} width={28} height={28} />
                       )}
-                      </span>
-                    );
-                  })}
-                </div>
-                <button
-                  onClick={() => setOpen(false)}
-                  className="p-3 w-full mt-6 bg-neutral-100 cursor-pointer text-black text-lg"
-                >
-                  Cancel
-                </button>
+                    </span>
+                  );
+                })}
               </div>
+              <button onClick={() => setOpen(false)} className="p-3 w-full mt-6 bg-neutral-100 cursor-pointer text-black text-lg">
+                Cancel
+              </button>
             </div>
-          </>
-        )}
-      </>
-    );
-  };
+          </div>
+        </>
+      )}
+    </>
+  );
+};
 
-  export default ReactionBtn;
+export default ReactionBtn;

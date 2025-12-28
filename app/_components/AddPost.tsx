@@ -125,7 +125,7 @@ export default function AddPostBtn() {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-40">
+        <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
           <div className="w-full max-w-2xl mt-20">
             <form
               className="w-full flex flex-col gap-4"
