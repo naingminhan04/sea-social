@@ -1,11 +1,15 @@
 import { PostType } from "@/types/post";
 import Image from "next/image";
 import PostContent from "./PostContent";
+import PostMenu from "./PostMenu";
 import ReactionBtn from "./ReactionBtn";
 import { Share2, MessageCircle } from "lucide-react";
 import ViewReaction from "./ViewReaction";
+import { useAuthStore } from "@/store/auth";
 
 const PostCard = ({ post }: { post: PostType }) => {
+  const auth = useAuthStore();
+  const userId = auth.user?.id
   const images = post.images || [];
   const moreCount = images.length > 4 ? images.length - 4 : 0;
   const displayImages = images.slice(0, 4);
@@ -13,7 +17,7 @@ const PostCard = ({ post }: { post: PostType }) => {
   return (
     <main className="bg-neutral-900 p-4 space-y-4 rounded-xl">
       {/* AUTHOR */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 w-full">
         <Image
           src={post.author.profilePic || "/default-avatar.png"}
           alt={post.author.name}
@@ -22,9 +26,10 @@ const PostCard = ({ post }: { post: PostType }) => {
           className="w-12 h-12 rounded-full object-cover"
         />
         <div>
-          <p className="font-semibold text-white">{post.author.name}</p>
+          <div className="flex gap-1"><p className="font-semibold text-white">{post.author.name}</p>{post.author.id===userId && (<p className="text-blue-500 font-semibold">(You)</p>)}</div>
           <p className="text-sm text-gray-400">@{post.author.username}</p>
         </div>
+        <PostMenu post={post} />
       </div>
 
       {/* CONTENT */}

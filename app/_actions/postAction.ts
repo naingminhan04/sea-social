@@ -53,3 +53,27 @@ export async function uploadImageAction(files: File[]): Promise<ImageKitResponse
 
       return Promise.all(uploadPromises);
 }
+
+export async function patchPostAction(postId: string, postData: AddPostType) {
+  const token = await getToken();
+
+  if (!token) throw new Error("Failed to get auth token");
+  
+  const res = await api.patch(`/posts/${postId}`, {
+    content: postData.content || "",
+      sharedPostId: postData.sharedPostId || null,
+      images: postData.images,
+  });
+
+  return res.data;
+}
+
+export async function deletePostAction(postId: string) {
+    const token = await getToken();
+    
+    if (!token) throw new Error("Failed to get auth token");
+    
+    const res = await api.delete(`/posts/${postId}`)
+
+    return res.data;
+}

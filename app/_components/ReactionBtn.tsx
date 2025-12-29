@@ -75,17 +75,14 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       }
 
       queryClient.setQueryData(["posts"], newData);
-      setReactionState(reaction);
+      setReactionState(reaction); queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
       return { previous };
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(["posts"], context.previous);
       setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
     },
-    onSettled: () => {
-      // invalidate only the post reactions query
-      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
-    },
+    
   });
 
   const removeMutation = useMutation({
