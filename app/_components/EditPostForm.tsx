@@ -20,20 +20,12 @@ type FormValues = {
 
 const MAX_IMAGES = 20;
 
-type MaybeImage = ImageType & { imageId?: string; url?: string };
-
 export default function EditPostBtn({ post }: { post: PostType }) {
   const [open, setOpen] = useState(false);
-  // normalize existing images to ensure a usable `fullPath` is present
-  const normalize = (i: Partial<MaybeImage>) => ({
-    id: i.id || "",
-    path: i.path || "",
-    fullPath: i.fullPath ?? i.url ?? i.path ?? "",
-  });
 
-  const [existingImages, setExistingImages] = useState<ImageType[]>(
-    (post.images ?? []).map(normalize)
-  );
+  const getSrc = (i: Partial<ImageType & { url?: string }>) => i.url || i.fullPath || "";
+
+  const [existingImages, setExistingImages] = useState<ImageType[]>(post.images ?? []);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
@@ -93,34 +85,15 @@ export default function EditPostBtn({ post }: { post: PostType }) {
       if (selectedFiles.length > 0) {
         const uploaded = await uploadMutation.mutateAsync(selectedFiles);
 
-        // Map uploaded ImageKit responses to the shape expected by the API
-        const newImages = uploaded.map(
-          (img) =>
-            ({
-              id: img.fileId,
-              path: img.path,
-              fullPath: img.url,
-              // include ImageKit fileId as imageId and thumbnail url for backend compatibility
-              imageId: img.fileId,
-              url: img.thumbnailUrl,
-            } as unknown as ImageType)
-        );
+        const newImages: ImageType[] = uploaded.map((img) => ({
+          id: img.fileId,
+          path: img.path,
+          fullPath: img.url,
+        }));
 
-        // avoid duplicates when merging (compare by imageId, id, or fullPath)
-        const existingKeys = new Set(
-          imagesForPost.map(
-            (i) => (i as MaybeImage).imageId || i.id || i.fullPath
-          )
-        );
-
-        imagesForPost = imagesForPost.concat(
-          newImages.filter(
-            (img) =>
-              !existingKeys.has(
-                (img as MaybeImage).imageId || img.id || img.fullPath
-              )
-          )
-        );
+        const keyOf = (i: { id?: string; fullPath?: string }) => i.id || i.fullPath || "";
+        const existingKeys = new Set(imagesForPost.map(keyOf));
+        imagesForPost = imagesForPost.concat(newImages.filter((n) => !existingKeys.has(keyOf(n))));
       }
 
       await postMutation.mutateAsync({
@@ -232,30 +205,33 @@ export default function EditPostBtn({ post }: { post: PostType }) {
 
               {allImagesCount > 0 ? (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {existingImages.map((img, index) => (
-                    <div key={img.id || index} className="relative w-full">
-                      <div className="relative w-full aspect-square">
-                        <Image
-                          src={
-                            (img as MaybeImage).fullPath ||
-                            (img as MaybeImage).url ||
-                            (img as MaybeImage).path
-                          }
-                          alt="Existing image"
-                          fill
-                          className="object-cover rounded-lg"
-                        />
+                  {existingImages.map((img, index) => {
+                    const src = getSrc(img);
+                    return (
+                      <div key={img.id || index} className="relative w-full">
+                        <div className="relative w-full aspect-square">
+                          {src ? (
+                            <Image
+                              src={src}
+                              alt="Existing image"
+                              fill
+                              className="object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-neutral-800 rounded-lg" />
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(index)}
+                          disabled={isLoading}
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center disabled:opacity-50"
+                        >
+                          <X size={14} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => removeExistingImage(index)}
-                        disabled={isLoading}
-                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center disabled:opacity-50"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {selectedFiles.map((_, index) => (
                     <div key={index} className="relative w-full">
