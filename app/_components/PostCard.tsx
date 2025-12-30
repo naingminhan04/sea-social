@@ -26,7 +26,7 @@ const PostCard = ({ post }: { post: PostType }) => {
           className="w-12 h-12 rounded-full object-cover"
         />
         <div>
-          <div className="flex gap-1"><p className="font-semibold text-white">{post.author.name}</p>{post.author.id===userId && (<p className="text-blue-500 font-semibold">(You)</p>)}</div>
+          <div className="flex gap-1"><p className="font-semibold text-white">{post.author.name}</p>{post.author.id===userId && (<p className="text-blue-500 font-semibold">(You)</p>)}{post.isEdited && <p className="text-xs text-gray-400 self-center">(edited)</p>}</div>
           <p className="text-sm text-gray-400">@{post.author.username}</p>
         </div>
         <PostMenu post={post} />

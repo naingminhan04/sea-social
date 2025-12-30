@@ -6,6 +6,7 @@ import { useAuthStore } from "@/store/auth";
 import { PostType } from "@/types/post";
 import { deletePostAction } from "../_actions/postAction";
 import { useQueryClient } from "@tanstack/react-query";
+import EditPostBtn from "./EditPostForm";
 import toast from "react-hot-toast";
 
 const PostMenu = ({ post }: { post: PostType }) => {
@@ -13,7 +14,6 @@ const PostMenu = ({ post }: { post: PostType }) => {
   const auth = useAuthStore();
   const user = auth.user?.id;
   const [open, setOpen] = useState(false);
-  const [edit, setEdit] = useState(false);
   const [del, setDel] = useState(false);
 
   const handleDelete = () => {
@@ -49,12 +49,11 @@ const PostMenu = ({ post }: { post: PostType }) => {
               />
               <div className="absolute bottom-0 left-0 right-0 z-60 bg-neutral-800 text-white">
                 <div className="flex flex-col justify-around items-center w-full h-30">
-                  <button
-                    onClick={() => setEdit(true)}
-                    className="w-full h-full cursor-pointer hover:bg-black"
+                  <div
+                    className="w-full h-full"
                   >
-                    Edit
-                  </button>
+                    <EditPostBtn post={post}/>
+                  </div>
                   <button
                     onClick={handleDelete}
                     className="w-full h-full cursor-pointer hover:bg-red-700"
@@ -77,13 +76,13 @@ const PostMenu = ({ post }: { post: PostType }) => {
                     onClick={handleConfirmDelete}
                     className="w-full h-full cursor-pointer hover:bg-red-600"
                   >
-                    Delete
+                    Delete Permenently
                   </button>
                   <button
                     onClick={() => setDel(false)}
                     className="w-full h-full cursor-pointer hover:bg-black"
                   >
-                    Cancel
+                    Cancel (Go Back)
                   </button>
                 </div>
               </div>

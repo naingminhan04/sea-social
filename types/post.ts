@@ -15,6 +15,7 @@ export interface PostType {
     author: Author
     images: PostImageType[]
     stats: PostStats
+    isEdited: boolean;
     isReacted: boolean;
     reaction: {
         id: string;

@@ -59,13 +59,28 @@ export async function patchPostAction(postId: string, postData: AddPostType) {
 
   if (!token) throw new Error("Failed to get auth token");
   
-  const res = await api.patch(`/posts/${postId}`, {
-    content: postData.content || "",
-      sharedPostId: postData.sharedPostId || null,
-      images: postData.images,
-  });
+  try {
+    const images = (postData.images || []).map((img) => ({
+      id: img.id,
+      path: img.path,
+      fullPath: img.fullPath,
+    }));
 
-  return res.data;
+    const res = await api.patch(`/posts/${postId}`, {
+      content: postData.content || "",
+      sharedPostId: postData.sharedPostId || null,
+      images,
+    });
+
+    return res.data;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      const data = error.response?.data as APIError;
+      const msg = data?.message ?? data?.error ?? "Failed to update post";
+      throw new Error(msg);
+    }
+    throw new Error("Unexpected error updating post");
+  }
 }
 
 export async function deletePostAction(postId: string) {
