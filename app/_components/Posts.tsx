@@ -46,7 +46,7 @@ const Posts = () => {
   }
 
   return (
-    <div ref={scrollRef} className="flex flex-col w-full gap-2 md:h-dvh h-[calc(100dvh-60px)] overflow-scroll scrollbar-none">
+    <div ref={scrollRef} className="flex flex-col w-full gap-2 md:h-dvh h-[calc(100dvh-60px)] overflow-y-scroll scrollbar-none">
       {data?.pages.map((page) =>
         page.posts.map((post: PostType) => (
           <PostCard key={post.id} post={post} />

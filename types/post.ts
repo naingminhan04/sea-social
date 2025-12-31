@@ -1,4 +1,4 @@
-interface Metadata {
+export interface Metadata {
     page: number;
     nextPage: number | null;
     totalPages: number;
