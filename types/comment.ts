@@ -1,4 +1,4 @@
-import { Metadata, ImageType, ReactionCountType, ReactionType, PostReactionUserType } from "./post"
+import { Metadata, ImageType,PostImageType, ReactionCountType, ReactionType, PostReactionUserType } from "./post"
 import { UserType } from "./user"
 
 export interface CommentResponseType {
@@ -19,7 +19,7 @@ export interface CommentType {
     replies: number
   }
   user: UserType
-  images: ImageType[]
+  images: PostImageType[]
   likes: PostReactionUserType[]
   reply: CommentType | null
   stats: {
@@ -33,4 +33,10 @@ export interface CommentType {
         reactionType: ReactionType
       }
     | null
+}
+
+export interface AddCommentType {
+  content: string
+  replyId?: string | null
+  images: ImageType[]
 }

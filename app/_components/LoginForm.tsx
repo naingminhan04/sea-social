@@ -26,8 +26,8 @@ const LoginForm = () => {
   } = useForm<Inputs>();
 
   const mutation = useMutation({
-    mutationFn: async (data: Inputs) => {
-      const res = await loginAction(data);
+    mutationFn: (data: Inputs) => {
+      const res = loginAction(data);
 
       return res;
     },

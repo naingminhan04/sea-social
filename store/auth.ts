@@ -1,12 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { User } from "@/types/user";
+import { UserType } from "@/types/user";
 
 interface AuthState {
   tmpVerificationCode: string | null;
-  user: User | null;
+  user: UserType | null;
   setTmpVerificationCode: (tmpVerificationCode: string | null) => void;
-  setUser: (user: User | null) => void;
+  setUser: (user: UserType | null) => void;
   logout: () => void;
 }
 

@@ -34,7 +34,7 @@ interface Author {
     profilePic: string | null;
 }
 
- interface PostImageType {
+ export interface PostImageType {
     id: string;
     path: string;
     imageId: string;
