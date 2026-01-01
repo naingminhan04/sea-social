@@ -145,7 +145,7 @@ export default function AddPostBtn() {
                   disabled={isPostDisabled}
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-colors"
                 >
-                  {isLoading ? "Posting..." : "Post"}
+                  {isLoading ? <span className="w-6 h-6 rounded-full border-4 border-white/40 border-t-transparent animate-spin" /> : "Post"}
                 </button>
               </div>
 

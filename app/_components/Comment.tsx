@@ -1,7 +1,7 @@
 "use client";
 
 import { PostType } from "@/types/post";
-import { MessageCircle } from "lucide-react";
+import { MessageCircle, SendHorizonal } from "lucide-react";
 import { formatCount } from "./PostCard";
 import { useState } from "react";
 import {
@@ -59,7 +59,7 @@ const CommentBtn = ({ post }: { post: PostType }) => {
                 </div>
                 <button
                   onClick={() => setOpen(false)}
-                  className="bg-neutral-600 hover:bg-neutral-500 px-4 py-2 rounded-xl"
+                  className="text-black bg-white hover:bg-neutral-300 px-4 py-2 rounded-xl"
                 >
                   Close
                 </button>
@@ -97,7 +97,9 @@ const CommentPage = ({ postId }: { postId: string }) => {
 
   const handleDelete = (commentId: string) => {
     deleteCommentAction(commentId);
-    queryClient.invalidateQueries({ queryKey: ["comments", postId] });
+    queryClient
+      .invalidateQueries({ queryKey: ["comments", postId] })
+      .then(() => toast.success("Comment Deleted Successfully"));
     queryClient.invalidateQueries({ queryKey: ["posts"] });
   };
 
@@ -129,8 +131,9 @@ const CommentPage = ({ postId }: { postId: string }) => {
                 className="w-10 h-10 rounded-full object-cover"
               />
 
-              <div className="flex-col max-w-[80%]">
-                <div className="bg-neutral-800 rounded-xl px-4 py-2">
+              <div className="flex flex-col max-w-[80%] w-fit">
+                  <div className="bg-neutral-800 rounded-xl px-4 py-2 w-fit max-w-full">
+
                   <p className="font-semibold text-sm">{comment.user.name}</p>
                   <p className="text-sm text-gray-200 whitespace-pre-wrap wrap-break-word">
                     {comment.content}
@@ -279,38 +282,34 @@ const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
       onSubmit={handleSubmit(onSubmit)}
       className="w-full sticky z-10 bottom-0 right-0 p-4 bg-black"
     >
-      <div className="flex gap-3 items-start">
-        <div className="flex-1 relative">
+      <div className="flex gap-3 items-center">
+        <div className="flex-1 flex relative">
           <textarea
-            placeholder={replyId ? "Write a reply..." : "Write a comment..."}
+            placeholder={replyId ? "Write a reply" : "Write a comment"}
             maxLength={500}
-            className="w-full scrollbar-none p-3 rounded-md bg-black text-white resize-none min-h-20 outline-0 border border-neutral-700 focus:border-white focus:border-2"
+            className="w-full scrollbar-none p-2 rounded-md bg-black text-white resize-none h-10 outline-0 border border-neutral-700 focus:border-white"
             {...register("content", {
               onChange: (e) =>
                 setContent((e.target as HTMLTextAreaElement).value),
             })}
             disabled={mutation.isPending}
           />
-          <div className="text-xs absolute bottom-3 right-1 text-neutral-400 mt-1">
-            {content.length}/500
-          </div>
+          {content.length > 450 && (
+            <div className="text-xs absolute bottom-3 right-1 text-neutral-400 mt-1">
+              {content.length}/500
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col justify-start">
-          <button
+        {isDisabled ? <></> :<div className="flex flex-col justify-start">
+           <button
             type="submit"
             disabled={isDisabled}
-            className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
+            className="px-3 py-1 h-10 rounded bg-white hover:bg-neutral-300 text-black"
           >
-            {mutation.isPending
-              ? replyId
-                ? "Replying..."
-                : "Posting..."
-              : replyId
-              ? "Reply"
-              : "Comment"}
+             <SendHorizonal />
           </button>
-        </div>
+        </div>}
       </div>
     </form>
   );

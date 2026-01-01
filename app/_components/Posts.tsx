@@ -42,7 +42,9 @@ const Posts = () => {
   }, [fetchNextPage, hasNextPage]);
 
   if (isLoading) {
-    return <div className="flex items-center md:h-dvh min-h-[calc(100dvh-60px)] justify-center p-10">Loading...</div>;
+    return <div className="flex justify-center items-center w-full h-[calc(100dvh-60px)] md:h-dvh">
+        <span className="w-10 h-10 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />
+      </div>
   }
 
   return (

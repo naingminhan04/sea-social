@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-
 import { viewReactionAction } from "../_actions/reaction";
 import {
   PostType,
@@ -150,15 +149,17 @@ const ReactionPage = ({
       initialPageParam: 1,
       getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
       staleTime: 1000 * 60 * 5,
-      refetchOnWindowFocus: false,
+      refetchOnWindowFocus: false
     });
 
   if (isLoading) {
-    return <p className="mt-4 text-gray-400">Loading reactions...</p>;
+    return <div className="flex justify-center items-center w-full h-full">
+        <span className="w-10 h-10 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />
+      </div>;
   }
 
   return (
-    <div className="mt-4 space-y-3">
+    <div className="mt-4 space-y-3 overflow-scroll scrollbar-none">
       {data?.pages.flatMap((page) =>
         page.reactions.map((r) => (
           <div key={r.id} className="flex items-center gap-3">

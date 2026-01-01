@@ -50,13 +50,13 @@ const PostMenu = ({ post }: { post: PostType }) => {
               <div className="absolute bottom-0 left-0 right-0 z-60 bg-neutral-800 text-white">
                 <div className="flex flex-col justify-around items-center w-full h-30">
                   <div
-                    className="w-full h-full"
+                    className="w-full h-full bg-black"
                   >
                     <EditPostBtn post={post}/>
                   </div>
                   <button
                     onClick={handleDelete}
-                    className="w-full h-full cursor-pointer hover:bg-red-700"
+                    className="w-full h-full cursor-pointer bg-red-700"
                   >
                     Delete
                   </button>
