@@ -20,12 +20,19 @@ type FormValues = {
 
 const MAX_IMAGES = 20;
 
-export default function EditPostBtn({ post }: { post: PostType }) {
-  const [open, setOpen] = useState(false);
+export default function EditPostForm({
+  post,
+  onClose,
+}: {
+  post: PostType;
+  onClose: () => void;
+}) {
+  const getSrc = (i: Partial<ImageType & { url?: string }>) =>
+    i.url || i.fullPath || "";
 
-  const getSrc = (i: Partial<ImageType & { url?: string }>) => i.url || i.fullPath || "";
-
-  const [existingImages, setExistingImages] = useState<ImageType[]>(post.images ?? []);
+  const [existingImages, setExistingImages] = useState<ImageType[]>(
+    post.images ?? []
+  );
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
@@ -49,8 +56,14 @@ export default function EditPostBtn({ post }: { post: PostType }) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post updated successfully!");
-      handleClose();
+      // call directly without the isLoading check
+      setSelectedFiles([]);
+      previewUrls.forEach((url) => URL.revokeObjectURL(url));
+      setPreviewUrls([]);
+      reset();
+      onClose();
     },
+
     onError: (error: Error) =>
       toast.error(`Failed to update post: ${error.message}`),
   });
@@ -60,12 +73,17 @@ export default function EditPostBtn({ post }: { post: PostType }) {
   const handleClose = useCallback(() => {
     if (isLoading) return;
 
-    setOpen(false);
     setSelectedFiles([]);
     previewUrls.forEach((url) => URL.revokeObjectURL(url));
     setPreviewUrls([]);
     reset();
-  }, [previewUrls, reset, isLoading]);
+    onClose();
+  }, [previewUrls, reset, isLoading, onClose]);
+
+  const handleUserClose = useCallback(() => {
+    if (isLoading) return; // Only block user clicks
+    handleClose();
+  }, [isLoading, handleClose]);
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     if (
@@ -91,9 +109,12 @@ export default function EditPostBtn({ post }: { post: PostType }) {
           fullPath: img.url,
         }));
 
-        const keyOf = (i: { id?: string; fullPath?: string }) => i.id || i.fullPath || "";
+        const keyOf = (i: { id?: string; fullPath?: string }) =>
+          i.id || i.fullPath || "";
         const existingKeys = new Set(imagesForPost.map(keyOf));
-        imagesForPost = imagesForPost.concat(newImages.filter((n) => !existingKeys.has(keyOf(n))));
+        imagesForPost = imagesForPost.concat(
+          newImages.filter((n) => !existingKeys.has(keyOf(n)))
+        );
       }
 
       await postMutation.mutateAsync({
@@ -101,7 +122,6 @@ export default function EditPostBtn({ post }: { post: PostType }) {
         sharedPostId: null,
         images: imagesForPost,
       });
-      setOpen(false);
     } catch (error) {
       console.error("Submit error:", error);
     }
@@ -158,152 +178,147 @@ export default function EditPostBtn({ post }: { post: PostType }) {
 
   return (
     <>
-      <button
-        className="w-full h-full cursor-pointer hover:bg-black"
-        onClick={() => !isLoading && setOpen(true)}
-      >
-        Edit
-      </button>
+      <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
+        <div className="w-full max-w-2xl mt-20">
+          <form
+            className="w-full flex flex-col gap-4"
+            onSubmit={handleSubmit(onSubmit)}
+          >
+            <div className="flex justify-between items-center">
+              <button
+                type="button"
+                onClick={handleUserClose} // block if loading
+                disabled={isLoading}
+                className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isPostDisabled}
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-colors"
+              >
+                {isLoading ? (
+                  <span className="w-6 h-6 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />
+                ) : (
+                  "Edit"
+                )}
+              </button>
+            </div>
 
-      {open && (
-        <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
-          <div className="w-full max-w-2xl mt-20">
-            <form
-              className="w-full flex flex-col gap-4"
-              onSubmit={handleSubmit(onSubmit)}
-            >
-              <div className="flex justify-between items-center">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  disabled={isLoading}
-                  className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isPostDisabled}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50"
-                >
-                  {isLoading ? "Posting..." : "Post"}
-                </button>
+            <div className="relative">
+              <textarea
+                {...register("content")}
+                placeholder="What's on your mind?"
+                maxLength={500}
+                disabled={isLoading}
+                className="w-full p-4 rounded-md bg-black text-white resize-none min-h-[200px] outline-0 border border-neutral-700 focus:border-white focus:border-2"
+              />
+              <div className="absolute bottom-4 right-2 text-xs">
+                {contentValue.length}/500
               </div>
+            </div>
 
-              <div className="relative">
-                <textarea
-                  {...register("content")}
-                  placeholder="What's on your mind?"
-                  maxLength={500}
-                  disabled={isLoading}
-                  className="w-full p-4 rounded-md bg-black text-white resize-none min-h-[200px] outline-0 border border-neutral-700 focus:border-white focus:border-2"
-                />
-                <div className="absolute bottom-4 right-2 text-xs">
-                  {contentValue.length}/500
-                </div>
-              </div>
-
-              {allImagesCount > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
-                  {existingImages.map((img, index) => {
-                    const src = getSrc(img);
-                    return (
-                      <div key={img.id || index} className="relative w-full">
-                        <div className="relative w-full aspect-square">
-                          {src ? (
-                            <Image
-                              src={src}
-                              alt="Existing image"
-                              fill
-                              className="object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-neutral-800 rounded-lg" />
-                          )}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => removeExistingImage(index)}
-                          disabled={isLoading}
-                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center disabled:opacity-50"
-                        >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    );
-                  })}
-
-                  {selectedFiles.map((_, index) => (
-                    <div key={index} className="relative w-full">
+            {allImagesCount > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                {existingImages.map((img, index) => {
+                  const src = getSrc(img);
+                  return (
+                    <div key={img.id || index} className="relative w-full">
                       <div className="relative w-full aspect-square">
-                        <Image
-                          src={previewUrls[index]}
-                          alt="Preview"
-                          fill
-                          className="object-cover rounded-lg"
-                        />
+                        {src ? (
+                          <Image
+                            src={src}
+                            alt="Existing image"
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-neutral-800 rounded-lg" />
+                        )}
                       </div>
                       <button
                         type="button"
-                        onClick={() => removeNewFile(index)}
+                        onClick={() => removeExistingImage(index)}
                         disabled={isLoading}
                         className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center disabled:opacity-50"
                       >
                         <X size={14} />
                       </button>
                     </div>
-                  ))}
+                  );
+                })}
 
-                  {allImagesCount < MAX_IMAGES && (
-                    <label
-                      className={`w-full aspect-square border-2 border-dashed border-neutral-600 hover:border-neutral-400 flex justify-center items-center cursor-pointer rounded-lg ${
-                        isLoading ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    >
-                      <Plus size={24} className="text-neutral-400" />
-                      <input
-                        type="file"
-                        multiple
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                        disabled={isLoading}
+                {selectedFiles.map((_, index) => (
+                  <div key={index} className="relative w-full">
+                    <div className="relative w-full aspect-square">
+                      <Image
+                        src={previewUrls[index]}
+                        alt="Preview"
+                        fill
+                        className="object-cover rounded-lg"
                       />
-                    </label>
-                  )}
-                </div>
-              ) : (
-                <label
-                  className={`w-full border-2 border-dashed border-neutral-600 hover:border-neutral-400 rounded-lg p-8 flex flex-col justify-center items-center cursor-pointer ${
-                    isLoading ? "opacity-50 cursor-not-allowed" : ""
-                  }`}
-                >
-                  <Plus size={32} className="text-neutral-400 mb-2" />
-                  <span className="text-neutral-400 text-sm">
-                    Add images ({MAX_IMAGES} max)
-                  </span>
-                  <input
-                    type="file"
-                    multiple
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileChange}
-                    disabled={isLoading}
-                  />
-                </label>
-              )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeNewFile(index)}
+                      disabled={isLoading}
+                      className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center disabled:opacity-50"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ))}
 
-              {isLoading && (
-                <div className="text-center text-neutral-400 text-sm">
-                  {uploadMutation.isPending
-                    ? "Uploading images..."
-                    : "Updating post..."}
-                </div>
-              )}
-            </form>
-          </div>
+                {allImagesCount < MAX_IMAGES && (
+                  <label
+                    className={`w-full aspect-square border-2 border-dashed border-neutral-600 hover:border-neutral-400 flex justify-center items-center cursor-pointer rounded-lg ${
+                      isLoading ? "opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    <Plus size={24} className="text-neutral-400" />
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleFileChange}
+                      disabled={isLoading}
+                    />
+                  </label>
+                )}
+              </div>
+            ) : (
+              <label
+                className={`w-full border-2 border-dashed border-neutral-600 hover:border-neutral-400 rounded-lg p-8 flex flex-col justify-center items-center cursor-pointer ${
+                  isLoading ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+              >
+                <Plus size={32} className="text-neutral-400 mb-2" />
+                <span className="text-neutral-400 text-sm">
+                  Add images ({MAX_IMAGES} max)
+                </span>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                  disabled={isLoading}
+                />
+              </label>
+            )}
+
+            {isLoading && (
+              <div className="text-center text-neutral-400 text-sm">
+                {uploadMutation.isPending
+                  ? "Uploading images..."
+                  : "Updating post..."}
+              </div>
+            )}
+          </form>
         </div>
-      )}
+      </div>
     </>
   );
 }
