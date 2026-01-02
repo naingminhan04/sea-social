@@ -8,6 +8,7 @@ import { deletePostAction } from "../_actions/postAction";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import EditPostForm from "./EditPostForm";
 import toast from "react-hot-toast";
+import { set } from "date-fns";
 
 const PostMenu = ({ post }: { post: PostType }) => {
   const queryClient = useQueryClient();
@@ -17,122 +18,107 @@ const PostMenu = ({ post }: { post: PostType }) => {
   const [open, setOpen] = useState(false);
   const [del, setDel] = useState(false);
   const [edit, setEdit] = useState(false);
+  const [isDel, setIsDel] = useState(false);
 
-  // ✅ useMutation for delete
   const deleteMutation = useMutation({
     mutationFn: () => deletePostAction(post.id),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post Deleted Successfully");
-      setDel(false);
     },
-    onError: () => {
-      toast.error("Failed to delete post");
-    },
+    onError: () => {toast.error("Failed to delete post"); setIsDel(false);},
   });
 
-  const handleDeleteClick = () => {
-    setOpen(false);
-    setDel(true);
-  };
-
-  const handleConfirmDelete = () => {
-    if (!deleteMutation.isPending) deleteMutation.mutate();
+  const handleDel = () => {
+    setIsDel(true);
+    deleteMutation.mutate();
+    setDel(false);
   };
 
   const isDeleting = deleteMutation.isPending;
 
   return (
     <>
-      {user === post.author.id && (
-        <>
-          {/* Menu trigger */}
-          <button
-            disabled={isDeleting}
-            onClick={() => !isDeleting && setOpen(!open)}
-            className="ml-auto cursor-pointer text-2xl disabled:opacity-50"
-          >
-            <Ellipsis />
-          </button>
+      {isDel ? (
+        <div className="absolute gap-2 z-20 bg-black/40 flex justify-center items-center right-0 top-0 w-full h-full">
+          <span className="w-10 h-10 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />Deleting Post
+        </div>
+      ) : (
+        user === post.author.id && (
+          <div className="relative ml-auto">
+            <button
+              disabled={isDeleting}
+              onClick={() => setOpen((p) => !p)}
+              className="text-2xl disabled:opacity-50"
+            >
+              <Ellipsis />
+            </button>
 
-          {/* Action menu */}
-          {open && (
-            <>
-              <div
-                className="fixed inset-0 z-60 bg-black/40"
-                onClick={() => !isDeleting && setOpen(false)}
+            {open && (
+              <><div
+                className="fixed inset-0 z-40"
+                onClick={() => setOpen(false)}
               />
-              <div className="absolute z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-neutral-800 text-white rounded-xl w-64 shadow-lg">
-                <div className="flex flex-col w-full">
-                  <button
-                    disabled={isDeleting}
-                    onClick={() => {
-                      setOpen(false);
-                      setEdit(true);
-                    }}
-                    className="py-3 hover:bg-black disabled:opacity-50"
-                  >
-                    Edit
-                  </button>
-
-                  <button
-                    disabled={isDeleting}
-                    onClick={handleDeleteClick}
-                    className="py-3 bg-red-700 hover:bg-red-600 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Delete confirm */}
-          {del && (
-            <>
               <div
-                className="fixed inset-0 z-60 bg-black/40"
-                onClick={() => !isDeleting && setDel(false)}
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 mt-2 z-50 w-48 rounded-xl bg-black shadow-lg"
+              >
+                <button
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setOpen(false);
+                    setEdit(true);
+                  }}
+                  className="w-full px-4 py-3 text-left hover:bg-neutral-800 rounded-t-xl"
+                >
+                  Edit
+                </button>
+
+                <button
+                  disabled={isDeleting}
+                  onClick={() => {
+                    setOpen(false);
+                    setDel(true);
+                  }}
+                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-800 rounded-b-xl"
+                >
+                  Delete
+                </button>
+              </div></>
+            )}
+
+            {del && (
+              <><div
+                className="fixed inset-0 z-40"
+                onClick={() => setDel(false)}
               />
-              <div className="absolute z-60 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-neutral-800 text-white rounded-xl w-64 shadow-lg">
-                <div className="flex flex-col w-full">
-                  <button
-                    disabled={isDeleting}
-                    onClick={handleConfirmDelete}
-                    className="py-3 bg-red-600 hover:bg-red-500 disabled:opacity-50"
-                  >
-                    {isDeleting ? "Deleting..." : "Delete Permanently"}
-                  </button>
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="absolute right-0 mt-2 z-50 w-48 rounded-xl bg-black shadow-lg"
+              >
+                <button
+                  disabled={isDeleting}
+                  onClick={handleDel}
+                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-800 rounded-t-xl"
+                >
+                  Delete Permanently
+                </button>
 
-                  <button
-                    disabled={isDeleting}
-                    onClick={() => setDel(false)}
-                    className="py-3 hover:bg-black disabled:opacity-50"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+                <button
+                  disabled={isDeleting}
+                  onClick={() => setDel(false)}
+                  className="w-full px-4 py-3 text-left hover:bg-neutral-800 rounded-b-xl"
+                >
+                  Cancel
+                </button>
+              </div></>
+            )}
 
-          {/* Edit modal */}
-          {edit && (
-            <EditPostForm
-              post={post}
-              onClose={() => setEdit(false)}
-            />
-          )}
-
-          {/* HARD UI LOCK while deleting */}
-          {isDeleting && (
-            <div className="fixed inset-0 z-9999 bg-black/60 flex items-center justify-center">
-              <span className="text-white text-lg font-semibold">
-                Deleting post…
-              </span>
-            </div>
-          )}
-        </>
+            {edit && (
+              <EditPostForm post={post} onClose={() => setEdit(false)} />
+            )}
+          </div>
+        )
       )}
     </>
   );

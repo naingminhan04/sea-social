@@ -45,12 +45,10 @@ const PostCard = ({ post }: { post: PostType }) => {
         <PostMenu post={post} />
       </div>
 
-      {/* CONTENT */}
       <div className="whitespace-pre-line text-sm leading-relaxed text-gray-200">
         <PostContent post={post} />
       </div>
 
-      {/* IMAGES — UNCHANGED */}
       {images.length > 0 && (
         <div className={`grid gap-1 ${getGridClass(images.length)} max-h-dvh`}>
           {displayImages.map((img, index) => (
@@ -72,17 +70,12 @@ const PostCard = ({ post }: { post: PostType }) => {
         </div>
       )}
 
-      {/* FACEBOOK STYLE INTERACTIONS */}
       <div className="flex items-center justify-between border-t border-neutral-800 pt-2 text-sm text-gray-400">
-        {/* LEFT ACTIONS */}
         <div className="flex items-center gap-6">
-          {/* REACT */}
           <ReactionBtn post={post} />
 
-          {/* COMMENT */}
           <CommentBtn post={post} />
 
-          {/* SHARE */}
           <div className="flex items-center gap-1 cursor-pointer hover:text-white">
             <Share2 size={18} />
             {post.stats.sharedCount > 0 && (
@@ -91,7 +84,6 @@ const PostCard = ({ post }: { post: PostType }) => {
           </div>
         </div>
 
-        {/* RIGHT REACTION ICONS (NO COUNTS) */}
         <ViewReaction post={post} />
       </div>
     </main>

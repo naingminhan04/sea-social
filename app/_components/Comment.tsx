@@ -45,7 +45,7 @@ const CommentBtn = ({ post }: { post: PostType }) => {
       {open && (
         <>
           <div
-            className="fixed inset-0 z-60 bg-black/40"
+            className="absolute inset-0 z-60 bg-black/40"
             onClick={() => setOpen(false)}
           />
           <div className="fixed md:absolute bottom-0 left-0 right-0 top-0 z-60 bg-black overflow-hidden text-white">

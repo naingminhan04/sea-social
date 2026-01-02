@@ -12,10 +12,6 @@ import {
 } from "@/types/post";
 import { useAuthStore } from "@/store/auth";
 
-/* =========================
-   UI CONFIG
-========================= */
-
 type ReactionFilter = ReactionType | "ALL";
 
 const REACTIONS: {
@@ -30,10 +26,6 @@ const REACTIONS: {
   { key: "angry", type: ReactionType.angry, src: "/angry.png" },
   { key: "sad", type: ReactionType.sad, src: "/sad.png" },
 ];
-
-/* =========================
-   COMPONENT
-========================= */
 
 const ViewReaction = ({ post }: { post: PostType }) => {
   const [open, setOpen] = useState(false);
@@ -50,7 +42,6 @@ const ViewReaction = ({ post }: { post: PostType }) => {
 
   return (
     <>
-      {/* Preview (top 3) */}
       <button
         onClick={() => setOpen(true)}
         className="flex items-center cursor-pointer -space-x-2"
@@ -65,7 +56,7 @@ const ViewReaction = ({ post }: { post: PostType }) => {
       {open && (
         <>
           <div
-            className="fixed inset-0 z-60 bg-black/40"
+            className="absolute inset-0 z-60 bg-black/40"
             onClick={() => setOpen(false)}
           />
 
@@ -86,7 +77,6 @@ const ViewReaction = ({ post }: { post: PostType }) => {
               </button>
             </div>
 
-            {/* Tabs */}
             <div className="grid grid-cols-6 gap-2 pt-3">
               <button
                 onClick={() => setActive("ALL")}

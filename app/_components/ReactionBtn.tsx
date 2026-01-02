@@ -36,6 +36,8 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
     post.isReacted ? post.reaction?.reactionType || null : null
   );
 
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => {
@@ -43,12 +45,12 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
     };
   }, [open]);
 
-  const queryClient = useQueryClient();
-
   const addMutation = useMutation({
     mutationFn: ({ postId, reaction }: { postId: string; reaction: ReactionType }) =>
       addReactionAction(postId, reaction),
     onMutate: async ({ postId, reaction }) => {
+      if (removeMutation.isPending) removeMutation.reset();
+
       await queryClient.cancelQueries({ queryKey: ["posts"] });
       const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(["posts"]);
       const newData = previous ? structuredClone(previous) : previous;
@@ -60,7 +62,8 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
             const prevReaction = p.reaction?.reactionType || null;
             if (prevReaction) {
               const rxKeyPrev = prevReaction.toLowerCase() as keyof typeof p.stats.reactions;
-              if (p.stats?.reactions?.[rxKeyPrev] != null) p.stats.reactions[rxKeyPrev] = Math.max(0, p.stats.reactions[rxKeyPrev] - 1);
+              if (p.stats?.reactions?.[rxKeyPrev] != null)
+                p.stats.reactions[rxKeyPrev] = Math.max(0, p.stats.reactions[rxKeyPrev] - 1);
             } else {
               p.stats.reactions.total = (p.stats.reactions.total || 0) + 1;
             }
@@ -75,19 +78,21 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       }
 
       queryClient.setQueryData(["posts"], newData);
-      setReactionState(reaction); queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
+      setReactionState(reaction); 
+      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
       return { previous };
     },
     onError: (_err, _vars, context) => {
       if (context?.previous) queryClient.setQueryData(["posts"], context.previous);
       setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
     },
-    
   });
 
   const removeMutation = useMutation({
     mutationFn: (postId: string) => removeReactionAction(postId),
     onMutate: async (postId: string) => {
+      if (addMutation.isPending) addMutation.reset();
+
       await queryClient.cancelQueries({ queryKey: ["posts"] });
       const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(["posts"]);
       const newData = previous ? structuredClone(previous) : previous;
@@ -128,37 +133,26 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
   };
 
   const userHasReacted = reactionState !== null;
-  const isBusy = addMutation.isPending || removeMutation.isPending;
 
   return (
     <>
       <div className="flex items-center hover:text-white">
         {userHasReacted ? (
           <button
-            disabled={isBusy}
-            onClick={() => !isBusy && handleRemove()}
+            onClick={handleRemove}
             className="flex items-center justify-center w-full h-full gap-2 cursor-pointer"
             aria-label={reactionState ? `${reactionState} reaction` : "reaction"}
           >
-            {isBusy ? (
-              <span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
-            ) : (
-              <Image src={reactionImageMap[reactionState!]} alt={reactionState!} width={20} height={20} />
-            )}
+            <Image src={reactionImageMap[reactionState!]} alt={reactionState!} width={20} height={20} />
             {post.stats.reactions.total > 0 && <span>{formatCount(post.stats.reactions.total)}</span>}
           </button>
         ) : (
           <button
+            onClick={() => setOpen(true)}
             className="flex items-center justify-center w-full h-full gap-2 cursor-pointer"
-            disabled={isBusy}
-            onClick={() => !isBusy && setOpen(true)}
             aria-label="Like"
           >
-            {isBusy ? (
-              <span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin" />
-            ) : (
-              <ThumbsUp size={18} />
-            )}
+            <ThumbsUp size={18} />
             {post.stats.reactions.total > 0 && <span>{formatCount(post.stats.reactions.total)}</span>}
           </button>
         )}
@@ -166,7 +160,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
 
       {open && (
         <>
-          <div className="fixed inset-0 z-60 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 z-60 bg-black/40" onClick={() => setOpen(false)} />
           <div className="absolute bottom-0 left-0 right-0 z-60 bg-black text-white p-2">
             <div className="flex-col w-full h-55">
               <div className="flex flex-col justify-center items-center gap-1 my-3">
@@ -180,21 +174,20 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
                   return (
                     <span
                       key={reaction}
-                      onClick={() => !isBusy && handleReaction(reaction)}
-                      className={`bg-neutral-800 rounded-2xl mx-1 sm:mx-3 w-1/5 h-15 flex justify-center items-center ${
-                        isBusy ? "opacity-70 cursor-wait" : "cursor-pointer"
-                      } ${reactionHoverMap[reaction]} ${isUserReaction ? "ring-2 ring-white" : ""} transition-colors duration-150`}
+                      onClick={() => handleReaction(reaction)}
+                      className={`bg-neutral-800 rounded-2xl mx-1 sm:mx-3 w-1/5 h-15 flex justify-center items-center cursor-pointer ${
+                        reactionHoverMap[reaction]
+                      } ${isUserReaction ? "ring-2 ring-white" : ""} transition-colors duration-150`}
                     >
-                      {addMutation.isPending && reaction === reactionState ? (
-                        "..."
-                      ) : (
-                        <Image src={reactionImageMap[reaction]} alt={reaction} width={28} height={28} />
-                      )}
+                      <Image src={reactionImageMap[reaction]} alt={reaction} width={28} height={28} />
                     </span>
                   );
                 })}
               </div>
-              <button onClick={() => setOpen(false)} className="p-3 w-full mt-6 bg-neutral-100 cursor-pointer text-black text-lg">
+              <button
+                onClick={() => setOpen(false)}
+                className="p-3 w-full mt-6 bg-neutral-100 cursor-pointer text-black text-lg"
+              >
                 Cancel
               </button>
             </div>

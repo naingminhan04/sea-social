@@ -187,7 +187,7 @@ export default function EditPostForm({
             <div className="flex justify-between items-center">
               <button
                 type="button"
-                onClick={handleUserClose} // block if loading
+                onClick={handleUserClose}
                 disabled={isLoading}
                 className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50"
               >
