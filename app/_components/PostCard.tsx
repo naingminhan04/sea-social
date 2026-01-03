@@ -50,13 +50,12 @@ const PostCard = ({ post }: { post: PostType }) => {
       </div>
 
       {images.length > 0 && (
-        <div className={`grid gap-1 ${getGridClass(images.length)} max-h-dvh`}>
+        <div className={`grid gap-1 ${getGridClass(images.length)} min-h-90 sm:min-h-150`}>
           {displayImages.map((img, index) => (
-            <div key={img.id} className="relative max-h-90">
+            <div key={img.id} className={`relative min-h-45 max-h-90 sm:min-h-45 sm:max-h-150 ${images.length === 3 && index === 2 ? "col-span-2" : ""}`}>
               <Image
                 src={img.url}
-                width={800}
-                height={800}
+                fill
                 alt="post image"
                 className="w-full h-full object-cover rounded-md"
               />
@@ -95,8 +94,9 @@ function getGridClass(length: number) {
     case 1:
       return "grid-cols-1";
     case 2:
-      return "grid-cols-2";
+      return "grid-rows-2";
     case 3:
+      return "grid-cols-2 grid-rows-2";
     case 4:
     default:
       return "grid-cols-2 grid-rows-2";
