@@ -1,39 +1,24 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { Menu } from "lucide-react";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import LogOutBtn from "./LogOutBtn";
 
 const MenuBtn = () => {
   const [menu, setMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenu(false);
-      }
-    };
-
-    if (menu) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [menu]);
   return (
-    <div ref={menuRef} className="md:hidden">
+    <div  className="lg:hidden flex">
       <button
         onClick={() => setMenu(!menu)}
-        className="border rounded-md px-1 cursor-pointer"
+        className="px-1 cursor-pointer"
       >
-        <Menu />
+        {menu ? <X /> : <Menu />}
       </button>
       {menu && (
-        <div className="absolute top-14 right-0 w-full bg-neutral-900">
+        <>
+        <div className="fixed inset-0 -z-20 bg-black/40" onClick={() => setMenu(false)} />
+        <div className="absolute top-16 left-0 h-[calc(100dvh-64px)] w-70 z-20 bg-black">
           <ul
             onClick={() => setMenu(!menu)}
             className="cursor-pointer flex flex-col"
@@ -54,7 +39,7 @@ const MenuBtn = () => {
               <LogOutBtn />
             </li>
           </ul>
-        </div>
+        </div></>
       )}
     </div>
   );

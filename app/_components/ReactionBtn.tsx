@@ -160,9 +160,9 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
 
       {open && (
         <>
-          <div className="absolute inset-0 z-60 bg-black/40" onClick={() => setOpen(false)} />
+          <div className="absolute inset-0 z-50 bg-black/40" onClick={() => setOpen(false)} />
           <div className="absolute bottom-0 left-0 right-0 z-60 bg-black text-white p-2">
-            <div className="flex-col w-full h-55">
+            <div className="flex-col w-full">
               <div className="flex flex-col justify-center items-center gap-1 my-3">
                 <Heart size={30} fill="white" />
                 <h1 className="text-xl">Choose Reaction</h1>

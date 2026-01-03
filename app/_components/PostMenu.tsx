@@ -8,7 +8,6 @@ import { deletePostAction } from "../_actions/postAction";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import EditPostForm from "./EditPostForm";
 import toast from "react-hot-toast";
-import { set } from "date-fns";
 
 const PostMenu = ({ post }: { post: PostType }) => {
   const queryClient = useQueryClient();

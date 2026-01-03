@@ -2,7 +2,7 @@
 const ChatBar = () => {
 
   return (
-    <main className="overflow-scroll scrollbar-none">
+    <main className="overflow-scroll scrollbar-none h-[calc(100dvh-68px)] lg:h-dvh">
         <div className='h-15 grid grid-cols-2 sticky top-0'>
             <button className="flex justify-center items-center">Chat</button>
             <button className="flex justify-center items-center">Chatroom</button>

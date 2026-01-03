@@ -105,7 +105,9 @@ const ViewReaction = ({ post }: { post: PostType }) => {
               ))}
             </div>
 
-            <ReactionPage postId={post.id} reaction={active} />
+            <div className="h-full">
+              <ReactionPage postId={post.id} reaction={active} />
+            </div>
           </div>
         </>
       )}
@@ -149,7 +151,7 @@ const ReactionPage = ({
   }
 
   return (
-    <div className="mt-4 space-y-3 overflow-scroll scrollbar-none">
+    <div className="mt-4 space-y-3 min-h-full overflow-scroll scrollbar-none">
       {data?.pages.flatMap((page) =>
         page.reactions.map((r) => (
           <div key={r.id} className="flex items-center gap-3">

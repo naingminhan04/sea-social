@@ -48,8 +48,8 @@ const CommentBtn = ({ post }: { post: PostType }) => {
             className="absolute inset-0 z-60 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <div className="fixed md:absolute bottom-0 left-0 right-0 top-0 z-60 bg-black overflow-hidden text-white">
-            <div className="flex flex-col h-dvh overflow-hidden">
+          <div className="fixed md:absolute bottom-0 left-0 right-0 lg:top-0 z-60 bg-black overflow-hidden text-white">
+            <div className="flex flex-col h-[calc(100dvh-60px)] lg:h-dvh overflow-hidden">
               <div className="flex w-full p-5 justify-between pb-3 border-b z-10 border-neutral-700 sticky top-0 bg-black">
                 <div>
                   <h1 className="font-bold text-lg">Comments</h1>
@@ -83,8 +83,9 @@ const CommentPage = ({ postId }: { postId: string }) => {
   const auth = useAuthStore();
   const userId = auth.user?.id;
   const queryClient = useQueryClient();
+  const [isDel , setIsDel] = useState(false)
 
-  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage, error, refetch} =
     useInfiniteQuery<CommentResponseType>({
       queryKey: ["comments", postId],
       queryFn: ({ pageParam = 1 }) =>
@@ -93,9 +94,12 @@ const CommentPage = ({ postId }: { postId: string }) => {
       getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
       staleTime: 1000 * 60 * 5,
       refetchOnWindowFocus: false,
+      retry: 2,
+      retryDelay: 1000,
     });
 
   const handleDelete = (commentId: string) => {
+    setIsDel(true);
     deleteCommentAction(commentId);
     queryClient
       .invalidateQueries({ queryKey: ["comments", postId] })
@@ -111,9 +115,27 @@ const CommentPage = ({ postId }: { postId: string }) => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col justify-center items-center w-full h-full gap-4 p-4">
+        <div className="text-center text-red-400">
+          <p className="text-lg font-semibold mb-2">Failed to load comments</p>
+          <p className="text-sm text-gray-400">{error instanceof Error ? error.message : "An unexpected error occurred"}</p>
+        </div>
+        <button
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   const comments = data?.pages.flatMap((page) => page.comments) ?? [];
 
-  return (
+  if(!error) {
+    return (
     <div className="flex flex-col">
       <main className="px-5 py-3 space-y-4">
         {comments.length === 0 && (
@@ -159,12 +181,14 @@ const CommentPage = ({ postId }: { postId: string }) => {
                   <span>{formatDate(comment.createdAt)}</span>
                   <span>{comment.stats.replies} replies</span>
                   {userId === comment.user.id && (
-                    <button
+                    isDel ? <span className="w-5 h-5 rounded-full border-2 border-white/40 border-t-transparent animate-spin"/> :<button
                       className="hover:text-red-500"
                       onClick={() => handleDelete(comment.id)}
+                      disabled={isDel}
                     >
                       Delete
                     </button>
+                    
                   )}
                 </div>
               </div>
@@ -187,6 +211,7 @@ const CommentPage = ({ postId }: { postId: string }) => {
       )}
     </div>
   );
+  }
 };
 
 const Replies = ({ commentId }: { commentId: string }) => {
