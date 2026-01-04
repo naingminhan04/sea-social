@@ -44,13 +44,13 @@ const ViewReaction = ({ post }: { post: PostType }) => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center -space-x-2 transition active:scale-90"
+        className="flex items-center -space-x-0.5 transition active:scale-90"
       >
         {sortedReactions.slice(0, 3).map((r, i) => (
           <span
             key={r.key}
-            style={{ zIndex: 10 + i }}
-            className="rounded-full ring-2 ring-black"
+            style={{ zIndex: 10 - i }}
+            className="rounded-full ring-1 ring-neutral-900"
           >
             <Image src={r.src} alt={r.key} width={18} height={18} />
           </span>
@@ -80,7 +80,6 @@ const ViewReaction = ({ post }: { post: PostType }) => {
               </button>
             </div>
 
-            {/* Filters */}
             <div className="flex overflow-x-scroll overflow-y-hidden scrollbar-none gap-2 pt-4">
               <button
                 onClick={() => setActive("ALL")}

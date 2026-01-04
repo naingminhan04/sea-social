@@ -4,9 +4,28 @@ import {
   formatDistanceToNowStrict,
 } from "date-fns";
 
-export function formatDate(date: string) {
-  const createdAt = new Date(date);
+import { enUS } from "date-fns/locale";
 
+const shortEn = {
+  ...enUS,
+  formatDistance: (token: string, count: number) => {
+    const map: Record<string, string> = {
+      xSeconds: `${count}s`,
+      xMinutes: `${count}m`,
+      xHours: `${count}h`,
+      xDays: `${count}d`,
+    };
+
+    return map[token] ?? `${count}`;
+  },
+};
+
+export function formatDate(
+  date: string,
+  addSuffix: boolean = true,
+  short: boolean = false
+) {
+  const createdAt = new Date(date);
   const daysAgo = differenceInDays(new Date(), createdAt);
 
   if (daysAgo >= 7) {
@@ -14,6 +33,8 @@ export function formatDate(date: string) {
   }
 
   return formatDistanceToNowStrict(createdAt, {
-    addSuffix: true,
+    addSuffix,
+    locale: short ? shortEn : undefined,
   });
 }
+

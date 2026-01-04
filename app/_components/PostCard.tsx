@@ -90,7 +90,7 @@ const PostCard = ({ post }: { post: PostType }) => {
       )}
 
       <div className="flex items-center justify-between border-t border-neutral-800 pt-2 text-sm text-gray-400">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3">
           <ReactionBtn post={post} />
 
           <CommentBtn post={post} />

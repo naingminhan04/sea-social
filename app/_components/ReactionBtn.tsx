@@ -13,12 +13,12 @@ interface ReactionBtnProps {
 }
 
 const reactionHoverMap: Record<ReactionType, string> = {
-  LIKE: "hover:bg-blue-500",
-  HAHA: "hover:bg-yellow-500",
-  WOW: "hover:bg-purple-500",
-  SAD: "hover:bg-indigo-500",
-  ANGRY: "hover:bg-red-500",
-  LOVE: "hover:bg-red-500",
+  LIKE: "hover:bg-blue-500/80",
+  HAHA: "hover:bg-yellow-400/80",
+  WOW: "hover:bg-purple-500/80",
+  SAD: "hover:bg-indigo-500/80",
+  ANGRY: "hover:bg-red-500/80",
+  LOVE: "hover:bg-red-500/80",
 };
 
 const reactionImageMap: Record<ReactionType, string> = {
@@ -62,28 +62,27 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
             const prevReaction = p.reaction?.reactionType || null;
             if (prevReaction) {
               const rxKeyPrev = prevReaction.toLowerCase() as keyof typeof p.stats.reactions;
-              if (p.stats?.reactions?.[rxKeyPrev] != null)
-                p.stats.reactions[rxKeyPrev] = Math.max(0, p.stats.reactions[rxKeyPrev] - 1);
+              p.stats.reactions[rxKeyPrev] = Math.max(0, p.stats.reactions[rxKeyPrev] - 1);
             } else {
-              p.stats.reactions.total = (p.stats.reactions.total || 0) + 1;
+              p.stats.reactions.total += 1;
             }
 
             const rxKeyNew = reaction.toLowerCase() as keyof typeof p.stats.reactions;
-            if (p.stats?.reactions?.[rxKeyNew] != null) p.stats.reactions[rxKeyNew] = (p.stats.reactions[rxKeyNew] || 0) + 1;
+            p.stats.reactions[rxKeyNew] += 1;
 
             p.isReacted = true;
-            p.reaction = { id: "optimistic", reactionType: reaction } as { id: string; reactionType: ReactionType };
+            p.reaction = { id: "optimistic", reactionType: reaction };
           }
         }
       }
 
       queryClient.setQueryData(["posts"], newData);
-      setReactionState(reaction); 
+      setReactionState(reaction);
       queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
       return { previous };
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(["posts"], context.previous);
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(["posts"], ctx.previous);
       setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
     },
   });
@@ -101,9 +100,9 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
         for (const page of newData.pages) {
           const p = page.posts.find((x: PostType) => x.id === postId);
           if (p && p.reaction) {
-            const prevKey = p.reaction.reactionType.toLowerCase() as keyof typeof p.stats.reactions;
-            if (p.stats?.reactions?.[prevKey] != null) p.stats.reactions[prevKey] = Math.max(0, p.stats.reactions[prevKey] - 1);
-            p.stats.reactions.total = Math.max(0, (p.stats.reactions.total || 1) - 1);
+            const key = p.reaction.reactionType.toLowerCase() as keyof typeof p.stats.reactions;
+            p.stats.reactions[key] = Math.max(0, p.stats.reactions[key] - 1);
+            p.stats.reactions.total = Math.max(0, p.stats.reactions.total - 1);
             p.isReacted = false;
             p.reaction = null;
           }
@@ -114,8 +113,8 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       setReactionState(null);
       return { previous };
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) queryClient.setQueryData(["posts"], context.previous);
+    onError: (_e, _v, ctx) => {
+      if (ctx?.previous) queryClient.setQueryData(["posts"], ctx.previous);
       setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
     },
     onSettled: () => {
@@ -128,69 +127,83 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
     addMutation.mutate({ postId: post.id, reaction });
   };
 
-  const handleRemove = () => {
-    removeMutation.mutate(post.id);
-  };
+  const handleRemove = () => removeMutation.mutate(post.id);
 
   const userHasReacted = reactionState !== null;
 
   return (
     <>
-      <div className="flex items-center hover:text-white active:scale-[0.9] transition-all">
+      <div className="flex items-center transition hover:text-white active:text-white active:scale-90">
         {userHasReacted ? (
           <button
             onClick={handleRemove}
-            className="flex items-center justify-center w-full h-full gap-2 cursor-pointer"
-            aria-label={reactionState ? `${reactionState} reaction` : "reaction"}
+            className="flex gap-1  transition"
           >
-            <Image src={reactionImageMap[reactionState!]} alt={reactionState!} width={20} height={20} />
-            {post.stats.reactions.total > 0 && <span>{formatCount(post.stats.reactions.total)}</span>}
+            <Image
+              src={reactionImageMap[reactionState!]}
+              alt={reactionState!}
+              width={20}
+              height={20}
+            />
+            {post.stats.reactions.total > 0 && (
+              <span className="text-sm">{formatCount(post.stats.reactions.total)}</span>
+            )}
           </button>
         ) : (
           <button
             onClick={() => setOpen(true)}
-            className="flex items-center justify-center w-full h-full gap-2 cursor-pointer"
-            aria-label="Like"
+            className="flex gap-1  transition"
           >
             <ThumbsUp size={18} />
-            {post.stats.reactions.total > 0 && <span>{formatCount(post.stats.reactions.total)}</span>}
+            {post.stats.reactions.total > 0 && (
+              <span className="text-sm">{formatCount(post.stats.reactions.total)}</span>
+            )}
           </button>
         )}
       </div>
 
       {open && (
         <>
-          <div className="absolute inset-0 z-50 bg-black/40" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-0 left-0 right-0 z-60 bg-black text-white p-2">
-            <div className="flex-col w-full">
-              <div className="flex flex-col justify-center items-center gap-1 my-3">
-                <Heart size={30} fill="white" />
-                <h1 className="text-xl">Choose Reaction</h1>
-                <p className="text-xs text-gray-400">Express how you feel about the post</p>
-              </div>
-              <div className="flex w-full">
-                {Object.values(ReactionType).map((reaction) => {
-                  const isUserReaction = reaction === reactionState;
-                  return (
-                    <span
-                      key={reaction}
-                      onClick={() => handleReaction(reaction)}
-                      className={`bg-neutral-800 rounded-2xl mx-1 sm:mx-3 w-1/5 h-15 flex justify-center items-center cursor-pointer ${
-                        reactionHoverMap[reaction]
-                      } ${isUserReaction ? "ring-2 ring-white" : ""} transition-colors duration-150`}
-                    >
-                      <Image src={reactionImageMap[reaction]} alt={reaction} width={28} height={28} />
-                    </span>
-                  );
-                })}
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="p-3 w-full mt-6 bg-neutral-100 cursor-pointer text-black text-lg"
-              >
-                Cancel
-              </button>
+          <div className="absolute inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setOpen(false)} />
+
+          <div className="absolute bottom-0 left-0 right-0 z-60 bg-neutral-900 text-white p-4">
+            <div className="flex flex-col items-center gap-1 my-3">
+              <Heart size={28} className="text-red-400" />
+              <h1 className="text-lg font-semibold">Choose Reaction</h1>
+              <p className="text-xs text-neutral-400">
+                Express how you feel about the post
+              </p>
             </div>
+
+            <div className="flex justify-between px-1">
+              {Object.values(ReactionType).map((reaction) => {
+                const isActive = reaction === reactionState;
+                return (
+                  <button
+                    key={reaction}
+                    onClick={() => handleReaction(reaction)}
+                    className={`flex-1 mx-1 h-14 rounded-2xl bg-neutral-800 flex items-center justify-center transition
+                      ${reactionHoverMap[reaction]}
+                      ${isActive ? "ring-2 ring-white scale-105" : "hover:scale-105"}
+                    `}
+                  >
+                    <Image
+                      src={reactionImageMap[reaction]}
+                      alt={reaction}
+                      width={28}
+                      height={28}
+                    />
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setOpen(false)}
+              className="mt-6 w-full rounded-xl bg-neutral-100 py-3 text-black font-medium active:scale-98 transition"
+            >
+              Cancel
+            </button>
           </div>
         </>
       )}
