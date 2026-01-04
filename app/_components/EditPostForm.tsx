@@ -189,14 +189,14 @@ export default function EditPostForm({
                 type="button"
                 onClick={handleUserClose}
                 disabled={isLoading}
-                className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 active:bg-gray-300 active:scale-[0.95] transition-all w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isPostDisabled}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-colors"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-600 active:scale-[0.95] transition-all w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50"
               >
                 {isLoading ? (
                   <span className="w-6 h-6 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />

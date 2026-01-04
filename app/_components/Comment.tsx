@@ -34,7 +34,7 @@ const CommentBtn = ({ post }: { post: PostType }) => {
     <>
       <div
         onClick={() => setOpen(true)}
-        className="flex items-center gap-1 cursor-pointer hover:text-white"
+        className="flex items-center gap-1 cursor-pointer hover:text-white active:scale-[0.9] transition-all"
       >
         <MessageCircle size={18} />
         {post.stats.comments > 0 && (

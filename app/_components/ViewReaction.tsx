@@ -44,10 +44,14 @@ const ViewReaction = ({ post }: { post: PostType }) => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center cursor-pointer -space-x-2"
+        className="flex items-center -space-x-2 transition active:scale-90"
       >
         {sortedReactions.slice(0, 3).map((r, i) => (
-          <span key={r.key} style={{ zIndex: 10 + i }}>
+          <span
+            key={r.key}
+            style={{ zIndex: 10 + i }}
+            className="rounded-full ring-2 ring-black"
+          >
             <Image src={r.src} alt={r.key} width={18} height={18} />
           </span>
         ))}
@@ -56,34 +60,34 @@ const ViewReaction = ({ post }: { post: PostType }) => {
       {open && (
         <>
           <div
-            className="absolute inset-0 z-60 bg-black/40"
+            className="absolute inset-0 z-60 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
 
-          <div className="absolute z-60 bottom-0 right-0 w-full h-100 bg-black text-white p-5 flex flex-col">
-            {/* Header */}
-            <div className="flex justify-between pb-3 border-b border-neutral-700">
+          <div className="absolute z-60 bottom-0 right-0 w-full h-100 bg-neutral-900 text-white p-5 flex flex-col">
+            <div className="flex justify-between items-center pb-4 border-b border-neutral-800">
               <div>
-                <h1 className="font-bold text-lg">Reactions</h1>
-                <p className="text-gray-500 text-xs">
+                <h1 className="font-semibold text-lg">Reactions</h1>
+                <p className="text-neutral-400 text-xs">
                   See who reacted to this post
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="bg-neutral-600 hover:bg-neutral-500 px-4 py-2 rounded-xl"
+                className="px-4 py-2 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 transition"
               >
                 Close
               </button>
             </div>
 
-            <div className="grid grid-cols-6 gap-2 pt-3">
+            {/* Filters */}
+            <div className="flex overflow-x-scroll overflow-y-hidden scrollbar-none gap-2 pt-4">
               <button
                 onClick={() => setActive("ALL")}
-                className={`h-10 rounded-xl ${
+                className={`h-10 mx-1 shrink-0 rounded-xl w-15 text-sm font-medium transition ${
                   active === "ALL"
-                    ? "bg-blue-500"
-                    : "bg-neutral-700 hover:bg-neutral-600"
+                    ? "bg-black text-white scale-110"
+                    : "bg-neutral-800 hover:bg-neutral-700"
                 }`}
               >
                 All {stats.total}
@@ -93,19 +97,19 @@ const ViewReaction = ({ post }: { post: PostType }) => {
                 <button
                   key={r.key}
                   onClick={() => setActive(r.type)}
-                  className={`h-10 rounded-xl flex items-center justify-center gap-1 ${
+                  className={`h-10 mx-1 shrink-0 rounded-xl w-15 flex items-center justify-center gap-1 text-sm transition ${
                     active === r.type
-                      ? "bg-blue-500"
-                      : "bg-neutral-700 hover:bg-neutral-600"
+                      ? "bg-black scale-110"
+                      : "bg-neutral-800 hover:bg-neutral-700"
                   }`}
                 >
                   <Image src={r.src} alt={r.key} width={16} height={16} />
-                  <span className="text-sm">{r.count}</span>
+                  <span>{r.count}</span>
                 </button>
               ))}
             </div>
 
-            <div className="h-full">
+            <div className="flex-1 mt-2 overflow-y-scroll scrollbar-none">
               <ReactionPage postId={post.id} reaction={active} />
             </div>
           </div>
@@ -114,10 +118,6 @@ const ViewReaction = ({ post }: { post: PostType }) => {
     </>
   );
 };
-
-/* =========================
-   REACTION PAGE
-========================= */
 
 const ReactionPage = ({
   postId,
@@ -141,21 +141,26 @@ const ReactionPage = ({
       initialPageParam: 1,
       getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
       staleTime: 1000 * 60 * 5,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
     });
 
   if (isLoading) {
-    return <div className="flex justify-center items-center w-full h-full">
-        <span className="w-10 h-10 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />
-      </div>;
+    return (
+      <div className="flex justify-center items-center h-full">
+        <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+      </div>
+    );
   }
 
   return (
-    <div className="mt-4 space-y-3 min-h-full overflow-scroll scrollbar-none">
+    <div className="">
       {data?.pages.flatMap((page) =>
         page.reactions.map((r) => (
-          <div key={r.id} className="flex items-center gap-3">
-            <div className="relative w-8 h-8">
+          <div
+            key={r.id}
+            className="flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-neutral-950 transition"
+          >
+            <div className="relative w-8 h-8 shrink-0">
               <Image
                 src={r.user.profilePic ?? "/default-avatar.png"}
                 alt={r.user.name}
@@ -173,12 +178,12 @@ const ReactionPage = ({
                     alt={r.reactionType}
                     width={16}
                     height={16}
-                    className="rounded-full"
                   />
                 </span>
               )}
             </div>
-            <span>
+
+            <span className="text-sm">
               {r.user.name}
               {r.user.id === currentUserId && (
                 <span className="ml-1 text-xs text-blue-400">(You)</span>
@@ -192,7 +197,7 @@ const ReactionPage = ({
         <button
           onClick={() => fetchNextPage()}
           disabled={isFetchingNextPage}
-          className="text-blue-400 hover:underline"
+          className="mx-auto block text-sm text-blue-400 hover:underline"
         >
           {isFetchingNextPage ? "Loading..." : "Load more"}
         </button>

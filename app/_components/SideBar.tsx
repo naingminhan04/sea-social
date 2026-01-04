@@ -1,7 +1,7 @@
 import Link from "next/link";
 import LogOutBtn from "./LogOutBtn";
 
-const Menu = [{
+export const MenuArr = [{
   name: "Home",
   href: "/home",
 }, {
@@ -18,16 +18,16 @@ const SideBar = () => {
   return (
     <div className="hidden lg:flex w-9/10">
       <ul className="cursor-pointer flex w-full flex-col">
-        {Menu.map((item) => (
+        {MenuArr.map((item) => (
           <Link
             key={item.name}
-            className="hover:bg-black p-4 rounded-2xl"
+            className="hover:bg-neutral-950 active:bg-black p-4 rounded-2xl"
             href={item.href}
           >
             {item.name}
           </Link>
         ))}
-        <li className="hover:bg-red-700 p-4 rounded-2xl">
+        <li className="hover:bg-red-800 active:bg-red-700 p-4 rounded-2xl">
           <LogOutBtn />
         </li>
       </ul>

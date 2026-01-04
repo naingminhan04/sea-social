@@ -136,7 +136,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
 
   return (
     <>
-      <div className="flex items-center hover:text-white">
+      <div className="flex items-center hover:text-white active:scale-[0.9] transition-all">
         {userHasReacted ? (
           <button
             onClick={handleRemove}
