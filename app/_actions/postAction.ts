@@ -25,56 +25,45 @@ export async function addPostAction(postData: AddPostType) {
       const data = error.response?.data as APIError;
       message = data?.message ?? data?.error ?? "Failed to create post";
     }
-    
+
     return { success: false, error: message };
   }
 }
 
-export async function uploadImageAction(files: File[]): Promise<ActionResponse<ImageKitResponse[]>> {
-    try {
-        const token = await getToken();
-        if (!token) {
-            return { success: false, error: "Failed to get auth token" };
-        }
+export async function uploadImageAction(
+  files: File[]
+): Promise<ActionResponse<ImageKitResponse[]>> {
+  try {
+    const uploadPromises = files.map(async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
 
-        const uploadPromises = files.map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
+      const response = await api.post(`/upload/upload`, {
+        method: "POST",
+        body: formData,
+      });
+      return response.data;
+    });
+    const results = await Promise.all(uploadPromises);
+    return { success: true, data: results };
+  } catch (error) {
+    let message = "Unexpected error uploading image";
 
-          const response = await fetch(`https://famlinkapi.onrender.com/v1/api/upload/upload`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-            body: formData,
-          });
-
-          if (!response.ok) {
-            const errorData = await response
-              .json()
-              .catch(() => ({ error: "Failed to upload image" }));
-            throw new Error(errorData.error || "Failed to upload image");
-          }
-          return response.json();
-        });
-
-        const results = await Promise.all(uploadPromises);
-        return { success: true, data: results };
-    } catch (error) {
-        let message = "Unexpected error uploading images";
-
-        if (error instanceof Error) {
-            message = error.message;
-        }
-        
-        return { success: false, error: message };
+    if (axios.isAxiosError(error)) {
+      const data = error.response?.data as APIError;
+      message = data?.message ?? data?.error ?? "Failed to upload image";
     }
+
+    return { success: false, error: message };
+  }
 }
 
-export async function patchPostAction(postId: string, postData: AddPostType){
+export async function patchPostAction(postId: string, postData: AddPostType) {
   try {
     const token = await getToken();
 
     if (!token) {
-        return { success: false, error: "Failed to get auth token" };
+      return { success: false, error: "Failed to get auth token" };
     }
 
     const images = (postData.images || []).map((img) => ({
@@ -97,29 +86,29 @@ export async function patchPostAction(postId: string, postData: AddPostType){
       const data = error.response?.data as APIError;
       message = data?.message ?? data?.error ?? "Failed to update post";
     }
-    
+
     return { success: false, error: message };
   }
 }
 
 export async function deletePostAction(postId: string) {
-    try {
-        const token = await getToken();
-        
-        if (!token) {
-            return { success: false, error: "Failed to get auth token" };
-        }
-        
-        const res = await api.delete(`/posts/${postId}`);
-        return { success: true, data: res.data };
-    } catch (error) {
-        let message = "Unexpected error deleting post";
+  try {
+    const token = await getToken();
 
-        if (axios.isAxiosError(error)) {
-            const data = error.response?.data as APIError;
-            message = data?.message || data?.error || "Failed to delete post";
-        }
-        
-        return { success: false, error: message };
+    if (!token) {
+      return { success: false, error: "Failed to get auth token" };
     }
+
+    const res = await api.delete(`/posts/${postId}`);
+    return { success: true, data: res.data };
+  } catch (error) {
+    let message = "Unexpected error deleting post";
+
+    if (axios.isAxiosError(error)) {
+      const data = error.response?.data as APIError;
+      message = data?.message || data?.error || "Failed to delete post";
+    }
+
+    return { success: false, error: message };
+  }
 }

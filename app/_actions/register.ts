@@ -1,4 +1,5 @@
 import axios, { AxiosError } from "axios";
+import api from "@/libs/axios";
 import { UserType } from "@/types/user";
 import { ActionResponse } from "@/types/action";
 
@@ -15,9 +16,9 @@ export type RegisterResponse = {
 
 export async function registerUser(payload: RegisterPayload): Promise<ActionResponse<RegisterResponse>> {
   try {
-    const res = await axios.post(`${process.env.BACKEND_URL}/auth/register`, payload);
+    const res = await api.post('/auth/register', payload);
     return { success: true, data: res.data };
-  } catch (err: unknown) {
+  } catch (err) {
     let message = "An unexpected error occurred";
 
     if (axios.isAxiosError(err)) {

@@ -8,7 +8,7 @@ import { setVerifyCookies } from "../_actions/cookies";
 import { PiWarningCircle } from "react-icons/pi";
 import { registerUser, RegisterPayload } from "../_actions/register";
 import { RegisterResponse } from "../_actions/register";
-import toast from "react-hot-toast";
+import { useState } from "react";
 
 type Inputs = RegisterPayload & { confirmPassword: string };
 
@@ -16,8 +16,14 @@ const Register = () => {
   const router = useRouter();
   const setUser = useAuthStore((state) => state.setUser);
   const setCode = useAuthStore((state) => state.setTmpVerificationCode);
+  const [error, setError] = useState("");
 
-  const { register, handleSubmit, formState: { errors } } = useForm<Inputs>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    reset
+  } = useForm<Inputs>();
 
   const mutation = useMutation({
     mutationFn: async (data: RegisterPayload) => {
@@ -28,14 +34,15 @@ const Register = () => {
       return result.data;
     },
     onSuccess: (data: RegisterResponse) => {
+      reset();
+      setError("");
       setVerifyCookies();
       setUser(data.user);
       setCode(data.verificationCodeForTesting);
       router.push("/verify");
     },
     onError: (err: Error) => {
-      console.error("Register failed:", err.message);
-      toast.error(err.message);
+      setError(err.message);
     },
   });
 
@@ -54,17 +61,27 @@ const Register = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-3 w-120">
-
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex flex-col gap-3 w-120"
+    >
       <div className="relative">
         <input
           id="name"
           type="text"
           placeholder=" "
-          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${errors.name ? "border-red-600" : "focus:border-white"}`}
+          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${
+            errors.name ? "border-red-600" : "focus:border-white"
+          }`}
           {...register("name", { required: "Please enter your name" })}
         />
-        <label htmlFor="name" className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${errors.name && "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"}`}>
+        <label
+          htmlFor="name"
+          className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${
+            errors.name &&
+            "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
+          }`}
+        >
           Full Name
         </label>
         {renderError(errors.name?.message)}
@@ -75,10 +92,24 @@ const Register = () => {
           id="email"
           type="text"
           placeholder=" "
-          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${errors.email ? "border-red-600" : "focus:border-white"}`}
-          {...register("email", { required: "Please enter your email", pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Please enter a valid email" } })}
+          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${
+            errors.email ? "border-red-600" : "focus:border-white"
+          }`}
+          {...register("email", {
+            required: "Please enter your email",
+            pattern: {
+              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+              message: "Please enter a valid email",
+            },
+          })}
         />
-        <label htmlFor="email" className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${errors.email && "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"}`}>
+        <label
+          htmlFor="email"
+          className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${
+            errors.email &&
+            "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
+          }`}
+        >
           Email address
         </label>
         {renderError(errors.email?.message)}
@@ -89,10 +120,24 @@ const Register = () => {
           id="password"
           type="password"
           placeholder=" "
-          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${errors.password ? "border-red-600" : "focus:border-white"}`}
-          {...register("password", { required: "Please enter your password", minLength: { value: 8, message: "Password must be at least 8 characters long" } })}
+          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${
+            errors.password ? "border-red-600" : "focus:border-white"
+          }`}
+          {...register("password", {
+            required: "Please enter your password",
+            minLength: {
+              value: 8,
+              message: "Password must be at least 8 characters long",
+            },
+          })}
         />
-        <label htmlFor="password" className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${errors.password && "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"}`}>
+        <label
+          htmlFor="password"
+          className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${
+            errors.password &&
+            "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
+          }`}
+        >
           Password
         </label>
         {renderError(errors.password?.message)}
@@ -103,23 +148,39 @@ const Register = () => {
           id="confirmPassword"
           type="password"
           placeholder=" "
-          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${errors.confirmPassword ? "border-red-600" : "focus:border-white"}`}
-          {...register("confirmPassword", { required: "Please confirm your password", validate: (value, formValues) => value === formValues.password || "Passwords do not match" })}
+          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${
+            errors.confirmPassword ? "border-red-600" : "focus:border-white"
+          }`}
+          {...register("confirmPassword", {
+            required: "Please confirm your password",
+            validate: (value, formValues) =>
+              value === formValues.password || "Passwords do not match",
+          })}
         />
-        <label htmlFor="confirmPassword" className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${errors.confirmPassword && "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"}`}>
+        <label
+          htmlFor="confirmPassword"
+          className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200 ${
+            errors.confirmPassword &&
+            "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
+          }`}
+        >
           Confirm Password
         </label>
         {renderError(errors.confirmPassword?.message)}
       </div>
 
-      <button type="submit" className="p-3 font-bold bg-neutral-300 cursor-pointer hover:bg-neutral-50 active:bg-neutral-200 text-black rounded-md" disabled={mutation.isPending}>
+      <button
+        type="submit"
+        className="p-3 font-bold bg-neutral-300 cursor-pointer hover:bg-neutral-50 active:bg-neutral-200 text-black rounded-md"
+        disabled={mutation.isPending}
+      >
         {mutation.isPending ? "Creating an account..." : "Sign up"}
       </button>
 
-      {mutation.isError && (
+      {mutation.error && (
         <div className="flex items-center gap-2 bg-red-100/30 text-red-600 text-sm rounded-md px-3 py-1 mt-1 animate-fade-in">
           <PiWarningCircle className="w-4 h-4" />
-          Register failed, please try again.
+          {mutation.error.message}
         </div>
       )}
     </form>
