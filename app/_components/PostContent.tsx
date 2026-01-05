@@ -19,7 +19,7 @@ const PostContent = ({post} : {post:PostType}) => {
     <div>
       {showContent ? content : content.slice(0, CONTENT_LIMIT)}
         {isLongContent && (
-          <button className='text-blue-500' onClick={toggleSeeMore}>
+          <button className='text-black hover:text-neutral-950 active:scale-90' onClick={toggleSeeMore}>
             {seeMore ? <span className='px-2'>See less</span> : "...See more"}
           </button>
         )}

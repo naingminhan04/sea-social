@@ -9,7 +9,7 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import EditPostForm from "./EditPostForm";
 import toast from "react-hot-toast";
 
-const PostMenu = ({ post }: { post: PostType }) => {
+const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: (v: boolean) => void; }) => {
   const queryClient = useQueryClient();
   const auth = useAuthStore();
   const user = auth.user?.id;
@@ -17,19 +17,22 @@ const PostMenu = ({ post }: { post: PostType }) => {
   const [open, setOpen] = useState(false);
   const [del, setDel] = useState(false);
   const [edit, setEdit] = useState(false);
-  const [isDel, setIsDel] = useState(false);
 
   const deleteMutation = useMutation({
-    mutationFn: () => deletePostAction(post.id),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast.success("Post Deleted Successfully");
-    },
-    onError: () => {toast.error("Failed to delete post"); setIsDel(false);},
-  });
+  mutationFn: () => deletePostAction(post.id),
+  onSuccess: async () => {
+    await queryClient.invalidateQueries({ queryKey: ["posts"] });
+    toast.success("Post Deleted Successfully");
+  },
+  onError: () => {
+    toast.error("Failed to delete post");
+    onDeletingChange(false);
+  },
+});
+
 
   const handleDel = () => {
-    setIsDel(true);
+    onDeletingChange(true);
     deleteMutation.mutate();
     setDel(false);
   };
@@ -38,17 +41,12 @@ const PostMenu = ({ post }: { post: PostType }) => {
 
   return (
     <>
-      {isDel ? (
-        <div className="absolute gap-2 z-20 bg-black/40 flex justify-center items-center right-0 top-0 w-full h-full">
-          <span className="w-10 h-10 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />Deleting Post
-        </div>
-      ) : (
-        user === post.author.id && (
+        {user === post.author.id && (
           <div className="relative ml-auto">
             <button
               disabled={isDeleting}
               onClick={() => setOpen((p) => !p)}
-              className="text-2xl disabled:opacity-50"
+              className="text-2xl active:scale-90 disabled:opacity-50"
             >
               <Ellipsis />
             </button>
@@ -60,7 +58,7 @@ const PostMenu = ({ post }: { post: PostType }) => {
               />
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 mt-2 z-50 w-48 rounded-xl bg-black shadow-lg"
+                className="absolute right-0 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-black/40 shadow-lg"
               >
                 <button
                   disabled={isDeleting}
@@ -68,7 +66,7 @@ const PostMenu = ({ post }: { post: PostType }) => {
                     setOpen(false);
                     setEdit(true);
                   }}
-                  className="w-full px-4 py-3 text-left hover:bg-neutral-800 rounded-t-xl"
+                  className="w-full px-4 py-3 text-left hover:bg-neutral-950 active:scale-98 rounded-t-xl"
                 >
                   Edit
                 </button>
@@ -79,7 +77,7 @@ const PostMenu = ({ post }: { post: PostType }) => {
                     setOpen(false);
                     setDel(true);
                   }}
-                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-800 rounded-b-xl"
+                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-950 active:scale-98 rounded-b-xl"
                 >
                   Delete
                 </button>
@@ -118,7 +116,7 @@ const PostMenu = ({ post }: { post: PostType }) => {
             )}
           </div>
         )
-      )}
+      }
     </>
   );
 };

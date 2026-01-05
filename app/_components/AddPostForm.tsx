@@ -118,7 +118,7 @@ export default function AddPostBtn() {
       <button
         onClick={() => setIsOpen(true)}
         hidden={isOpen}
-        className="fixed md:absolute bottom-10 right-10 rounded-full w-14 h-14 bg-neutral-700 hover:bg-black flex justify-center items-center cursor-pointer z-50 transition-colors"
+        className="fixed md:absolute bottom-10 right-10 rounded-full w-14 h-14 bg-neutral-700 hover:bg-black active:scale-90 flex justify-center items-center cursor-pointer z-50 transition-all"
         aria-label="Add post"
       >
         <Plus size={24} />
@@ -135,7 +135,7 @@ export default function AddPostBtn() {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 active:scale-95 w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50 transition-all"
                   disabled={isLoading}
                 >
                   Cancel
@@ -143,9 +143,9 @@ export default function AddPostBtn() {
                 <button
                   type="submit"
                   disabled={isPostDisabled}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-colors"
+                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-all"
                 >
-                  {isLoading ? <span className="w-6 h-6 rounded-full border-4 border-white/40 border-t-transparent animate-spin" /> : "Post"}
+                  {isLoading ? <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : "Post"}
                 </button>
               </div>
 
@@ -180,7 +180,7 @@ export default function AddPostBtn() {
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-100 transition-opacity disabled:opacity-50"
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 active:scale-85 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-100 transition-all disabled:opacity-50"
                         disabled={isLoading}
                         aria-label={`Remove image ${index + 1}`}
                       >
@@ -209,7 +209,7 @@ export default function AddPostBtn() {
                 </div>
               ) : (
                 <label
-                  className={`w-full border-2 border-dashed border-neutral-600 hover:border-neutral-400 rounded-lg p-8 flex flex-col justify-center items-center cursor-pointer transition-colors ${
+                  className={`w-full border-2 border-dashed border-neutral-600 hover:border-neutral-400 active:border-neutral-600 rounded-lg p-8 flex flex-col justify-center items-center cursor-pointer transition-colors ${
                     isLoading ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >

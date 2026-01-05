@@ -189,17 +189,17 @@ export default function EditPostForm({
                 type="button"
                 onClick={handleUserClose}
                 disabled={isLoading}
-                className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 active:bg-gray-300 active:scale-[0.95] transition-all w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 active:bg-gray-300 active:scale-95 transition-all w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isPostDisabled}
-                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-600 active:scale-[0.95] transition-all w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-600 active:scale-95 transition-all w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50"
               >
                 {isLoading ? (
-                  <span className="w-6 h-6 rounded-full border-4 border-white/40 border-t-transparent animate-spin" />
+                  <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 ) : (
                   "Edit"
                 )}
@@ -241,7 +241,7 @@ export default function EditPostForm({
                         type="button"
                         onClick={() => removeExistingImage(index)}
                         disabled={isLoading}
-                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center disabled:opacity-50"
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 active:scale-85 transition-all text-white rounded-full w-6 h-6 flex items-center justify-center disabled:opacity-50"
                       >
                         <X size={14} />
                       </button>

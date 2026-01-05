@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import ImageViewer from "./ImageViewer";
 import { PostType } from "@/types/post";
 import Image from "next/image";
@@ -21,13 +22,21 @@ const PostCard = ({ post }: { post: PostType }) => {
   const displayImages = images.slice(0, 4);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [viewerIndex, setViewerIndex] = useState(0);
+  const [isDel, setIsDel] = useState(false);
+  const [imageState, setImageState] = useState<
+    Record<number, "loading" | "loaded" | "broken">
+  >(() => images.reduce((acc, _, i) => ({ ...acc, [i]: "loading" }), {}));
 
   const timestamp = post.createdAt;
   const relativeTime = formatDate(timestamp);
 
   return (
-    <main className="bg-neutral-900 p-4 space-y-4 rounded-xl">
-      {/* AUTHOR */}
+    <Link
+      href={`home/post/${post.id}`}
+      className={`bg-neutral-900 p-4 space-y-4 rounded-xl transition-opacity
+    ${isDel && "opacity-50 pointer-events-none"}
+  `}
+    >
       <div className="flex items-center gap-3 w-full">
         <Image
           src={post.author.profilePic || "/default-avatar.png"}
@@ -48,7 +57,7 @@ const PostCard = ({ post }: { post: PostType }) => {
             {post.isEdited && <span>[Edited]</span>}
           </p>
         </div>
-        <PostMenu post={post} />
+        <PostMenu post={post} onDeletingChange={setIsDel} />
       </div>
 
       <div className="whitespace-pre-line text-sm leading-relaxed text-gray-200">
@@ -73,10 +82,28 @@ const PostCard = ({ post }: { post: PostType }) => {
               }`}
             >
               <Image
-                src={img.url}
+                src={imageState[index] === "broken" ? "/alt.png" : img.url}
                 fill
-                alt="post image"
-                className="object-cover"
+                alt="Post Image"
+                className={`object-cover transition-opacity duration-300 ${
+                  imageState[index] === "broken" && "bg-neutral-500"
+                } ${
+                  imageState[index] === "loading"
+                    ? " bg-neutral-400 animate-pulse"
+                    : "opacity-100"
+                }`}
+                onLoad={() =>
+                  setImageState((prev) => ({
+                    ...prev,
+                    [index]: "loaded",
+                  }))
+                }
+                onError={() =>
+                  setImageState((prev) => ({
+                    ...prev,
+                    [index]: "broken",
+                  }))
+                }
               />
 
               {index === 3 && moreCount > 0 && (
@@ -113,7 +140,7 @@ const PostCard = ({ post }: { post: PostType }) => {
           onChange={setViewerIndex}
         />
       )}
-    </main>
+    </Link>
   );
 };
 

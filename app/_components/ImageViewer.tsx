@@ -21,7 +21,7 @@ const ImageViewer = ({ images, index, onClose, onChange }: Props) => {
       <div className="fixed bottom-10 z-90 backdrop-blur-2xl bg-black/40 rounded-full overflow-hidden w-20 h-10 flex justify-center items-center">{index+1}/{images.length}</div>
       <button
         onClick={onClose}
-        className="absolute z-90 top-4 right-4 text-white hover:opacity-80"
+        className="absolute z-90 top-4 right-4 text-white hover:opacity-80 active:scale-90"
       >
         <X size={28} />
       </button>
@@ -30,7 +30,7 @@ const ImageViewer = ({ images, index, onClose, onChange }: Props) => {
       {index > 0 && (
         <button
           onClick={() => onChange(index - 1)}
-          className="absolute z-90 left-4 text-white hover:opacity-80"
+          className="absolute z-90 left-4 text-white hover:opacity-80 active:scale-90"
         >
           <ChevronLeft size={36} />
         </button>
@@ -49,7 +49,7 @@ const ImageViewer = ({ images, index, onClose, onChange }: Props) => {
       {index < images.length - 1 && (
         <button
           onClick={() => onChange(index + 1)}
-          className="absolute z-90 right-4 text-white hover:opacity-80"
+          className="absolute z-90 right-4 text-white hover:opacity-80 active:scale-90"
         >
           <ChevronRight size={36} />
         </button>

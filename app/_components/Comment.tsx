@@ -102,13 +102,10 @@ const CommentPage = ({ postId }: { postId: string }) => {
   });
 
   const handleDelete = async (commentId: string) => {
-    // Add the commentId to the array
     setIsDel((prev) => [...prev, commentId]);
 
     try {
       deleteCommentAction(commentId);
-
-      // Refresh queries
       queryClient
         .invalidateQueries({ queryKey: ["comments", postId] })
         .then(() => {
@@ -164,7 +161,7 @@ const CommentPage = ({ postId }: { postId: string }) => {
 
           {comments.map((comment) => (
             <div key={comment.id}>
-              <div className="flex gap-3">
+              <div className={`flex gap-3 ${isDel.includes(comment.id) && "opacity-50 pointer-events-none"}`}>
                 <Image
                   width={8}
                   height={8}
@@ -205,10 +202,10 @@ const CommentPage = ({ postId }: { postId: string }) => {
                     <span>{comment.stats.replies} replies</span>
                     {userId === comment.user.id &&
                       (isDel.includes(comment.id) ? (
-                        <span className="w-3 h-3 rounded-full border-2 border-red-500/70 border-t-transparent animate-spin" />
+                        <span className="w-3 h-3 rounded-full border-2 border-red-500 border-t-transparent animate-spin" />
                       ) : (
                         <button
-                          className="hover:text-red-500"
+                          className="hover:text-red-500 active:text-red-400 transition-colors"
                           onClick={() => handleDelete(comment.id)}
                           disabled={isDel.includes(comment.id)}
                         >

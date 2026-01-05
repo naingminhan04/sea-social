@@ -6,7 +6,7 @@ export const metadata: Metadata = {
   title: "Home - Star Education Academy",
 };
 
-export default function HomeLayout({
+export default function MainLayout({
   children,
 }: {
   children: React.ReactNode;
