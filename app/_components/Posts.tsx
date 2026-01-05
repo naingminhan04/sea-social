@@ -9,19 +9,31 @@ import { PostType } from "@/types/post";
 const LIMIT = 10;
 
 const Posts = () => {
-  
-  const { data, isLoading, error, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
-    useInfiniteQuery({
-      queryKey: ["posts"],
-      queryFn: async ({ pageParam = 1 }) => await getPostAction(pageParam, LIMIT),
-      refetchOnWindowFocus: false,
-      staleTime: 1000 * 60 * 5,
-      getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
-      initialPageParam: 1,
-    });
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    refetch,
+  } = useInfiniteQuery({
+    queryKey: ["posts"],
+    queryFn: async ({ pageParam = 1 }) => {
+      const result = await getPostAction(pageParam, LIMIT);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
 
+      return result.data;
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5,
+    getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
+    initialPageParam: 1,
+  });
 
-  const scrollRef = useRef<HTMLDivElement | null>(null);  
+  const scrollRef = useRef<HTMLDivElement | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -30,35 +42,33 @@ const Posts = () => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-  fetchNextPage();
-}
-
+          fetchNextPage();
+        }
       },
-      { root: scrollRef.current,rootMargin: "5000px" }
+      { root: scrollRef.current, rootMargin: "5000px" }
     );
 
     observer.observe(loadMoreRef.current);
 
     return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage,isFetchingNextPage]);
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   if (isLoading) {
-    return <div className="flex justify-center items-center w-full h-[calc(100dvh-68px)] lg:h-dvh">
+    return (
+      <div className="flex justify-center items-center w-full h-[calc(100dvh-68px)] lg:h-dvh">
         <span className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />
       </div>
+    );
   }
 
-  if (error) {
+ if (error) {
     return (
       <div className="flex flex-col justify-center items-center w-full h-[calc(100dvh-68px)] lg:h-dvh gap-4 p-4">
         <div className="text-center text-red-400">
           <p className="text-lg font-semibold mb-2">Failed to load posts</p>
-          <p className="text-sm text-gray-400">{error instanceof Error ? error.message : "An unexpected error occurred"}</p>
+          <p className="text-sm text-gray-400">{error.message}</p>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="px-4 py-2 bg-black active:scale-90 text-white rounded-lg transition"
-        >
+        <button onClick={() => refetch()} className="px-4 py-2 bg-black text-white rounded-lg">
           Try Again
         </button>
       </div>
@@ -68,7 +78,10 @@ const Posts = () => {
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
-    <div ref={scrollRef} className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-68px)] overflow-y-scroll scrollbar-none">
+    <div
+      ref={scrollRef}
+      className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-68px)] overflow-y-scroll scrollbar-none"
+    >
       {posts.length === 0 && !isLoading ? (
         <div className="flex flex-col justify-center items-center w-full h-full gap-4 p-4">
           <p className="text-gray-400">No posts yet</p>

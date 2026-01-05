@@ -23,14 +23,25 @@ export default function AddPostBtn() {
   const { register, handleSubmit, reset, watch } = useForm<FormValues>();
 
   const uploadMutation = useMutation({
-    mutationFn: async (files: File[]): Promise<ImageKitResponse[]> =>
-      uploadImageAction(files),
+    mutationFn: async (files: File[]): Promise<ImageKitResponse[]> => {
+      const result = await uploadImageAction(files);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
     onError: (error: Error) =>
-      toast.error(`Failed to upload images: ${error.message}`),
+      toast.error(error.message),
   });
 
   const postMutation = useMutation({
-    mutationFn: (postData: AddPostType) => addPostAction(postData),
+    mutationFn: async (postData: AddPostType) => {
+      const result = await addPostAction(postData);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post uploaded successfully!");

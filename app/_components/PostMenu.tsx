@@ -19,16 +19,22 @@ const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: 
   const [edit, setEdit] = useState(false);
 
   const deleteMutation = useMutation({
-  mutationFn: () => deletePostAction(post.id),
-  onSuccess: async () => {
-    await queryClient.invalidateQueries({ queryKey: ["posts"] });
-    toast.success("Post Deleted Successfully");
-  },
-  onError: () => {
-    toast.error("Failed to delete post");
-    onDeletingChange(false);
-  },
-});
+    mutationFn: async () => {
+      const result = await deletePostAction(post.id);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["posts"] });
+      toast.success("Post Deleted Successfully");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+      onDeletingChange(false);
+    },
+  });
 
 
   const handleDel = () => {
@@ -42,11 +48,11 @@ const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: 
   return (
     <>
         {user === post.author.id && (
-          <div className="relative ml-auto">
+          <div className="relative">
             <button
               disabled={isDeleting}
               onClick={() => setOpen((p) => !p)}
-              className="text-2xl active:scale-90 disabled:opacity-50"
+              className="text-2xl active:scale-90 cursor-pointer disabled:opacity-50"
             >
               <Ellipsis />
             </button>
@@ -91,12 +97,12 @@ const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: 
               />
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 mt-2 z-50 w-48 rounded-xl bg-black shadow-lg"
+                className="absolute right-0 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-black/40 shadow-lg"
               >
                 <button
                   disabled={isDeleting}
                   onClick={handleDel}
-                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-800 rounded-t-xl"
+                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-950 active:scale-98 rounded-b-xl rounded-t-xl"
                 >
                   Delete Permanently
                 </button>
@@ -104,7 +110,7 @@ const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: 
                 <button
                   disabled={isDeleting}
                   onClick={() => setDel(false)}
-                  className="w-full px-4 py-3 text-left hover:bg-neutral-800 rounded-b-xl"
+                  className="w-full px-4 py-3 text-left hover:bg-neutral-950 active:scale-98 rounded-b-xl"
                 >
                   Cancel
                 </button>

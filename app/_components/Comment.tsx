@@ -91,8 +91,13 @@ const CommentPage = ({ postId }: { postId: string }) => {
     refetch,
   } = useInfiniteQuery<CommentResponseType>({
     queryKey: ["comments", postId],
-    queryFn: ({ pageParam = 1 }) =>
-      getCommentAction(postId, pageParam as number),
+    queryFn: async ({ pageParam = 1 }) => {
+      const result = await getCommentAction(postId, pageParam as number);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
     initialPageParam: 1,
     getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
     staleTime: 1000 * 60 * 5,
@@ -105,13 +110,14 @@ const CommentPage = ({ postId }: { postId: string }) => {
     setIsDel((prev) => [...prev, commentId]);
 
     try {
-      deleteCommentAction(commentId);
-      queryClient
-        .invalidateQueries({ queryKey: ["comments", postId] })
-        .then(() => {
-          toast.success("Comment Deleted Successfully");
-        });
+      const result = await deleteCommentAction(commentId);
+      if (!result.success) {
+        toast.error(result.data.error);
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["comments", postId] });
       await queryClient.invalidateQueries({ queryKey: ["posts"] });
+      toast.success("Comment Deleted Successfully");
     } catch (error) {
       console.error(error);
       toast.error("Failed to delete comment");
@@ -239,7 +245,13 @@ const CommentPage = ({ postId }: { postId: string }) => {
 const Replies = ({ commentId }: { commentId: string }) => {
   const { data, isLoading } = useQuery({
     queryKey: ["replies", commentId],
-    queryFn: () => getReplyAction(commentId),
+    queryFn: async () => {
+      const result = await getReplyAction(commentId);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
     refetchOnWindowFocus: false,
   });
   if (isLoading) return <div>Loading</div>;
@@ -294,15 +306,20 @@ const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
   const content = watch("content");
 
   const mutation = useMutation({
-    mutationFn: (data: AddCommentType) =>
-      addCommentAction(
+    mutationFn: async (data: AddCommentType) => {
+      const result = await addCommentAction(
         {
           content: data.content || "",
           replyId: data.replyId ?? replyId ?? null,
           images: data.images ?? [],
         },
         id
-      ),
+      );
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", id] });
       queryClient.invalidateQueries({ queryKey: ["posts"] });
@@ -312,7 +329,7 @@ const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
       toast.success(replyId ? "Reply posted" : "Comment posted");
       reset(); // resets the textarea
     },
-    onError: (error: Error) => toast.error(`Failed to post: ${error.message}`),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const onSubmit: SubmitHandler<AddCommentType> = async (data) => {

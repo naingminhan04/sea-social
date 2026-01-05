@@ -2,25 +2,28 @@
 
 import api from "@/libs/axios";
 import axios from "axios";
-import { AddCommentType } from "@/types/comment";
+import { AddCommentType, CommentResponseType } from "@/types/comment";
+import { ActionResponse } from "@/types/action";
 
 type APIError = { message?: string; error?: string };
 
-export async function getCommentAction(postId: string, page: number) {
+export async function getCommentAction(postId: string, page: number): Promise<ActionResponse<CommentResponseType>> {
     try {
         const res = await api.get(`/comments/${postId}`, {
             params: {
                 page
             }
         });
-        return res.data;
+        return { success: true, data: res.data };
     } catch (error) {
+        let message = "Unexpected error fetching comments";
+
         if (axios.isAxiosError(error)) {
             const data = error.response?.data as APIError | undefined;
-            const msg = data?.message || data?.error || "Failed to fetch comments";
-            throw new Error(msg);
+            message = data?.message || data?.error || "Failed to fetch comments";
         }
-        throw new Error("Unexpected error fetching comments");
+        
+        return { success: false, error: message };
     }
 }
 
@@ -31,41 +34,47 @@ export async function addCommentAction(commentData: AddCommentType, postId: stri
             replyId: commentData.replyId || null,
             images: commentData.images,
         });
-        return res.data;
+        return { success: true, data: res.data };
     } catch (error) {
+        let message = "Unexpected error adding comment";
+
         if (axios.isAxiosError(error)) {
             const data = error.response?.data as APIError | undefined;
-            const msg = data?.message || data?.error || "Failed to add comment";
-            throw new Error(msg);
+            message = data?.message || data?.error || "Failed to add comment";
         }
-        throw new Error("Unexpected error adding comment");
+        
+        return { success: false, error: message };
     }
 }
 
 export async function deleteCommentAction(commentId: string) {
     try {
         const res = await api.delete(`/comments/${commentId}`);
-        return res.data;
+        return { success: true, data: res.data };
     } catch (error) {
+        let message = "Unexpected error deleting comment";
+
         if (axios.isAxiosError(error)) {
             const data = error.response?.data as APIError | undefined;
-            const msg = data?.message || data?.error || "Failed to delete comment";
-            throw new Error(msg);
+            message = data?.message || data?.error || "Failed to delete comment";
         }
-        throw new Error("Unexpected error deleting comment");
+        
+        return { success: false, error: message };
     }
 }
 
 export async function getReplyAction(commentId: string) {
     try {
         const res = await api.get(`/comments/${commentId}`);
-        return res.data;
+        return { success: true, data: res.data };
     } catch (error) {
+        let message = "Unexpected error fetching replies";
+
         if (axios.isAxiosError(error)) {
             const data = error.response?.data as APIError | undefined;
-            const msg = data?.message || data?.error || "Failed to fetch replies";
-            throw new Error(msg);
+            message = data?.message || data?.error || "Failed to fetch replies";
         }
-        throw new Error("Unexpected error fetching replies");
+        
+        return { success: false, error: message };
     }
 }

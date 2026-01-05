@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { ThumbsUp, Heart } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 interface ReactionBtnProps {
   post: PostType;
@@ -46,8 +47,13 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
   }, [open]);
 
   const addMutation = useMutation({
-    mutationFn: ({ postId, reaction }: { postId: string; reaction: ReactionType }) =>
-      addReactionAction(postId, reaction),
+    mutationFn: async ({ postId, reaction }: { postId: string; reaction: ReactionType }) => {
+      const result = await addReactionAction(postId, reaction);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
     onMutate: async ({ postId, reaction }) => {
       if (removeMutation.isPending) removeMutation.reset();
 
@@ -81,14 +87,21 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
       return { previous };
     },
-    onError: (_e, _v, ctx) => {
+    onError: (error: Error, _v, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["posts"], ctx.previous);
       setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
+      toast.error(error.message);
     },
   });
 
   const removeMutation = useMutation({
-    mutationFn: (postId: string) => removeReactionAction(postId),
+    mutationFn: async (postId: string) => {
+      const result = await removeReactionAction(postId);
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+      return result.data;
+    },
     onMutate: async (postId: string) => {
       if (addMutation.isPending) addMutation.reset();
 
@@ -113,9 +126,10 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       setReactionState(null);
       return { previous };
     },
-    onError: (_e, _v, ctx) => {
+    onError: (error: Error, _v, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["posts"], ctx.previous);
       setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
+      toast.error(error.message);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });

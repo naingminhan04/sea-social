@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import ImageViewer from "./ImageViewer";
 import { PostType } from "@/types/post";
 import Image from "next/image";
@@ -13,6 +12,7 @@ import ViewReaction from "./ViewReaction";
 import { useAuthStore } from "@/store/auth";
 import { formatDate } from "@/utils/formatDate";
 import CommentBtn from "./Comment";
+import { useRouter } from "next/navigation";
 
 const PostCard = ({ post }: { post: PostType }) => {
   const auth = useAuthStore();
@@ -30,10 +30,16 @@ const PostCard = ({ post }: { post: PostType }) => {
   const timestamp = post.createdAt;
   const relativeTime = formatDate(timestamp);
 
+  const router = useRouter();
+
+  const goToPost = () => {
+    router.push(`/home/post/${post.id}`);
+  };
+
   return (
-    <Link
-      href={`home/post/${post.id}`}
-      className={`bg-neutral-900 p-4 space-y-4 rounded-xl transition-opacity
+    <div
+      onClick={goToPost}
+      className={`bg-neutral-900 p-4 space-y-4 rounded-xl hover:bg-neutral-800 transition-all
     ${isDel && "opacity-50 pointer-events-none"}
   `}
     >
@@ -57,7 +63,9 @@ const PostCard = ({ post }: { post: PostType }) => {
             {post.isEdited && <span>[Edited]</span>}
           </p>
         </div>
-        <PostMenu post={post} onDeletingChange={setIsDel} />
+        <div className="ml-auto" onClick={(e)=>e.stopPropagation()}>
+          <PostMenu post={post} onDeletingChange={setIsDel} />
+        </div>
       </div>
 
       <div className="whitespace-pre-line text-sm leading-relaxed text-gray-200">
@@ -73,7 +81,8 @@ const PostCard = ({ post }: { post: PostType }) => {
           {displayImages.map((img, index) => (
             <div
               key={img.id}
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 setViewerIndex(index);
                 setViewerOpen(true);
               }}
@@ -117,7 +126,7 @@ const PostCard = ({ post }: { post: PostType }) => {
       )}
 
       <div className="flex items-center justify-between border-t border-neutral-800 pt-2 text-sm text-gray-400">
-        <div className="flex items-center gap-3">
+        <div onClick={(e)=>e.stopPropagation()} className="flex items-center gap-3">
           <ReactionBtn post={post} />
 
           <CommentBtn post={post} />
@@ -130,17 +139,21 @@ const PostCard = ({ post }: { post: PostType }) => {
           </div>
         </div>
 
-        <ViewReaction post={post} />
+        <div onClick={(e)=>e.stopPropagation()}>
+          <ViewReaction post={post} />
+        </div>
       </div>
       {viewerOpen && (
-        <ImageViewer
-          images={images}
-          index={viewerIndex}
-          onClose={() => setViewerOpen(false)}
-          onChange={setViewerIndex}
-        />
+        <div onClick={(e) => e.stopPropagation()}>
+          <ImageViewer
+            images={images}
+            index={viewerIndex}
+            onClose={() => setViewerOpen(false)}
+            onChange={setViewerIndex}
+          />
+        </div>
       )}
-    </Link>
+    </div>
   );
 };
 

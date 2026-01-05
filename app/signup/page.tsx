@@ -4,8 +4,9 @@ import Link from "next/link";
 
 const Signup = () => {
   return (
-    <main className="min-h-dvh w-dvw flex flex-col justify-center items-center p-5">
-      <div className="flex flex-col items-center justify-center w-full pb-5">
+    <main className="h-dvh overflow-hidden w-dvw flex flex-col justify-center items-center p-5">
+      <div className="overflow-scroll w-full scrollbar-none">
+        <div className="flex flex-col items-center justify-center w-full pb-5">
         <Image
           src="/sea-logo.jpg"
           alt="Star Education Academy Logo"
@@ -26,6 +27,7 @@ const Signup = () => {
         <Link href="/" className="text-blue-300 text-sm">
           Login
         </Link>
+      </div>
       </div>
     </main>
   );

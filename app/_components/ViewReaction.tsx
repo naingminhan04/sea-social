@@ -131,12 +131,17 @@ const ReactionPage = ({
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<PostReactionType>({
       queryKey: ["post-reactions", postId, reaction],
-      queryFn: ({ pageParam = 1 }) =>
-        viewReactionAction(
+      queryFn: async ({ pageParam = 1 }) => {
+        const result = await viewReactionAction(
           postId,
           pageParam as number,
           reaction === "ALL" ? undefined : reaction
-        ),
+        );
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        return result.data;
+      },
       initialPageParam: 1,
       getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
       staleTime: 1000 * 60 * 5,

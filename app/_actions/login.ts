@@ -4,30 +4,44 @@ import { setCookies, setVerifyCookies } from "./cookies";
 import api from "@/libs/axios";
 import axios from "axios";
 import { LoginInput } from "@/types/auth";
+import { ActionResponse } from "@/types/action";
+import { UserType } from "@/types/user";
 
-export default async function loginAction(input: LoginInput) {
+type LoginSuccessData = {
+  user: UserType;
+  verificationCode?: string;
+};
+
+export default async function loginAction(input: LoginInput): Promise<ActionResponse<LoginSuccessData>> {
   try {
     const { data } = await api.post("/auth/login", input);
 
     if (data.access_token) {
       const token = data.access_token;
       await setCookies(token);
+      return {
+        success: true,
+        data: {
+          user: data.user,
+        },
+      };
     } else {
       await setVerifyCookies();
       return {
-        user: data.user,
-        verificationCode: data.verificationCodeForTesting,
+        success: true,
+        data: {
+          user: data.user,
+          verificationCode: data.verificationCodeForTesting,
+        },
       };
     }
-
-    return {
-      user: data.user,
-    };
   } catch (err) {
+    let message = "Unexpected server error";
+
     if (axios.isAxiosError(err)) {
-      throw new Error(err.response?.data?.message || "Login Failed");
+      message = err.response?.data?.message || "Login Failed";
     }
 
-    throw new Error("Unexpected server error");
+    return { success: false, error: message };
   }
 }
