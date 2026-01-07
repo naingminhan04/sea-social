@@ -38,10 +38,8 @@ export async function uploadImageAction(
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await api.post(`/upload/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const response = await api.post(`/upload/upload`, formData, {headers: { "Content-Type": "multipart/form-data" }});
+      ;
       return response.data;
     });
     const results = await Promise.all(uploadPromises);
@@ -67,10 +65,11 @@ export async function patchPostAction(postId: string, postData: AddPostType) {
     }
 
     const images = (postData.images || []).map((img) => ({
-      id: img.id,
-      path: img.path,
-      fullPath: img.fullPath,
-    }));
+  id: img.id,
+  path: img.path,
+  fullPath: img.fullPath,
+}));
+
 
     const res = await api.patch(`/posts/${postId}`, {
       content: postData.content || "",

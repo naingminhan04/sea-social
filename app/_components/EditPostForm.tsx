@@ -27,12 +27,17 @@ export default function EditPostForm({
   post: PostType;
   onClose: () => void;
 }) {
-  const getSrc = (i: Partial<ImageType & { url?: string }>) =>
-    i.url || i.fullPath || "";
+  const getSrc = (i: Partial<ImageType & { url?: string }>) => i.fullPath || i.path || "";
+
 
   const [existingImages, setExistingImages] = useState<ImageType[]>(
-    post.images ?? []
-  );
+  (post.images ?? []).map(img => ({
+    id: img.imageId,    
+    path: img.path,        
+    fullPath: img.fullPath 
+  }))
+);
+
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
 
@@ -92,7 +97,7 @@ export default function EditPostForm({
   }, [previewUrls, reset, isLoading, onClose]);
 
   const handleUserClose = useCallback(() => {
-    if (isLoading) return; // Only block user clicks
+    if (isLoading) return;
     handleClose();
   }, [isLoading, handleClose]);
 
