@@ -27,8 +27,20 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
 
-const CommentBtn = ({ post }: { post: PostType }) => {
+const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
   const [open, setOpen] = useState(false);
+
+  if (view)
+    return (
+      <div className="flex items-center transition hover:text-white active:text-white active:scale-90">
+        <button className="flex gap-1 transition">
+          <MessageCircle size={18} />
+          {post.stats.comments > 0 && (
+            <span>{formatCount(post.stats.comments)}</span>
+          )}
+        </button>
+      </div>
+    );
 
   return (
     <>
@@ -167,7 +179,11 @@ export const CommentPage = ({ postId }: { postId: string }) => {
 
           {comments.map((comment) => (
             <div key={comment.id}>
-              <div className={`flex gap-3 ${isDel.includes(comment.id) && "opacity-50 pointer-events-none"}`}>
+              <div
+                className={`flex gap-3 ${
+                  isDel.includes(comment.id) && "opacity-50 pointer-events-none"
+                }`}
+              >
                 <Image
                   width={8}
                   height={8}
@@ -194,7 +210,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
                       comment.images.map((img, i) => (
                         <div key={i}>
                           <Image
-                            src={img.url}
+                            src={img.url.length > 0 ? img.url : "/alt.png"}
                             alt={"comment image"}
                             width={200}
                             height={200}
@@ -233,7 +249,11 @@ export const CommentPage = ({ postId }: { postId: string }) => {
               disabled={isFetchingNextPage}
               className="text-blue-400 hover:underline disabled:opacity-50"
             >
-              {isFetchingNextPage ? <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : "Load more comments"}
+              {isFetchingNextPage ? (
+                <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+              ) : (
+                "Load more comments"
+              )}
             </button>
           </footer>
         )}
@@ -350,7 +370,7 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="w-full sticky z-10 bottom-0 right-0 p-4 bg-neutral-900 border-t border-neutral-800"
+      className="w-full sticky mt-auto z-10 bottom-0 right-0 p-4 bg-neutral-900 border-t border-neutral-800"
     >
       <div className="flex gap-3 items-center">
         <textarea
@@ -365,21 +385,22 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
             {content.length}/500
           </div>
         )}
-        {isSubmitting ? <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white cursor-progress animate-spin" />:<button
-          type="submit"
-          disabled={isDisabled}
-          className={`px-3 py-1 h-10 rounded ${
-            isDisabled
-              ? "bg-neutral-700 text-gray-400 cursor-not-allowed"
-              : "bg-white text-black hover:bg-neutral-300 active:scale-90 transition cursor-pointer"
-          }`}
-        >
-          <SendHorizonal />
-        </button>}
-
-        
+        {isSubmitting ? (
+          <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white cursor-progress animate-spin" />
+        ) : (
+          <button
+            type="submit"
+            disabled={isDisabled}
+            className={`px-3 py-1 h-10 rounded ${
+              isDisabled
+                ? "bg-neutral-700 text-gray-400 cursor-not-allowed"
+                : "bg-white text-black hover:bg-neutral-300 active:scale-90 transition cursor-pointer"
+            }`}
+          >
+            <SendHorizonal />
+          </button>
+        )}
       </div>
     </form>
   );
 };
-

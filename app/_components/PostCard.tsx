@@ -62,12 +62,12 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
           </p>
         </div>
         <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
-          <PostMenu post={post} onDeletingChange={setIsDel} />
+          <PostMenu post={post} onDeletingChange={setIsDel} view={view} />
         </div>
       </div>
 
       <div className="whitespace-pre-line text-sm leading-relaxed text-gray-200">
-        <PostContent post={post} />
+        <PostContent post={post} view={view} />
       </div>
 
       {images.length > 0 && (
@@ -130,7 +130,7 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
         >
           <ReactionBtn post={post} />
 
-          <CommentBtn post={post} />
+          <CommentBtn post={post} view={view} />
 
           <div className="flex items-center gap-1 cursor-pointer hover:text-white">
             <Share2 size={18} />

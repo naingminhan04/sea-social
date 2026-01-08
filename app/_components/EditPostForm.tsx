@@ -72,7 +72,6 @@ export default function EditPostForm({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Post updated successfully!");
-      // call directly without the isLoading check
       setSelectedFiles([]);
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
       setPreviewUrls([]);

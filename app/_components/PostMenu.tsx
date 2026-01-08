@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Ellipsis } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { PostType } from "@/types/post";
 import { deletePostAction } from "../_actions/postAction";
@@ -9,10 +10,11 @@ import { useQueryClient, useMutation } from "@tanstack/react-query";
 import EditPostForm from "./EditPostForm";
 import toast from "react-hot-toast";
 
-const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: (v: boolean) => void; }) => {
+const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolean;onDeletingChange: (v: boolean) => void; }) => {
   const queryClient = useQueryClient();
   const auth = useAuthStore();
   const user = auth.user?.id;
+  const router = useRouter();
 
   const [open, setOpen] = useState(false);
   const [del, setDel] = useState(false);
@@ -27,7 +29,11 @@ const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: 
       return result.data;
     },
     onSuccess: async () => {
+      
       await queryClient.invalidateQueries({ queryKey: ["posts"] });
+      if (view) {
+        router.back();
+      }
       toast.success("Post Deleted Successfully");
     },
     onError: (error: Error) => {

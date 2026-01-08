@@ -3,7 +3,7 @@
 import { PostType, ReactionType, PostsResponseType } from "@/types/post";
 import { addReactionAction, removeReactionAction } from "../_actions/reaction";
 import { formatCount } from "./PostCard";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Image from "next/image";
 import { ThumbsUp, Heart } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -33,18 +33,8 @@ const reactionImageMap: Record<ReactionType, string> = {
 
 const ReactionBtn = ({ post }: ReactionBtnProps) => {
   const [open, setOpen] = useState(false);
-  const [reactionState, setReactionState] = useState<ReactionType | null>(
-    post.isReacted ? post.reaction?.reactionType || null : null
-  );
-
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open]);
+  const reactionState = post.isReacted ? post.reaction?.reactionType || null : null;
 
   const addMutation = useMutation({
     mutationFn: async ({ postId, reaction }: { postId: string; reaction: ReactionType }) => {
@@ -59,7 +49,10 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
 
       await queryClient.cancelQueries({ queryKey: ["posts"] });
       const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(["posts"]);
+      const previousPost = queryClient.getQueryData<PostType>(["post", postId]);
+      
       const newData = previous ? structuredClone(previous) : previous;
+      const newPostData = previousPost ? structuredClone(previousPost) : previousPost;
 
       if (newData?.pages) {
         for (const page of newData.pages) {
@@ -82,15 +75,37 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
         }
       }
 
+      if (newPostData) {
+          const p = newPostData;
+          if (p) {
+            const prevReaction = p.reaction?.reactionType || null;
+            if (prevReaction) {
+              const rxKeyPrev = prevReaction.toLowerCase() as keyof typeof p.stats.reactions;
+              p.stats.reactions[rxKeyPrev] = Math.max(0, p.stats.reactions[rxKeyPrev] - 1);
+            } else {
+              p.stats.reactions.total += 1;
+            }
+
+            const rxKeyNew = reaction.toLowerCase() as keyof typeof p.stats.reactions;
+            p.stats.reactions[rxKeyNew] += 1;
+
+            p.isReacted = true;
+            p.reaction = { id: "optimistic", reactionType: reaction };
+          }
+      }
+
       queryClient.setQueryData(["posts"], newData);
-      setReactionState(reaction);
-      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
+      queryClient.setQueryData(["post", postId], newPostData);
+
       return { previous };
     },
     onError: (error: Error, _v, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["posts"], ctx.previous);
-      setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
       toast.error(error.message);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["post", post.id], exact: false });
     },
   });
 
@@ -108,6 +123,8 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       await queryClient.cancelQueries({ queryKey: ["posts"] });
       const previous = queryClient.getQueryData<{ pages: PostsResponseType[] }>(["posts"]);
       const newData = previous ? structuredClone(previous) : previous;
+      const previousPost = queryClient.getQueryData<PostType>(["post", postId]);
+      const newPostData = previousPost ? structuredClone(previousPost) : previousPost;
 
       if (newData?.pages) {
         for (const page of newData.pages) {
@@ -122,17 +139,29 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
         }
       }
 
+      if (newPostData) {
+          const p = newPostData
+          if (p && p.reaction) {
+            const key = p.reaction.reactionType.toLowerCase() as keyof typeof p.stats.reactions;
+            p.stats.reactions[key] = Math.max(0, p.stats.reactions[key] - 1);
+            p.stats.reactions.total = Math.max(0, p.stats.reactions.total - 1);
+            p.isReacted = false;
+            p.reaction = null;
+          }
+      }
+
       queryClient.setQueryData(["posts"], newData);
-      setReactionState(null);
+      queryClient.setQueryData(["post", postId], newPostData);
+
       return { previous };
     },
     onError: (error: Error, _v, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["posts"], ctx.previous);
-      setReactionState(post.isReacted ? post.reaction?.reactionType || null : null);
       toast.error(error.message);
     },
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["post", post.id], exact: false });
     },
   });
 
