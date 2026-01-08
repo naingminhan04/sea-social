@@ -3,7 +3,7 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import PostCard from "../_components/PostCard";
-import { getPostAction } from "../_actions/post";
+import { getAllPostAction } from "../_actions/postAction";
 import { PostType } from "@/types/post";
 
 const LIMIT = 10;
@@ -20,7 +20,7 @@ const Posts = () => {
   } = useInfiniteQuery({
     queryKey: ["posts"],
     queryFn: async ({ pageParam = 1 }) => {
-      const result = await getPostAction(pageParam, LIMIT);
+      const result = await getAllPostAction(pageParam, LIMIT);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -89,7 +89,7 @@ const Posts = () => {
       ) : (
         <>
           {posts.map((post: PostType) => (
-            <PostCard key={post.id} post={post} />
+            <PostCard key={post.id} post={post} view={false}/>
           ))}
 
           {hasNextPage && (

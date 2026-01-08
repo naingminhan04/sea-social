@@ -48,11 +48,11 @@ const PostMenu = ({ post,onDeletingChange }: { post: PostType;onDeletingChange: 
   return (
     <>
         {user === post.author.id && (
-          <div className="relative">
+          <div className="relative flex hover:bg-neutral-500 active:bg-neutral-400 rounded-2xl">
             <button
               disabled={isDeleting}
               onClick={() => setOpen((p) => !p)}
-              className="text-2xl active:scale-90 cursor-pointer disabled:opacity-50"
+              className="text-2xl flex justify-center items-center w-10 h-8 active:scale-90 cursor-pointer disabled:opacity-50"
             >
               <Ellipsis />
             </button>

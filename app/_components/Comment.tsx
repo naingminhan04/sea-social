@@ -75,7 +75,7 @@ const CommentBtn = ({ post }: { post: PostType }) => {
 
 export default CommentBtn;
 
-const CommentPage = ({ postId }: { postId: string }) => {
+export const CommentPage = ({ postId }: { postId: string }) => {
   const auth = useAuthStore();
   const userId = auth.user?.id;
   const queryClient = useQueryClient();
@@ -291,7 +291,7 @@ const Replies = ({ commentId }: { commentId: string }) => {
 
 type CommentFormProps = { id: string; replyId?: string | null };
 
-const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
+export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
   const queryClient = useQueryClient();
   const {
     register,

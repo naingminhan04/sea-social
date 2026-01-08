@@ -5,8 +5,8 @@ import Link from "next/link";
 
 const NavBar = () => {
   return (
-    <header className="bg-black lg:bg-neutral-900 h-15 lg:h-dvh sticky top-0 left-0 right-0 z-70 lg:w-2/9 shrink-0 mb-2 lg:mb-0">
-      <nav className="flex lg:flex-col justify-between items-center p-4 lg:p-0 gap-2">
+    <header className="bg-black lg:bg-neutral-900 h-15 lg:h-dvh sticky top-0 left-0 right-0 lg:w-2/9 shrink-0 mb-2 lg:mb-0">
+      <nav className="flex lg:flex-col justify-between items-center p-4 lg:p-0 gap-2 z-70">
         <MenuBtn />
         <Link href="/home" className="flex gap-1 lg:w-full lg:bg-black hover:opacity-90 lg:p-5">
           <Star fill="white" />

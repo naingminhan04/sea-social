@@ -12,9 +12,9 @@ import ViewReaction from "./ViewReaction";
 import { useAuthStore } from "@/store/auth";
 import { formatDate } from "@/utils/formatDate";
 import CommentBtn from "./Comment";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 
-const PostCard = ({ post }: { post: PostType }) => {
+const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
   const auth = useAuthStore();
   const userId = auth.user?.id;
   const images = post.images || [];
@@ -29,17 +29,15 @@ const PostCard = ({ post }: { post: PostType }) => {
 
   const timestamp = post.createdAt;
   const relativeTime = formatDate(timestamp);
-
   const router = useRouter();
-
-  const goToPost = () => {
-    router.push(`/home/post/${post.id}`);
-  };
 
   return (
     <div
-      onClick={goToPost}
-      className={`bg-neutral-900 p-4 space-y-4 rounded-xl hover:bg-neutral-800 transition-all
+      onClick={() => {
+        if (view) return;
+        router.push(`/post/${post.id}`);
+      }}
+      className={`bg-neutral-900 p-4 space-y-4 rounded-xl ${!view && "hover:bg-neutral-800"} transition-all
     ${isDel && "opacity-50 pointer-events-none"}
   `}
     >
@@ -63,7 +61,7 @@ const PostCard = ({ post }: { post: PostType }) => {
             {post.isEdited && <span>[Edited]</span>}
           </p>
         </div>
-        <div className="ml-auto" onClick={(e)=>e.stopPropagation()}>
+        <div className="ml-auto" onClick={(e) => e.stopPropagation()}>
           <PostMenu post={post} onDeletingChange={setIsDel} />
         </div>
       </div>
@@ -125,8 +123,11 @@ const PostCard = ({ post }: { post: PostType }) => {
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t border-neutral-800 pt-2 text-sm text-gray-400">
-        <div onClick={(e)=>e.stopPropagation()} className="flex items-center gap-3">
+      <div className="flex items-center justify-between text-sm text-gray-400">
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="flex items-center gap-3"
+        >
           <ReactionBtn post={post} />
 
           <CommentBtn post={post} />
@@ -139,7 +140,7 @@ const PostCard = ({ post }: { post: PostType }) => {
           </div>
         </div>
 
-        <div onClick={(e)=>e.stopPropagation()}>
+        <div onClick={(e) => e.stopPropagation()}>
           <ViewReaction post={post} />
         </div>
       </div>
