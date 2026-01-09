@@ -114,7 +114,7 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
               />
 
               {index === 3 && moreCount > 0 && (
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-2xl font-bold rounded-md">
+                <div className="absolute inset-0 bg-black/50 flex items-center justify-center text-white text-2xl font-bold">
                   +{moreCount}
                 </div>
               )}

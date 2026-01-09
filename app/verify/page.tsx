@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import api from "@/libs/axios";
 import { useMutation } from "@tanstack/react-query";
-import { setVerifyCookies, setCookies } from "../_actions/cookies";
+import { setVerifyCookies, setCookies, clearVerifyCookies } from "../_actions/cookies";
 
 interface Error {
   message : string,
@@ -45,7 +45,9 @@ const Verify = () => {
       return res.data;
     },
     onSuccess: (data) => {
+      clearVerifyCookies();
       setCookies(data.access_token);
+      setCode(null);
       setUser(data.user);
       setCode(null);
       router.replace("/home");

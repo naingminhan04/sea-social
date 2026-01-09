@@ -34,3 +34,8 @@ export async function setVerifyCookies() {
     maxAge: 60 * 5,
   });
 }
+
+export async function clearVerifyCookies() {
+  const cookie = await cookies();
+  cookie.delete("verify_state");
+}

@@ -5,6 +5,7 @@ import { useEffect, useRef } from "react";
 import PostCard from "../_components/PostCard";
 import { getAllPostAction } from "../_actions/postAction";
 import { PostType } from "@/types/post";
+import DummyPostCard from "./DummyPostCard";
 
 const LIMIT = 10;
 
@@ -31,6 +32,7 @@ const Posts = () => {
     staleTime: 1000 * 60 * 5,
     getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
     initialPageParam: 1,
+    
   });
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -55,9 +57,15 @@ const Posts = () => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center w-full h-[calc(100dvh-68px)] lg:h-dvh">
-        <span className="w-10 h-10 rounded-full border-2 border-white/30 border-t-white animate-spin" />
-      </div>
+      <div className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-68px)] overflow-hidden">
+  {Array.from({ length: 5 }).map((_, i) => (
+    <DummyPostCard
+      key={i}
+      text={2 + (i % 3)}
+      image={3 + (i % 4)}
+    />
+  ))}
+          </div>
     );
   }
 
@@ -98,7 +106,7 @@ const Posts = () => {
               className="h-10 flex justify-center items-center"
             >
               {isFetchingNextPage && (
-                <span className="w-5 h-5 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                <DummyPostCard text={2} image={1}/>
               )}
             </div>
           )}

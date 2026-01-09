@@ -1,5 +1,4 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
 import { UserType } from "@/types/user";
 
 interface AuthState {
@@ -11,16 +10,11 @@ interface AuthState {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
     (set) => ({
       tmpVerificationCode: null,
       user: null,
       setTmpVerificationCode: (tmpVerificationCode) => set({ tmpVerificationCode }),
       setUser: (user) => set({ user }),
       logout: () => set({ user: null }),
-    }),
-    {
-      name: "user",
-    }
-  )
+    })
 );
