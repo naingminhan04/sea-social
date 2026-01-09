@@ -88,7 +88,7 @@ const Posts = () => {
   return (
     <div
       ref={scrollRef}
-      className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-68px)] overflow-y-scroll scrollbar-none"
+      className="flex flex-col w-full gap-2 overflow-y-scroll overscroll-none scrollbar-none"
     >
       {posts.length === 0 && !isLoading ? (
         <div className="flex flex-col justify-center items-center w-full h-full gap-4 p-4">

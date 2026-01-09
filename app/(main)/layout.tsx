@@ -14,11 +14,10 @@ export default function MainLayout({
   return (
     <div className="max-w-7xl gap-2 lg:flex mx-auto shadow relative justify-center">
       <NavBar />
-      <div className="md:flex w-full md:h-[calc(100dvh-68px)] lg:h-dvh md:gap-2">
+      
+      <div className="md:flex md:gap-2 relative">
         <div className="md:w-3/5">{children}</div>
-        <div className="hidden md:flex flex-col md:w-2/5">
-          <ChatBar />
-        </div>
+        <ChatBar />
       </div>
     </div>
   );
