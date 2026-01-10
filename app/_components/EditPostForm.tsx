@@ -13,6 +13,7 @@ import {
   PostType,
 } from "@/types/post";
 import toast from "react-hot-toast";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 type FormValues = {
   content: string;
@@ -28,6 +29,7 @@ export default function EditPostForm({
   onClose: () => void;
 }) {
   const getSrc = (i: Partial<ImageType & { url?: string }>) => i.fullPath || i.path || "";
+  useLockBodyScroll(true);
 
 
   const [existingImages, setExistingImages] = useState<ImageType[]>(
@@ -71,16 +73,14 @@ export default function EditPostForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast.success("Post updated successfully!");
       setSelectedFiles([]);
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
       setPreviewUrls([]);
       reset();
-      onClose();
     },
 
     onError: (error: Error) =>
-      toast.error(`Failed to update post: ${error.message}`),
+      toast.error(`Failed to update post`),
   });
 
   const isLoading = uploadMutation.isPending || postMutation.isPending;
@@ -109,7 +109,10 @@ export default function EditPostForm({
       toast.error("Please add content or at least one image.");
       return;
     }
+    
+    const toastId = toast.loading("Editing post...");
 
+    onClose();
     if (isLoading) return;
 
     try {
@@ -137,8 +140,9 @@ export default function EditPostForm({
         sharedPostId: null,
         images: imagesForPost,
       });
+      toast.success("Post updated successfully!", {id: toastId});
     } catch (error) {
-      console.error("Submit error:", error);
+      toast.error(`Unexpected error while editing post`, { id: toastId });
     }
   };
 

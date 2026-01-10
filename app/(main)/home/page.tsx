@@ -1,9 +1,9 @@
-import Posts from "../../_components/Posts";
+import PostReel from "../../_components/PostReel";
 import AddPostBtn from "@/app/_components/AddPostForm";
 const HomePage = () => {
   return (
     <main className="relative">
-      <Posts />
+      <PostReel />
       <AddPostBtn />
     </main>
   );

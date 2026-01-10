@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus, X, LoaderIcon } from "lucide-react";
 import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -8,6 +8,7 @@ import { useState, useCallback } from "react";
 import { addPostAction, uploadImageAction } from "../_actions/postAction";
 import { AddPostType, ImageType, ImageKitResponse } from "@/types/post";
 import toast from "react-hot-toast";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 type FormValues = {
   content: string;
@@ -21,6 +22,7 @@ export default function AddPostBtn() {
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, watch } = useForm<FormValues>();
+  useLockBodyScroll(isOpen)
 
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]): Promise<ImageKitResponse[]> => {
@@ -44,7 +46,6 @@ export default function AddPostBtn() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      toast.success("Post uploaded successfully!");
       handleClose();
     },
     onError: (error: Error) =>
@@ -65,6 +66,9 @@ export default function AddPostBtn() {
       return;
     }
 
+    setIsOpen(false);
+    const toastId = toast.loading("Uploading post in progress");
+
     try {
       let imagesForPost: ImageType[] = [];
       if (selectedFiles.length > 0) {
@@ -81,8 +85,9 @@ export default function AddPostBtn() {
         sharedPostId: null,
         images: imagesForPost,
       });
+      toast.success("Post uploaded successfully",{id: toastId});
     } catch (error) {
-      console.error("Submit error:", error);
+      toast.error("Failed to create post",{id: toastId});
     }
   };
 
@@ -127,12 +132,13 @@ export default function AddPostBtn() {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => {if(!isLoading) setIsOpen(true)}}
         hidden={isOpen}
-        className="fixed md:absolute bottom-10 right-10 rounded-full w-14 h-14 bg-neutral-700 hover:bg-black active:scale-90 flex justify-center items-center cursor-pointer z-50 transition-all"
+        className="fixed bottom-10 right-10 rounded-full w-14 h-14 bg-neutral-700 hover:bg-black active:scale-90 flex justify-center items-center cursor-pointer z-50 transition-all"
         aria-label="Add post"
+        disabled={isLoading}
       >
-        <Plus size={24} />
+        {isLoading? <LoaderIcon className="animate-spin" size={24}/> : <Plus size={24} />}
       </button>
 
       {isOpen && (
@@ -146,8 +152,7 @@ export default function AddPostBtn() {
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 active:scale-95 w-20 h-10 flex justify-center items-center text-black font-bold disabled:opacity-50 transition-all"
-                  disabled={isLoading}
+                  className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 active:scale-95 w-20 h-10 flex justify-center items-center text-black font-bold transition-all"
                 >
                   Cancel
                 </button>

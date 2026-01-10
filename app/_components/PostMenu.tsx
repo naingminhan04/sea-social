@@ -37,7 +37,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
       toast.success("Post Deleted Successfully");
     },
     onError: (error: Error) => {
-      toast.error(error.message);
+      toast.error("Couldn't Delete Post");
       onDeletingChange(false);
     },
   });
@@ -54,7 +54,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
   return (
     <>
         {user === post.author.id && (
-          <div className="relative flex ">
+          <div className="flex ">
             <button
               disabled={isDeleting}
               onClick={() => setOpen((p) => !p)}
@@ -70,7 +70,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
               />
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-black/40 shadow-lg"
+                className="absolute right-2 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-black/40 shadow-lg"
               >
                 <button
                   disabled={isDeleting}

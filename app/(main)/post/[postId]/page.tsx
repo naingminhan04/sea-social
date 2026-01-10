@@ -16,7 +16,7 @@ export default async function PostView({
 
   return (
     <div className="relative overflow-x-hidden">
-      <div className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-68px)] overflow-scroll scrollbar-none">
+      <div className="flex flex-col w-full gap-2 p-2 pb-0 overscroll-none lg:h-dvh h-[calc(100dvh-68px)] overflow-scroll scrollbar-none">
         <BackButton />
         <PostViewClient initialPost={result.data} />
         <CommentPage postId={postId} />

@@ -3,7 +3,7 @@
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
 import { useAuthStore } from "@/store/auth";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import loginAction from "../_actions/login";
 import { useState } from "react";
 import { PiWarningCircle } from "react-icons/pi";

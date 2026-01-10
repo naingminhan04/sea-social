@@ -26,13 +26,15 @@ import { formatDate } from "@/utils/formatDate";
 import { useForm, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
   const [open, setOpen] = useState(false);
+  useLockBodyScroll(open);
 
   if (view)
     return (
-      <div className="flex items-center transition hover:text-white active:text-white active:scale-90">
+      <div className="flex items-center hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-white active:text-white active:scale-95">
         <button className="flex gap-1 transition">
           <MessageCircle size={18} />
           {post.stats.comments > 0 && (
@@ -46,7 +48,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
     <>
       <div
         onClick={() => setOpen(true)}
-        className="flex items-center transition hover:text-white active:text-white active:scale-90"
+        className="flex items-center hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-white active:text-white active:scale-95"
       >
         <button className="flex gap-1 transition">
           <MessageCircle size={18} />
@@ -57,7 +59,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
       </div>
 
       {open && (
-        <div className="fixed md:absolute bottom-0 left-0 right-0 lg:top-0 z-60 bg-neutral-900 overflow-hidden text-white">
+        <div className="fixed max-w-7xl mx-auto bottom-0 left-0 right-0  z-60 bg-neutral-900 overflow-hidden text-white">
           <div className="flex flex-col h-[calc(100dvh-60px)] lg:h-dvh overflow-hidden">
             <div className="flex w-full p-5 justify-between pb-3 border-b border-neutral-800 z-10 sticky top-0">
               <div>

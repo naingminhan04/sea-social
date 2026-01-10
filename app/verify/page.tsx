@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuthStore } from "@/store/auth";
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { AxiosError } from "axios";
 import api from "@/libs/axios";

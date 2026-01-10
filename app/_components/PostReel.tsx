@@ -2,14 +2,15 @@
 
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
-import PostCard from "../_components/PostCard";
+import PostCard from "./PostCard";
 import { getAllPostAction } from "../_actions/postAction";
 import { PostType } from "@/types/post";
 import DummyPostCard from "./DummyPostCard";
+import toast from "react-hot-toast";
 
 const LIMIT = 10;
 
-const Posts = () => {
+const PostReel = () => {
   const {
     data,
     isLoading,
@@ -32,14 +33,22 @@ const Posts = () => {
     staleTime: 1000 * 60 * 5,
     getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
     initialPageParam: 1,
-    
   });
 
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+  const handleRefresh = async () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    toast.promise(refetch(), {
+      loading: "Refreshing your feed",
+      success: "Feed updated!",
+      error: "Error refreshing feed",
+    });
+  };
+
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!scrollRef.current || !loadMoreRef.current || !hasNextPage) return;
+    if (!loadMoreRef.current || !hasNextPage) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -47,7 +56,7 @@ const Posts = () => {
           fetchNextPage();
         }
       },
-      { root: scrollRef.current, rootMargin: "5000px" }
+      { root: null, rootMargin: "5000px" }
     );
 
     observer.observe(loadMoreRef.current);
@@ -57,26 +66,25 @@ const Posts = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-68px)] overflow-hidden">
-  {Array.from({ length: 5 }).map((_, i) => (
-    <DummyPostCard
-      key={i}
-      text={2 + (i % 3)}
-      image={3 + (i % 4)}
-    />
-  ))}
-          </div>
+      <div className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-60px)] p-2 overflow-hidden">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <DummyPostCard key={i} text={2 + (i % 3)} image={3 + (i % 4)} />
+        ))}
+      </div>
     );
   }
 
- if (error) {
+  if (error) {
     return (
-      <div className="flex flex-col justify-center items-center w-full h-[calc(100dvh-68px)] lg:h-dvh gap-4 p-4">
+      <div className="flex flex-col justify-center items-center w-full h-[calc(100dvh-60px)] lg:h-dvh bg-neutral-900 gap-4 p-2">
         <div className="text-center text-red-400">
           <p className="text-lg font-semibold mb-2">Failed to load posts</p>
           <p className="text-sm text-gray-400">{error.message}</p>
         </div>
-        <button onClick={() => refetch()} className="px-4 py-2 bg-black text-white rounded-lg">
+        <button
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-black text-white rounded-lg"
+        >
           Try Again
         </button>
       </div>
@@ -86,28 +94,27 @@ const Posts = () => {
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
-    <div
-      ref={scrollRef}
-      className="flex flex-col w-full gap-2 overflow-y-scroll overscroll-none scrollbar-none"
-    >
+    <div className="flex flex-col w-full gap-2 overscroll-none p-2">
       {posts.length === 0 && !isLoading ? (
-        <div className="flex flex-col justify-center items-center w-full h-full gap-4 p-4">
+        <div className="flex flex-col justify-center items-center w-full h-full p-4">
           <p className="text-gray-400">No posts yet</p>
         </div>
       ) : (
         <>
           {posts.map((post: PostType) => (
-            <PostCard key={post.id} post={post} view={false}/>
+            <PostCard key={post.id} post={post} view={false} />
           ))}
 
-          {hasNextPage && (
+          {hasNextPage ? (
             <div
               ref={loadMoreRef}
               className="h-10 flex justify-center items-center"
             >
-              {isFetchingNextPage && (
-                <DummyPostCard text={2} image={1}/>
-              )}
+              {isFetchingNextPage && <DummyPostCard text={2} image={1} />}
+            </div>
+          ) : (
+            <div className="flex w-full justify-between items-center p-2 bg-neutral-900 text-gray-400 text-sm">
+              <span>You have reached the end</span> <button onClick={handleRefresh} className="bg-white active:scale-98 transition-all text-black rounded-md p-2">Refresh the feed</button>
             </div>
           )}
         </>
@@ -116,4 +123,4 @@ const Posts = () => {
   );
 };
 
-export default Posts;
+export default PostReel;

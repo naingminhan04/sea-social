@@ -2,7 +2,7 @@
 
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
+import { useRouter } from "nextjs-toploader/app";
 import { useAuthStore } from "@/store/auth";
 import { setVerifyCookies } from "../_actions/cookies";
 import { PiWarningCircle } from "react-icons/pi";

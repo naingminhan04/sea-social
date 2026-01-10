@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
+import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
 
 type ImageType = {
   id: string;
@@ -15,28 +16,28 @@ type Props = {
 
 const ImageViewer = ({ images, index, onClose, onChange }: Props) => {
   const image = images[index];
+  useLockBodyScroll(true);
 
   return (
     <div className="fixed inset-0 z-80 backdrop-blur-2xl flex items-center justify-center">
-      <div className="fixed bottom-10 z-90 backdrop-blur-2xl bg-black/40 rounded-full overflow-hidden w-20 h-10 flex justify-center items-center">{index+1}/{images.length}</div>
+      <div className="fixed bottom-10 z-90 backdrop-blur-md bg-white/10 rounded-full overflow-hidden w-20 h-10 flex justify-center items-center">{index+1}/{images.length}</div>
       <button
         onClick={onClose}
-        className="absolute z-90 top-4 right-4 text-white hover:opacity-80 active:scale-90"
+        className="absolute z-90 top-4 right-4 backdrop-blur-md bg-white/10 w-12 h-12 flex items-center justify-center hover:bg-white/50 rounded-full text-white hover:opacity-80 active:scale-90"
       >
         <X size={28} />
       </button>
 
-      {/* LEFT */}
       {index > 0 && (
         <button
           onClick={() => onChange(index - 1)}
-          className="absolute z-90 left-4 text-white hover:opacity-80 active:scale-90"
+          className="absolute z-90 left-4 backdrop-blur-md bg-white/10 w-12 h-12 flex items-center justify-center hover:bg-white/50 rounded-full text-white hover:opacity-80 active:scale-90"
         >
           <ChevronLeft size={36} />
         </button>
       )}
 
-      <div className="relative w-[90vw] h-[85vh]">
+      <div className="relative w-dvw h-dvh">
         <Image
           src={image.url}
           alt="viewer"
@@ -49,7 +50,7 @@ const ImageViewer = ({ images, index, onClose, onChange }: Props) => {
       {index < images.length - 1 && (
         <button
           onClick={() => onChange(index + 1)}
-          className="absolute z-90 right-4 text-white hover:opacity-80 active:scale-90"
+          className="absolute z-90 right-4 backdrop-blur-md bg-white/10 w-12 h-12 flex items-center justify-center hover:bg-white/50 rounded-full text-white hover:opacity-80 active:scale-90"
         >
           <ChevronRight size={36} />
         </button>
