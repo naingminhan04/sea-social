@@ -3,8 +3,7 @@ import AddPostBtn from "@/app/_components/AddPostForm";
 const HomePage = () => {
   return (
     <main className="relative">
-      <PostReel />
-      <AddPostBtn />
+    <PostReel /><AddPostBtn state={"reel"} />
     </main>
   );
 };

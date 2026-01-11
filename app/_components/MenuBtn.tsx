@@ -9,7 +9,7 @@ import { MenuArr } from "./SideBar";
 const MenuBtn = () => {
   const [menu, setMenu] = useState(false);
   return (
-    <div className="lg:hidden flex">
+    <div className="flex">
       <button
         onClick={() => setMenu(!menu)}
         className="px-1 cursor-pointer hover:opacity-90 active:opacity-80"

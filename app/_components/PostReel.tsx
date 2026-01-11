@@ -108,7 +108,7 @@ const PostReel = () => {
           {hasNextPage ? (
             <div
               ref={loadMoreRef}
-              className="h-10 flex justify-center items-center"
+              className={`h-10 flex justify-center items-center ${isFetchingNextPage && "w-full h-auto"}`}
             >
               {isFetchingNextPage && <DummyPostCard text={2} image={1} />}
             </div>

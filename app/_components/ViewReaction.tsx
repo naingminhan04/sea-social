@@ -46,7 +46,7 @@ const ViewReaction = ({ post }: { post: PostType }) => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="flex items-center h-10 px-2 rounded-xl hover:bg-neutral-500 -space-x-0.5 transition active:scale-90"
+        className={`flex items-center h-10 px-2 rounded-xl hover:bg-neutral-500 -space-x-0.5 transition active:scale-90 ${stats.total === 0 && "hidden"}`}
       >
         {sortedReactions.slice(0, 3).map((r, i) => (
           <span
@@ -62,11 +62,11 @@ const ViewReaction = ({ post }: { post: PostType }) => {
       {open && (
         <>
           <div
-            className="fixed max-w-7xl mx-auto inset-0 z-60 bg-black/40 backdrop-blur-sm"
+            className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
 
-          <div className="fixed max-w-7xl mx-auto z-60 bottom-0 right-0 left-0 w-full h-100 bg-neutral-900 text-white p-5 flex flex-col">
+          <div className="fixed md:max-w-xl mx-auto z-60 bottom-0 md:bottom-1/2 md:translate-y-1/2 md:rounded-xl right-0 left-0 w-full h-100 bg-neutral-900 text-white p-5 flex flex-col">
             <div className="flex justify-between items-center pb-4 border-b border-neutral-800">
               <div>
                 <h1 className="font-semibold text-lg">Reactions</h1>

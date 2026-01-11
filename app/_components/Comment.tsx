@@ -59,8 +59,10 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
       </div>
 
       {open && (
-        <div className="fixed max-w-7xl mx-auto bottom-0 left-0 right-0  z-60 bg-neutral-900 overflow-hidden text-white">
-          <div className="flex flex-col h-[calc(100dvh-60px)] lg:h-dvh overflow-hidden">
+        <>
+          <div onClick={()=>setOpen(false)} className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm"/>
+        <div className="fixed lg:max-w-3xl mx-auto bottom-0 left-0 right-0 lg:h-8/10 lg:bottom-1/2 lg:translate-y-1/2 z-60 bg-neutral-900 overflow-hidden text-white">
+          <div className="flex flex-col h-[calc(100dvh-60px)]">
             <div className="flex w-full p-5 justify-between pb-3 border-b border-neutral-800 z-10 sticky top-0">
               <div>
                 <h1 className="font-bold text-lg">Comments</h1>
@@ -82,6 +84,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
             <CommentForm id={post.id} />
           </div>
         </div>
+        </>
       )}
     </>
   );

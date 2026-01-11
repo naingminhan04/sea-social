@@ -40,6 +40,7 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
       {!view && (
         <Link
           href={`post/${post.id}`}
+          prefetch={true}
           className="absolute inset-0 rounded-xl"
           aria-label="View post"
         />

@@ -7,7 +7,7 @@ const DummyPostCard = ({
   const images = Array.from({ length: image });
 
   return (
-    <div className="bg-neutral-900 p-4 space-y-4 rounded-2xl animate-pulse">
+    <div className="bg-neutral-900 p-4 space-y-4 w-full rounded-2xl animate-pulse">
       <div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full bg-neutral-700" />
 

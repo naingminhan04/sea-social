@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, X, LoaderIcon } from "lucide-react";
+import { Plus, X, LoaderIcon, PenBox } from "lucide-react";
 import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -16,7 +16,7 @@ type FormValues = {
 
 const MAX_IMAGES = 20;
 
-export default function AddPostBtn() {
+export default function AddPostBtn({state}:{state:"nav" | "sidebar" | "reel"}) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -134,11 +134,11 @@ export default function AddPostBtn() {
       <button
         onClick={() => {if(!isLoading) setIsOpen(true)}}
         hidden={isOpen}
-        className="fixed bottom-10 right-10 rounded-full w-14 h-14 bg-neutral-700 hover:bg-black active:scale-90 flex justify-center items-center cursor-pointer z-50 transition-all"
+        className={`${state != "reel" ? "rounded-md hidden md:block px-2 hover:text-neutral-400 active:text-neutral-300" : "fixed bottom-10 right-10 rounded-full md:hidden w-14 h-14 bg-neutral-700 hover:bg-black"}   active:scale-90 flex justify-center items-center z-50 transition-all`}
         aria-label="Add post"
         disabled={isLoading}
       >
-        {isLoading? <LoaderIcon className="animate-spin" size={24}/> : <Plus size={24} />}
+        {isLoading? <LoaderIcon className="animate-spin" size={24}/> : state != "reel" ? <div className="flex items-center justify-center gap-1"><PenBox size={24}/></div> : <Plus size={24} />}
       </button>
 
       {isOpen && (
