@@ -8,7 +8,7 @@ import { useState, useCallback } from "react";
 import { addPostAction, uploadImageAction } from "../_actions/postAction";
 import { AddPostType, ImageType, ImageKitResponse } from "@/types/post";
 import toast from "react-hot-toast";
-import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
 type FormValues = {
   content: string;
@@ -134,7 +134,7 @@ export default function AddPostBtn({state}:{state:"nav" | "sidebar" | "reel"}) {
       <button
         onClick={() => {if(!isLoading) setIsOpen(true)}}
         hidden={isOpen}
-        className={`${state != "reel" ? "rounded-md hidden md:block px-2 hover:text-neutral-400 active:text-neutral-300" : "fixed bottom-10 right-10 rounded-full md:hidden w-14 h-14 bg-neutral-700 hover:bg-black"}   active:scale-90 flex justify-center items-center z-50 transition-all`}
+        className={`${state != "reel" ? "rounded-md hidden md:block p-2 hover:bg-gray-700 active:bg-gray-600" : "fixed bottom-10 right-10 rounded-full md:hidden w-14 h-14 bg-neutral-700 hover:bg-black"}   active:scale-90 flex justify-center items-center z-50 transition-all`}
         aria-label="Add post"
         disabled={isLoading}
       >

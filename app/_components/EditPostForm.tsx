@@ -13,7 +13,7 @@ import {
   PostType,
 } from "@/types/post";
 import toast from "react-hot-toast";
-import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 
 type FormValues = {
   content: string;

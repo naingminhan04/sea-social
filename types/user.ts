@@ -1,3 +1,10 @@
+import { Metadata } from "./post";
+
+export interface UserResponseType {
+  metadata: Metadata;
+  users: UserType[];
+}
+
 export interface UserType {
   id: string;
   name: string;

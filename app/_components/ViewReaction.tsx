@@ -11,7 +11,7 @@ import {
   PostReactionType,
 } from "@/types/post";
 import { useAuthStore } from "@/store/auth";
-import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 
 type ReactionFilter = ReactionType | "ALL";
 
@@ -51,7 +51,7 @@ const ViewReaction = ({ post }: { post: PostType }) => {
         {sortedReactions.slice(0, 3).map((r, i) => (
           <span
             key={r.key}
-            style={{ zIndex: 10 - i }}
+            style={{ zIndex: 3 - i }}
             className="rounded-full ring-1 ring-neutral-900"
           >
             <Image src={r.src} alt={r.key} width={18} height={18} />

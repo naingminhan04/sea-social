@@ -39,7 +39,7 @@ const PostReel = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
     toast.promise(refetch(), {
-      loading: "Refreshing your feed",
+      loading: "Refreshing the feed",
       success: "Feed updated!",
       error: "Error refreshing feed",
     });

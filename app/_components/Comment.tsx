@@ -26,7 +26,7 @@ import { formatDate } from "@/utils/formatDate";
 import { useForm, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
-import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
 const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
   const [open, setOpen] = useState(false);

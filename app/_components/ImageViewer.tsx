@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
-import { useLockBodyScroll } from "../hooks/useLockBodyScroll";
+import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 
 type ImageType = {
   id: string;

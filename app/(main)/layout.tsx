@@ -12,9 +12,8 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="max-w-7xl lg:flex mx-auto shadow justify-center">
+    <div className="max-w-7xl lg:flex mx-auto relative shadow justify-center">
       <NavBar />
-      
       <div className="md:flex w-full">
         <div className="md:w-3/5">{children}</div>
         <PortalBar /> 

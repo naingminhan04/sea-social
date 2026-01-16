@@ -11,7 +11,7 @@ export function Provider({ children }: { children: ReactNode }) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NextTopLoader color="white" height={2} showSpinner={false} />
+      <NextTopLoader color="white" height={2} showSpinner={false}/>
       <BackendActivator />
       {children}
       <Toaster position="top-center" reverseOrder={false} />

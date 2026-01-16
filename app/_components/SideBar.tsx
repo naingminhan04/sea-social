@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import LogOutBtn from "./LogOutBtn";
 
 export const MenuArr = [{
@@ -15,18 +18,27 @@ export const MenuArr = [{
   href: "/profile",
 }]
 const SideBar = () => {
+  const pathname = usePathname();
+  
   return (
     <div className="hidden lg:flex w-9/10">
       <ul className="cursor-pointer flex w-full flex-col">
-        {MenuArr.map((item) => (
-          <Link
-            key={item.name}
-            className="hover:bg-neutral-950 active:bg-black p-4 rounded-2xl"
-            href={item.href}
-          >
-            {item.name}
-          </Link>
-        ))}
+        {MenuArr.map((item) => {
+          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          return (
+            <Link
+              key={item.name}
+              className={`p-4 rounded-2xl transition-colors ${
+                isActive 
+                  ? "bg-black text-white" 
+                  : "hover:bg-neutral-950 active:bg-black"
+              }`}
+              href={item.href}
+            >
+              {item.name}
+            </Link>
+          );
+        })}
         <li className="hover:bg-red-800 active:bg-red-700 p-4 rounded-2xl">
           <LogOutBtn />
         </li>
