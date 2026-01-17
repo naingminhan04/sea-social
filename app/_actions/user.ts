@@ -1,11 +1,10 @@
 "use server"
 
 import api from "@/libs/axios";
-import axios from "axios";
 import { UserResponseType } from "@/types/user";
 import { ActionResponse } from "@/types/action";
 
-export async function getAllUserAction(nextPage: number = 1, limit: number = 10, keyword: string): Promise<ActionResponse<UserResponseType>> {
+export async function getAllUserAction(nextPage: number = 1, limit: number = 10, keyword: string | null): Promise<ActionResponse<UserResponseType>> {
     try {
         const res = await api.get("/users", {
             params: {

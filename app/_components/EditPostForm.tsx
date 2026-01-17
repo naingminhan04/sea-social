@@ -14,6 +14,8 @@ import {
 } from "@/types/post";
 import toast from "react-hot-toast";
 import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
+import { formatDate } from "@/utils/formatDate";
+import { useAuthStore } from "@/store/auth";
 
 type FormValues = {
   content: string;
@@ -28,17 +30,20 @@ export default function EditPostForm({
   post: PostType;
   onClose: () => void;
 }) {
-  const getSrc = (i: Partial<ImageType & { url?: string }>) => i.fullPath || i.path || "";
+  const getSrc = (i: Partial<ImageType & { url?: string }>) =>
+    i.fullPath || i.path || "";
+  const relativeTime = formatDate(post.createdAt);
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id;
   useLockBodyScroll(true);
 
-
   const [existingImages, setExistingImages] = useState<ImageType[]>(
-  (post.images ?? []).map(img => ({
-    id: img.imageId,    
-    path: img.path,        
-    fullPath: img.fullPath 
-  }))
-);
+    (post.images ?? []).map((img) => ({
+      id: img.imageId,
+      path: img.path,
+      fullPath: img.fullPath,
+    }))
+  );
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -59,8 +64,7 @@ export default function EditPostForm({
       }
       return result.data;
     },
-    onError: (error: Error) =>
-      toast.error(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const postMutation = useMutation({
@@ -79,8 +83,7 @@ export default function EditPostForm({
       reset();
     },
 
-    onError: (error: Error) =>
-      toast.error(`Failed to update post`),
+    onError: (error: Error) => toast.error(`Failed to update post`),
   });
 
   const isLoading = uploadMutation.isPending || postMutation.isPending;
@@ -109,7 +112,7 @@ export default function EditPostForm({
       toast.error("Please add content or at least one image.");
       return;
     }
-    
+
     const toastId = toast.loading("Editing post...");
 
     onClose();
@@ -140,7 +143,7 @@ export default function EditPostForm({
         sharedPostId: null,
         images: imagesForPost,
       });
-      toast.success("Post updated successfully!", {id: toastId});
+      toast.success("Post updated successfully!", { id: toastId });
     } catch (error) {
       toast.error(`Unexpected error while editing post`, { id: toastId });
     }
@@ -197,8 +200,8 @@ export default function EditPostForm({
 
   return (
     <>
-      <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
-        <div className="w-full max-w-2xl mt-20">
+      <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70 scrollbar-none">
+        <div className="w-full max-w-2xl my-auto">
           <form
             className="w-full flex flex-col gap-4"
             onSubmit={handleSubmit(onSubmit)}
@@ -224,14 +227,35 @@ export default function EditPostForm({
                 )}
               </button>
             </div>
+            <div className="pointer-events-auto flex items-center gap-3 my-1">
+              <Image
+                src={post.author.profilePic || "/default-avatar.png"}
+                alt={post.author.name}
+                width={100}
+                height={100}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+              <div>
+                <p className="font-semibold flex gap-1 text-white">
+                  {post.author.name}
+                  {post.author.id === userId && (
+                    <span className="text-blue-500 font-semibold">(You)</span>
+                  )}
+                </p>
+                <p className="text-xs flex gap-1 text-gray-400 self-center">
+                  {relativeTime}
+                  {post.isEdited && <span>[Edited]</span>}
+                </p>
+              </div>
+            </div>
 
-            <div className="relative">
+            <div className="relative h-50">
               <textarea
                 {...register("content")}
                 placeholder="What's on your mind?"
                 maxLength={500}
                 disabled={isLoading}
-                className="w-full p-4 rounded-md bg-black text-white resize-none min-h-[200px] outline-0 border border-neutral-700 focus:border-white focus:border-2"
+                className="w-full p-4 scrollbar-none rounded-md bg-black text-white resize-none h-full outline-0 border border-neutral-700 focus:border-white focus:border-2"
               />
               <div className="absolute bottom-4 right-2 text-xs">
                 {contentValue.length}/500

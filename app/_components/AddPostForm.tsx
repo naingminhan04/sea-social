@@ -9,6 +9,8 @@ import { addPostAction, uploadImageAction } from "../_actions/postAction";
 import { AddPostType, ImageType, ImageKitResponse } from "@/types/post";
 import toast from "react-hot-toast";
 import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
+import { formatDate } from "@/utils/formatDate";
+import { useAuthStore } from "@/store/auth";
 
 type FormValues = {
   content: string;
@@ -16,13 +18,19 @@ type FormValues = {
 
 const MAX_IMAGES = 20;
 
-export default function AddPostBtn({state}:{state:"nav" | "sidebar" | "reel"}) {
+export default function AddPostBtn({
+  state,
+}: {
+  state: "nav" | "sidebar" | "reel";
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, watch } = useForm<FormValues>();
-  useLockBodyScroll(isOpen)
+  const user = useAuthStore((state) => state.user);
+  const userId = user?.id;
+  useLockBodyScroll(isOpen);
 
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]): Promise<ImageKitResponse[]> => {
@@ -32,8 +40,7 @@ export default function AddPostBtn({state}:{state:"nav" | "sidebar" | "reel"}) {
       }
       return result.data;
     },
-    onError: (error: Error) =>
-      toast.error(error.message),
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const postMutation = useMutation({
@@ -85,9 +92,9 @@ export default function AddPostBtn({state}:{state:"nav" | "sidebar" | "reel"}) {
         sharedPostId: null,
         images: imagesForPost,
       });
-      toast.success("Post uploaded successfully",{id: toastId});
+      toast.success("Post uploaded successfully", { id: toastId });
     } catch (error) {
-      toast.error("Failed to create post",{id: toastId});
+      toast.error("Failed to create post", { id: toastId });
     }
   };
 
@@ -132,18 +139,32 @@ export default function AddPostBtn({state}:{state:"nav" | "sidebar" | "reel"}) {
   return (
     <>
       <button
-        onClick={() => {if(!isLoading) setIsOpen(true)}}
+        onClick={() => {
+          if (!isLoading) setIsOpen(true);
+        }}
         hidden={isOpen}
-        className={`${state != "reel" ? "rounded-md hidden md:block p-2 hover:bg-gray-700 active:bg-gray-600" : "fixed bottom-10 right-10 rounded-full md:hidden w-14 h-14 bg-neutral-700 hover:bg-black"}   active:scale-90 flex justify-center items-center z-50 transition-all`}
+        className={`${
+          state != "reel"
+            ? "rounded-md hidden md:block p-2 hover:bg-gray-700 active:bg-gray-600"
+            : "fixed bottom-10 right-10 rounded-full md:hidden w-14 h-14 bg-neutral-700 hover:bg-black"
+        }   active:scale-90 flex justify-center items-center z-50 transition-all`}
         aria-label="Add post"
         disabled={isLoading}
       >
-        {isLoading? <LoaderIcon className="animate-spin" size={24}/> : state != "reel" ? <div className="flex items-center justify-center gap-1"><PenBox size={24}/></div> : <Plus size={24} />}
+        {isLoading ? (
+          <LoaderIcon className="animate-spin" size={24} />
+        ) : state != "reel" ? (
+          <div className="flex items-center justify-center gap-1">
+            <PenBox size={24} />
+          </div>
+        ) : (
+          <Plus size={24} />
+        )}
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
-          <div className="w-full max-w-2xl mt-20">
+          <div className="w-full max-w-2xl my-auto">
             <form
               className="w-full flex flex-col gap-4"
               onSubmit={handleSubmit(onSubmit)}
@@ -161,15 +182,36 @@ export default function AddPostBtn({state}:{state:"nav" | "sidebar" | "reel"}) {
                   disabled={isPostDisabled}
                   className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-all"
                 >
-                  {isLoading ? <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" /> : "Post"}
+                  {isLoading ? (
+                    <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  ) : (
+                    "Post"
+                  )}
                 </button>
               </div>
+              <div className="pointer-events-auto flex items-center gap-3 my-1">
+                <Image
+                  src={user?.profilePic || "/default-avatar.png"}
+                  alt={user?.name as string}
+                  width={100}
+                  height={100}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+                <div>
+                  <p className="font-semibold flex gap-1 text-white">
+                    {user?.name}
+                    {user?.id === userId && (
+                      <span className="text-blue-500 font-semibold">(You)</span>
+                    )}
+                  </p>
+                </div>
+              </div>
 
-              <div className="relative">
+              <div className="relative h-50">
                 <textarea
                   placeholder="What's on your mind?"
                   maxLength={500}
-                  className="w-full p-4 rounded-md bg-black text-white resize-none min-h-[200px] outline-0 border border-neutral-700 focus:border-white focus:border-2 transition-colors"
+                  className="w-full p-4 rounded-md scrollbar-none bg-black text-white resize-none h-full outline-0 border border-neutral-700 focus:border-white focus:border-2 transition-colors"
                   {...register("content")}
                   disabled={isLoading}
                 />

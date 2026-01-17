@@ -77,7 +77,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
                 Close
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto scrollbar-none">
+            <div className="flex-1 mb-20 overflow-y-auto scrollbar-none">
               <CommentPage postId={post.id} />
             </div>
 

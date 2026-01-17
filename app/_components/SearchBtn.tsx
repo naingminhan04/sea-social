@@ -17,11 +17,14 @@ type FormValues = {
 
 const SearchBtn = () => {
   const [open, setOpen] = useState(false);
-  const [keyword, setKeyword] = useState("");
-  const { register, handleSubmit } = useForm<FormValues>();
-  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [keyword, setKeyword] = useState<string | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  useLockBodyScroll(open)
+  const { register, handleSubmit, reset } = useForm<FormValues>();
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useLockBodyScroll(open);
 
   const {
     data,
@@ -30,7 +33,6 @@ const SearchBtn = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-    refetch,
   } = useInfiniteQuery({
     queryKey: ["users", keyword],
     queryFn: async ({ pageParam = 1 }) => {
@@ -44,6 +46,7 @@ const SearchBtn = () => {
     getNextPageParam: (lastPage) => lastPage.metadata.nextPage ?? undefined,
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
+    enabled: open && !!keyword,
   });
 
   useEffect(() => {
@@ -55,7 +58,10 @@ const SearchBtn = () => {
           fetchNextPage();
         }
       },
-      { root: null, rootMargin: "200px" }
+      {
+        root: scrollRef.current,
+        rootMargin: "100px",
+      }
     );
 
     observer.observe(loadMoreRef.current);
@@ -64,11 +70,21 @@ const SearchBtn = () => {
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const onSubmit: SubmitHandler<FormValues> = (data) => {
-    setKeyword(data.keyword.trim() || "a");
-    refetch();
+    const value = data.keyword.trim();
+    if (!value) return;
+    setHasSearched(true);
+    setKeyword(value);
   };
 
-  const users: UserResponseType["users"] = data?.pages.flatMap((page) => page.users) ?? [];
+  const handleClose = () => {
+    setOpen(false);
+    setHasSearched(false);
+    setKeyword("");
+    reset();
+  };
+
+  const users: UserResponseType["users"] =
+    data?.pages.flatMap((page) => page.users) ?? [];
 
   return (
     <>
@@ -80,11 +96,18 @@ const SearchBtn = () => {
       </button>
 
       {open && (
-        <div onClick={()=>setOpen(false)} className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-start p-4 z-50">
-          <div onClick={(e) => e.stopPropagation()} className="bg-neutral-900 w-full max-w-md p-4 rounded-md">
-            <form onSubmit={handleSubmit(onSubmit)} className="flex justify-center items-center gap-2">
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-start p-4 z-50">
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="bg-neutral-900 w-full max-w-md p-4 rounded-md"
+          >
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex justify-center items-center gap-2"
+            >
               <input
                 type="text"
+                autoFocus
                 placeholder="Search users"
                 className="flex-1 p-2 rounded w-full h-10 bg-black text-white border border-neutral-700 focus:border-white"
                 {...register("keyword")}
@@ -97,34 +120,50 @@ const SearchBtn = () => {
               </button>
             </form>
 
-            <div className="mt-4 max-h-[30vh] overflow-auto scrollbar-none">
-              {isLoading ? (
-                <p className="text-gray-400">Loading users...</p>
+            <div
+              ref={scrollRef}
+              className="max-h-[30vh] overflow-auto scrollbar-none"
+            >
+              {!hasSearched ? null : isLoading ? (
+                <div className="flex justify-center items-center h-30 mt-3">
+                  <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                </div>
               ) : error ? (
-                <p className="text-red-500">{(error as Error).message}</p>
+                <p className="text-red-500 mt-3">{(error as Error).message}</p>
               ) : users.length === 0 ? (
-                <p className="text-gray-400">No users found</p>
+                <p className="text-gray-400 text-center mt-3">No users found</p>
               ) : (
                 users.map((user) => (
                   <div
                     key={user.id}
                     className="flex items-center gap-2 p-2 hover:bg-neutral-800 rounded"
                   >
-                    <Image src={user.profilePic || "/default-avatar.png"} alt="" className="w-8 h-8 rounded-full object-cover" width={50} height={50}/>
+                    <Image
+                      src={user.profilePic || "/default-avatar.png"}
+                      alt=""
+                      className="w-8 h-8 rounded-full object-cover"
+                      width={50}
+                      height={50}
+                    />
                     <span>{user.name}</span>
                   </div>
                 ))
               )}
 
               {hasNextPage && (
-                <div ref={loadMoreRef} className="text-center p-2 text-gray-400">
-                  {isFetchingNextPage ? "Loading more..." : "Scroll to load more"}
+                <div
+                  ref={loadMoreRef}
+                  className="text-center p-2 text-gray-400"
+                >
+                  {isFetchingNextPage
+                    ? "Loading more..."
+                    : "Scroll to load more"}
                 </div>
               )}
             </div>
 
             <button
-              onClick={() => setOpen(false)}
+              onClick={handleClose}
               className="mt-4 w-full py-2 bg-neutral-700 hover:bg-neutral-600 active:bg-neutral-500 rounded text-white"
             >
               Close
