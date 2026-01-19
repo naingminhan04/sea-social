@@ -7,7 +7,7 @@ interface AuthState {
   user: UserType | null;
   setTmpVerificationCode: (code: string | null) => void;
   setUser: (user: UserType | null) => void;
-  logout: () => void;
+  logOut: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -21,7 +21,7 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user) => set({ user }),
 
-      logout: () => set({ user: null }),
+      logOut: () => set({ user: null }),
     }),
     {
       name: "auth-store",

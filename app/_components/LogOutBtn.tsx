@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/auth";
 import { useRouter } from "nextjs-toploader/app";
 
 export default function LogOutBtn() {
-  const clearUser = useAuthStore((state) => state.logout);
+  const clearUser = useAuthStore((state) => state.logOut);
   const router = useRouter();
 
   const handleLogOut = async() => {

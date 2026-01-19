@@ -4,8 +4,7 @@ import api from "@/libs/axios";
 import axios from "axios";
 import { AddCommentType, CommentResponseType } from "@/types/comment";
 import { ActionResponse } from "@/types/action";
-
-type APIError = { message?: string; error?: string };
+import { APIError } from "@/types/error";
 
 export async function getCommentAction(postId: string, page: number): Promise<ActionResponse<CommentResponseType>> {
     try {

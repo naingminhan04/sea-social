@@ -7,8 +7,7 @@ import { ImageKitResponse } from "@/types/post";
 import api from "@/libs/axios";
 import { PostsResponseType } from "@/types/post";
 import { ActionResponse } from "@/types/action";
-
-type APIError = { message?: string; error?: string };
+import {APIError} from "@/types/error";
 
 export async function getAllPostAction(nextPage: number = 1, limit: number = 10): Promise<ActionResponse<PostsResponseType>> {
     try {

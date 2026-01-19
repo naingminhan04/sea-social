@@ -1,5 +1,10 @@
 import { Metadata } from "./post";
 
+export type LoginSuccessData = {
+  user: UserType;
+  verificationCode?: string;
+};
+
 export interface UserResponseType {
   metadata: Metadata;
   users: UserType[];
@@ -12,8 +17,6 @@ export interface UserType {
   nickname: string | null;
   bio: string | null;
   points: number;
-  profilePicId: string | null;
-  coverPicId: string | null;
   email: string;
   phone: string | null;
   role: "USER" | "ADMIN";
@@ -21,5 +24,17 @@ export interface UserType {
   createdAt: string;
   updatedAt: string;
   profilePic: string | null;
+  accountStatus: AccountStatusType;
+  _count: {
+    posts: number,
+    followers: number,
+    followings: number,
+    likes: number,
+  }
+}
+
+enum AccountStatusType {
+  ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
 }
 

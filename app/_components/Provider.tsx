@@ -3,15 +3,17 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useState } from "react";
 import { Toaster } from "react-hot-toast";
-import BackendActivator from "./BackendActivator";
 import NextTopLoader from "nextjs-toploader";
+import BackendActivator from "./BackendActivator";
+import Refresher from "./Refresher";
 
 export function Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
-      <NextTopLoader color="white" height={2} showSpinner={false}/>
+      <NextTopLoader color="white" height={2} showSpinner={false} />
+      <Refresher />
       <BackendActivator />
       {children}
       <Toaster position="top-center" reverseOrder={false} />

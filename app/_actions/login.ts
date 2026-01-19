@@ -5,12 +5,7 @@ import api from "@/libs/axios";
 import axios from "axios";
 import { LoginInput } from "@/types/auth";
 import { ActionResponse } from "@/types/action";
-import { UserType } from "@/types/user";
-
-type LoginSuccessData = {
-  user: UserType;
-  verificationCode?: string;
-};
+import { LoginSuccessData } from "@/types/user";
 
 export default async function loginAction(input: LoginInput): Promise<ActionResponse<LoginSuccessData>> {
   try {

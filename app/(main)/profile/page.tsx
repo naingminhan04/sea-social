@@ -1,11 +1,11 @@
-import React from 'react'
+import Profile from "@/app/_components/Profile"
 
-const Profile = () => {
+const ProfilePage = () => {
   return (
-    <div>
-      Profile
-    </div>
+    <main className="p-2">
+      <Profile userId={``}/>
+    </main>
   )
 }
 
-export default Profile
+export default ProfilePage
