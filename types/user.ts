@@ -24,6 +24,7 @@ export interface UserType {
   createdAt: string;
   updatedAt: string;
   profilePic: string | null;
+  coverPic: string | null;
   accountStatus: AccountStatusType;
   _count: {
     posts: number,
