@@ -76,14 +76,14 @@ const PostReel = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center w-full h-[calc(100dvh-60px)] lg:h-dvh bg-neutral-900 gap-4 p-2">
-        <div className="text-center text-red-400">
+      <div className="flex flex-col justify-center items-center w-full h-[calc(100dvh-60px)] lg:h-dvh bg-white dark:bg-neutral-900 gap-4 p-2">
+        <div className="text-center text-red-600 dark:text-red-400">
           <p className="text-lg font-semibold mb-2">Failed to load posts</p>
-          <p className="text-sm text-gray-400">{error.message}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">{error.message}</p>
         </div>
         <button
           onClick={() => refetch()}
-          className="px-4 py-2 bg-black text-white rounded-lg"
+          className="px-4 py-2 bg-gray-200 dark:bg-black text-white dark:text-white rounded-lg"
         >
           Try Again
         </button>
@@ -97,7 +97,7 @@ const PostReel = () => {
     <div className="flex flex-col w-full gap-2 overscroll-none p-2">
       {posts.length === 0 && !isLoading ? (
         <div className="flex flex-col justify-center items-center w-full h-full p-4">
-          <p className="text-gray-400">No posts yet</p>
+          <p className="text-gray-500 dark:text-gray-400">No posts yet</p>
         </div>
       ) : (
         <>
@@ -113,8 +113,8 @@ const PostReel = () => {
               {isFetchingNextPage && <DummyPostCard text={2} image={1} />}
             </div>
           ) : (
-            <div className="flex w-full justify-between items-center p-2 bg-neutral-900 text-gray-400 text-sm">
-              <span>You have reached the end</span> <button onClick={handleRefresh} className="bg-white active:scale-98 transition-all text-black rounded-md p-2">Refresh the feed</button>
+            <div className="flex w-full justify-between items-center p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
+              <span>You have reached the end</span> <button onClick={handleRefresh} className="bg-gray-200 dark:bg-white active:scale-98 transition-all text-white dark:text-black rounded-md p-2">Refresh the feed</button>
             </div>
           )}
         </>

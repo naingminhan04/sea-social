@@ -29,11 +29,11 @@ const Profile = ({userId}:{userId:string}) => {
   return (
     <main>
       <header className="relative mb-[10vw] md:mb-[6vw] lg:mb-[clamp(10px,5vw,60px)]">
-        <div className="flex items-center gap-1 bg-black h-15 font-semibold">
-          <button onClick={()=>router.back()} className="p-2 rounded-sm hover:bg-gray-600"><ArrowBigLeft fill="white"/> </button>
-          <span>{`${user?.name}'s Profile`}</span>
+        <div className="flex items-center gap-1 bg-white dark:bg-black h-15 font-semibold">
+          <button onClick={()=>router.back()} className="p-2 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-600"><ArrowBigLeft fill="black" className="dark:fill-white"/> </button>
+          <span className="text-black dark:text-white">{`${user?.name}'s Profile`}</span>
         </div>
-        <div className="w-full aspect-5/2 relative bg-neutral-400">
+        <div className="w-full aspect-5/2 relative bg-gray-300 dark:bg-neutral-400">
           {user?.coverPic ? <Image 
           src={user?.coverPic}
           fill
@@ -47,11 +47,11 @@ const Profile = ({userId}:{userId:string}) => {
             alt="Profile Picture"
             width={200}
             height={200}
-            className="object-cover border-6 border-neutral-950 bg-gray-300 w-full aspect-square relative rounded-full"
+            className="object-cover border-6 border-white dark:border-neutral-950 bg-gray-300 w-full aspect-square relative rounded-full"
           />
         </div>
       </header>
-      <section className="text-clip break-all">
+      <section className="text-clip break-all text-black dark:text-white">
         {user?.name}
       {user?.accountStatus}
       {user?.bio}

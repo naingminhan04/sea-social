@@ -33,8 +33,8 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
 
   return (
     <div
-      className={`group bg-neutral-900 relative rounded-xl transition-all 
-      ${!view && "hover:bg-neutral-800"} 
+      className={`group bg-neutral-100 dark:bg-neutral-900 relative rounded-xl transition-all 
+      ${!view && "hover:bg-gray-200 dark:hover:bg-neutral-800"} 
       ${isDel && "opacity-50 pointer-events-none"}`}
     >
       {!view && (
@@ -58,13 +58,13 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
                 className="w-12 h-12 rounded-full object-cover"
               />
               <div>
-                <p className="font-semibold flex gap-1 text-white">
+                <p className="font-semibold flex gap-1 text-black dark:text-white">
                   {post.author.name}
                   {post.author.id === userId && (
-                    <span className="text-blue-500 font-semibold">(You)</span>
+                    <span className="text-blue-500">(You)</span>
                   )}
                 </p>
-                <p className="text-xs flex gap-1 text-gray-400 self-center">
+                <p className="text-xs flex gap-1 text-gray-500 dark:text-gray-400 self-center">
                   {relativeTime}
                   {post.isEdited && <span>[Edited]</span>}
                 </p>
@@ -76,7 +76,7 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
             </div>
           </div>
 
-          <div className="whitespace-pre-line text-sm w-fit leading-relaxed text-gray-200 pointer-events-auto">
+          <div className="whitespace-pre-line text-sm w-fit leading-relaxed pointer-events-auto">
             <PostContent post={post} view={view} />
           </div>
 
@@ -103,10 +103,10 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
                     fill
                     alt="Post Image"
                     className={`object-cover transition-opacity duration-300 ${
-                      imageState[index] === "broken" && "bg-neutral-500"
+                      imageState[index] === "broken" && "bg-gray-400 dark:bg-neutral-500"
                     } ${
                       imageState[index] === "loading"
-                        ? " bg-neutral-400 animate-pulse"
+                        ? " bg-gray-300 dark:bg-neutral-400 animate-pulse"
                         : "opacity-100"
                     }`}
                     onLoad={() =>
@@ -134,12 +134,12 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
           )}
         </div>
 
-        <div className="flex items-center justify-between text-sm p-1 text-gray-400">
+        <div className="flex items-center justify-between text-sm p-1 text-gray-500 dark:text-gray-400">
           <div className="flex items-center pointer-events-auto">
             <ReactionBtn post={post} />
             <CommentBtn post={post} view={view} />
 
-            <div onClick={()=>{navigator.clipboard.writeText(`https://stareducationacademy.netlify.app/post/${post.id}`); toast.success("Link copied to clipboard",{id: `share-${post.id}`,duration: 1000});}} className="flex items-center gap-1 cursor-pointer px-2 h-10 hover:bg-neutral-500 rounded-xl justify-center active:scale-95 hover:text-white">
+            <div onClick={()=>{navigator.clipboard.writeText(`https://stareducationacademy.netlify.app/post/${post.id}`); toast.success("Link copied to clipboard",{id: `share-${post.id}`,duration: 1000});}} className="flex items-center gap-1 cursor-pointer px-2 h-10 hover:bg-gray-200 dark:hover:bg-neutral-500 rounded-xl justify-center active:scale-95 hover:text-black dark:hover:text-white">
               <Share2 size={18} />
               {post.stats.sharedCount > 0 && (
                 <span>{formatCount(post.stats.sharedCount)}</span>

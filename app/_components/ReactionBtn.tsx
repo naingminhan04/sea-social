@@ -229,7 +229,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       {reactionState ? (
         <button
           onClick={() => removeMutation.mutate(post.id)}
-          className="flex items-center justify-center px-2 h-10 gap-1 hover:bg-neutral-500 active:bg-neutral-500 rounded-xl hover:text-white active:scale-95 transition"
+          className="flex items-center justify-center px-2 h-10 gap-1 hover:bg-gray-200 dark:hover:bg-neutral-500 active:bg-gray-200 dark:active:bg-neutral-500 rounded-xl hover:text-black dark:hover:text-white active:scale-95 transition"
         >
             <Image
             src={reactionImageMap[reactionState]}
@@ -246,7 +246,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       ) : (
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center px-3 h-10 justify-center gap-1 hover:bg-neutral-500 active:bg-neutral-500 rounded-xl hover:text-white active:scale-95 transition"
+          className="flex items-center px-3 h-10 justify-center gap-1 hover:bg-gray-200 dark:hover:bg-neutral-500 active:bg-gray-200 dark:active:bg-neutral-500 rounded-xl hover:text-black dark:hover:text-white active:scale-95 transition"
         >
           <ThumbsUp size={18} />
           {post.stats.reactions.total > 0 && (
@@ -264,7 +264,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
           className="
             absolute bottom-full left-0 mb-2 z-40
             flex gap-1 px-2 py-2
-            bg-neutral-900 border border-neutral-700
+            bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700
             rounded-2xl shadow-xl
             animate-in fade-in zoom-in-95 duration-150
           "

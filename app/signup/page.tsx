@@ -15,7 +15,7 @@ const Signup = () => {
           className="rounded-full mb-5"
         />
         <h1 className="text-2xl font-bold mb-1">Create Account</h1>
-        <p className="text-gray-300 text-sm text-center">
+        <p className="text-gray-600 dark:text-gray-300 text-sm text-center">
           Join Star Education Academy and Start Your Journey
         </p>
       </div>
@@ -23,8 +23,8 @@ const Signup = () => {
         <Register />
       </div>
       <div className="flex justify-center items-center gap-1 mt-5">
-        <p className="text-sm text-gray-300">Already have an account?</p>
-        <Link href="/" className="text-blue-300 text-sm">
+        <p className="text-sm text-gray-600 dark:text-gray-300">Already have an account?</p>
+        <Link href="/" className="text-blue-600 dark:text-blue-300 text-sm">
           Login
         </Link>
       </div>

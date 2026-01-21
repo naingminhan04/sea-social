@@ -13,8 +13,8 @@ const Home = () => {
           height={100}
           className="rounded-full mb-5"
         />
-        <h1 className="text-2xl font-bold mb-1">Welcome Back</h1>
-        <p className="text-gray-300 text-sm">
+        <h1 className="text-2xl text-black dark:text-white font-bold mb-1">Welcome Back</h1>
+        <p className="text-gray-600 dark:text-gray-300 text-sm">
           Sign in to continue your learning journey
         </p>
       </div>
@@ -22,8 +22,8 @@ const Home = () => {
         <LoginForm />
       </div>
       <div className="flex justify-center items-center gap-1 mt-5">
-        <p className="text-sm text-gray-300">Don&apos;t have an account?</p>
-        <Link href="/signup" className="text-blue-300 text-sm">
+        <p className="text-sm text-gray-600 dark:text-gray-300">Don&apos;t have an account?</p>
+        <Link href="/signup" className="text-blue-600 dark:text-blue-300 text-sm">
           Sign Up
         </Link>
       </div>

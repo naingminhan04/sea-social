@@ -28,7 +28,7 @@ const PostContent = ({ post,view }: { post: PostType, view:boolean }) => {
 
       {isLongContent && !view && (
         <button
-          className="text-blue-300 hover:text-blue-500 active:text-blue-600"
+          className="text-blue-600 dark:text-blue-300 hover:text-blue-700 dark:hover:text-blue-500 active:text-blue-800 dark:active:text-blue-600"
           onClick={(e) => {
             e.stopPropagation();
             toggleSeeMore();

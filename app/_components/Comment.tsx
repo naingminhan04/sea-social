@@ -34,7 +34,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
 
   if (view)
     return (
-      <div className="flex items-center hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-white active:text-white active:scale-95">
+      <div className="flex items-center hover:bg-gray-200 dark:hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-black dark:hover:text-white active:text-black dark:active:text-white active:scale-95">
         <button className="flex gap-1 transition">
           <MessageCircle size={18} />
           {post.stats.comments > 0 && (
@@ -48,7 +48,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
     <>
       <div
         onClick={() => setOpen(true)}
-        className="flex items-center hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-white active:text-white active:scale-95"
+        className="flex items-center hover:bg-gray-200 dark:hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-black dark:hover:text-white active:text-black dark:active:text-white active:scale-95"
       >
         <button className="flex gap-1 transition">
           <MessageCircle size={18} />
@@ -61,18 +61,18 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
       {open && (
         <>
           <div onClick={()=>setOpen(false)} className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm"/>
-        <div className="fixed lg:max-w-3xl mx-auto bottom-0 left-0 right-0 lg:h-8/10 lg:bottom-1/2 lg:translate-y-1/2 z-60 bg-neutral-900 overflow-hidden text-white">
+        <div className="fixed lg:max-w-3xl mx-auto bottom-0 left-0 right-0 lg:h-8/10 lg:bottom-1/2 lg:translate-y-1/2 z-60 bg-white dark:bg-neutral-900 overflow-hidden text-black dark:text-white">
           <div className="flex flex-col h-[calc(100dvh-60px)]">
-            <div className="flex w-full p-5 justify-between pb-3 border-b border-neutral-800 z-10 sticky top-0">
+            <div className="flex w-full p-5 justify-between pb-3 border-b border-gray-300 dark:border-neutral-800 z-10 sticky top-0">
               <div>
                 <h1 className="font-bold text-lg">Comments</h1>
-                <p className="text-gray-500 text-xs">
+                <p className="text-gray-500 dark:text-gray-500 text-xs">
                   See who commented to this post
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-2 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 transition"
+                className="px-4 py-2 rounded-full bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 active:scale-90 transition"
               >
                 Close
               </button>
@@ -199,9 +199,9 @@ export const CommentPage = ({ postId }: { postId: string }) => {
 
                 <div className="flex flex-col max-w-[80%] w-fit">
                   <div className="rounded-xl w-fit max-w-full space-y-1">
-                    <p className="text-neutral-400 text-sm">
+                    <p className="text-gray-500 dark:text-neutral-400 text-sm">
                       {comment.user.name}
-                      <span className="font-extralight text-xs mx-2 text-gray-300">
+                      <span className="font-extralight text-xs mx-2 text-gray-400 dark:text-gray-300">
                         {formatDate(comment.createdAt, false, true)}
                       </span>
                     </p>
@@ -375,13 +375,13 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="w-full sticky mt-auto z-10 bottom-0 right-0 p-4 bg-neutral-900 border-t border-neutral-800"
+      className="w-full sticky mt-auto z-10 bottom-0 right-0 p-4 bg-white dark:bg-neutral-900 border-t border-gray-300 dark:border-neutral-800"
     >
       <div className="flex gap-3 items-center">
         <textarea
           placeholder={replyId ? "Write a reply" : "Write a comment"}
           maxLength={500}
-          className="flex-1 p-2 rounded-md bg-black text-white resize-none h-11 outline-none border border-neutral-700 focus:border-neutral-500 scrollbar-none"
+          className="flex-1 p-2 rounded-md bg-white dark:bg-black text-black dark:text-white resize-none h-11 outline-none border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-neutral-500 scrollbar-none"
           {...register("content")}
           disabled={mutation.isPending}
         />

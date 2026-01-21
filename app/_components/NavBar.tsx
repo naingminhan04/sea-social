@@ -7,9 +7,9 @@ import SearchBtn from "./SearchBtn";
 
 const NavBar = () => {
   return (
-    <header className="bg-black lg:bg-neutral-900 h-15 lg:h-dvh sticky top-0 w-full z-70 lg:z-20 lg:w-2/9 shrink-0">
+    <header className="bg-black dark:bg-black lg:bg-gray-100 dark:lg:bg-neutral-900 h-15 lg:h-dvh sticky top-0 w-full z-70 lg:z-20 lg:w-2/9 shrink-0">
       <nav className="flex lg:flex-col justify-between relative lg:items-center h-full lg:justify-normal lg:p-0 gap-2">
-        <div className="flex justify-between items-center lg:flex-row-reverse w-full h-15 p-4 bg-black">
+        <div className="flex justify-between items-center lg:flex-row-reverse w-full h-15 p-4 bg-black dark:bg-black">
           <div className="flex gap-1 justify-center items-center">
               <MenuBtn />
             <AddPostBtn state={"nav"} />
@@ -20,7 +20,7 @@ const NavBar = () => {
             className="flex gap-1 hover:opacity-90"
           >
             <Star fill="white" />
-            <h1>SEA</h1>
+            <h1 className="text-white">SEA</h1>
           </Link>
         </div>
 

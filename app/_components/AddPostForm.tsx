@@ -145,8 +145,8 @@ export default function AddPostBtn({
         hidden={isOpen}
         className={`${
           state != "reel"
-            ? "rounded-md hidden md:block p-2 hover:bg-gray-700 active:bg-gray-600"
-            : "fixed bottom-10 right-10 rounded-full md:hidden w-14 h-14 bg-neutral-700 hover:bg-black"
+            ? "rounded-md hidden md:block p-2 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600"
+            : "fixed bottom-10 right-10 rounded-full md:hidden w-14 h-14 bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-black"
         }   active:scale-90 flex justify-center items-center z-50 transition-all`}
         aria-label="Add post"
         disabled={isLoading}
@@ -163,7 +163,7 @@ export default function AddPostBtn({
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
+        <div className="fixed inset-0 bg-white dark:bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
           <div className="w-full max-w-2xl my-auto">
             <form
               className="w-full flex flex-col gap-4"
@@ -173,7 +173,7 @@ export default function AddPostBtn({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 rounded-xl bg-gray-300 hover:bg-gray-400 active:scale-95 w-20 h-10 flex justify-center items-center text-black font-bold transition-all"
+                  className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-300 hover:bg-gray-100 dark:hover:bg-gray-400 active:scale-95 w-20 h-10 flex justify-center items-center text-white dark:text-black font-bold transition-all"
                 >
                   Cancel
                 </button>
@@ -198,10 +198,10 @@ export default function AddPostBtn({
                   className="w-12 h-12 rounded-full object-cover"
                 />
                 <div>
-                  <p className="font-semibold flex gap-1 text-white">
+                  <p className="font-semibold flex gap-1 text-black dark:text-white">
                     {user?.name}
                     {user?.id === userId && (
-                      <span className="text-blue-500 font-semibold">(You)</span>
+                      <span className="text-blue-600 dark:text-blue-500 font-semibold">(You)</span>
                     )}
                   </p>
                 </div>
@@ -211,7 +211,7 @@ export default function AddPostBtn({
                 <textarea
                   placeholder="What's on your mind?"
                   maxLength={500}
-                  className="w-full p-4 rounded-md scrollbar-none bg-black text-white resize-none h-full outline-0 border border-neutral-700 focus:border-white focus:border-2 transition-colors"
+                  className="w-full p-4 rounded-md scrollbar-none bg-white dark:bg-black text-black dark:text-white resize-none h-full outline-0 border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-white focus:border-2 transition-colors"
                   {...register("content")}
                   disabled={isLoading}
                 />

@@ -60,7 +60,7 @@ const LoginForm = () => {
   const renderError = (message?: string) => {
     if (!message) return null;
     return (
-      <div className="flex items-center gap-2 bg-red-950/30 text-red-600 text-sm rounded-md px-3 py-1 mt-1 animate-fade-in">
+      <div className="flex items-center gap-2 bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-500 text-sm rounded-md px-3 py-1 mt-1 animate-fade-in">
         <PiWarningCircle className="w-4 h-4" />
         {message}
       </div>
@@ -75,8 +75,8 @@ const LoginForm = () => {
           id="email"
           type="text"
           placeholder=" "
-          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${
-            errors.email ? "border-red-600" : "focus:border-white"
+          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 text-black dark:text-white rounded-md ${
+            errors.email ? "border-red-600" : "focus:border-black dark:focus:border-white"
           }`}
           {...register("email", {
             required: "Please enter your email",
@@ -88,10 +88,10 @@ const LoginForm = () => {
         />
         <label
           htmlFor="email"
-          className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200
+          className={`absolute bg-white dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200
             peer-placeholder-shown:top-4 peer-placeholder-shown:text-base
-            peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200
-            peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
+            peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200
+            peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200
             ${errors.email && "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"}
           `}
         >
@@ -105,8 +105,8 @@ const LoginForm = () => {
           id="password"
           type="password"
           placeholder=" "
-          className={`peer w-full border border-neutral-700 outline-0 p-4 text-white rounded-md ${
-            errors.password ? "border-red-600" : "focus:border-white"
+          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 text-black dark:text-white rounded-md ${
+            errors.password ? "border-red-600" : "focus:border-black dark:focus:border-white"
           }`}
           {...register("password", {
             required: "Please enter your password",
@@ -114,10 +114,10 @@ const LoginForm = () => {
         />
         <label
           htmlFor="password"
-          className={`absolute bg-background px-2 left-4 top-4 text-gray-400 transition-all duration-200
+          className={`absolute bg-white dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200
             peer-placeholder-shown:top-4 peer-placeholder-shown:text-base
-            peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-200
-            peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-200
+            peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200
+            peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200
             ${errors.password && "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"}
           `}
         >
@@ -128,14 +128,14 @@ const LoginForm = () => {
 
       <button
         type="submit"
-        className="p-3 font-bold bg-neutral-300 cursor-pointer hover:bg-neutral-50 active:bg-neutral-200 text-black rounded-md"
+        className="p-3 font-bold bg-gray-300 dark:bg-neutral-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-50 active:bg-gray-200 dark:active:bg-neutral-200 text-white dark:text-black rounded-md"
         disabled={mutation.isPending}
       >
         {mutation.isPending ? "Logging in..." : "Login"}
       </button>
 
       {mutation.isError && (
-        <div className="flex items-center gap-2 bg-red-950/30 text-red-600 text-sm rounded-md px-3 py-1 mt-1 animate-fade-in">
+        <div className="flex items-center gap-2 bg-red-100 dark:bg-red-950/30 text-red-600 dark:text-red-500 text-sm rounded-md px-3 py-1 mt-1 animate-fade-in">
           <PiWarningCircle className="w-4 h-4" />
           {error}
         </div>

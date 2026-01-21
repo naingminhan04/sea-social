@@ -46,7 +46,7 @@ const ViewReaction = ({ post }: { post: PostType }) => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className={`flex items-center h-10 px-2 rounded-xl hover:bg-neutral-500 -space-x-0.5 transition active:scale-90 ${stats.total === 0 && "hidden"}`}
+        className={`flex items-center h-10 px-2 rounded-xl hover:bg-gray-200 dark:hover:bg-neutral-500 -space-x-0.5 transition active:scale-90 ${stats.total === 0 && "hidden"}`}
       >
         {sortedReactions.slice(0, 3).map((r, i) => (
           <span
@@ -66,17 +66,17 @@ const ViewReaction = ({ post }: { post: PostType }) => {
             onClick={() => setOpen(false)}
           />
 
-          <div className="fixed md:max-w-xl mx-auto z-60 bottom-0 md:bottom-1/2 md:translate-y-1/2 md:rounded-xl right-0 left-0 w-full h-100 bg-neutral-900 text-white p-5 flex flex-col">
-            <div className="flex justify-between items-center pb-4 border-b border-neutral-800">
+          <div className="fixed md:max-w-xl mx-auto z-60 bottom-0 md:bottom-1/2 md:translate-y-1/2 md:rounded-xl right-0 left-0 w-full h-100 bg-white dark:bg-neutral-900 text-black dark:text-white p-5 flex flex-col">
+            <div className="flex justify-between items-center pb-4 border-b border-gray-300 dark:border-neutral-800">
               <div>
                 <h1 className="font-semibold text-lg">Reactions</h1>
-                <p className="text-neutral-400 text-xs">
+                <p className="text-gray-500 text-xs">
                   See who reacted to this post
                 </p>
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className="px-4 py-2 rounded-full bg-neutral-800 hover:bg-neutral-700 active:scale-90 transition"
+                className="px-4 py-2 rounded-full bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 active:scale-90 transition"
               >
                 Close
               </button>
@@ -88,7 +88,7 @@ const ViewReaction = ({ post }: { post: PostType }) => {
                 className={`h-10 mx-1 shrink-0 rounded-xl w-15 text-sm font-medium transition ${
                   active === "ALL"
                     ? "bg-black text-white scale-110"
-                    : "bg-neutral-800 hover:bg-neutral-700"
+                    : "bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700"
                 }`}
               >
                 All {stats.total}
@@ -101,7 +101,7 @@ const ViewReaction = ({ post }: { post: PostType }) => {
                   className={`h-10 mx-1 shrink-0 rounded-xl w-15 flex items-center justify-center gap-1 text-sm transition ${
                     active === r.type
                       ? "bg-black scale-110"
-                      : "bg-neutral-800 hover:bg-neutral-700"
+                      : "bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700"
                   }`}
                 >
                   <Image src={r.src} alt={r.key} width={16} height={16} />

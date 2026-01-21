@@ -30,8 +30,8 @@ const SideBar = () => {
               key={item.name}
               className={`p-4 rounded-2xl transition-colors ${
                 isActive 
-                  ? "bg-black text-white" 
-                  : "hover:bg-neutral-950 active:bg-black"
+                  ? "bg-gray-200 dark:bg-black text-white dark:text-white" 
+                  : "hover:bg-gray-100 dark:hover:bg-neutral-950 active:bg-gray-300 dark:active:bg-black"
               }`}
               href={item.href}
             >

@@ -90,7 +90,7 @@ const SearchBtn = () => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="p-2 rounded hover:bg-gray-700 active:bg-gray-600"
+        className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600"
       >
         <Search />
       </button>
@@ -99,7 +99,7 @@ const SearchBtn = () => {
         <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-start p-4 z-50">
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-neutral-900 w-full max-w-md p-4 rounded-md"
+            className="bg-white dark:bg-neutral-900 w-full max-w-md p-4 rounded-md"
           >
             <form
               onSubmit={handleSubmit(onSubmit)}
@@ -109,12 +109,12 @@ const SearchBtn = () => {
                 type="text"
                 autoFocus
                 placeholder="Search users"
-                className="flex-1 p-2 rounded w-full h-10 bg-black text-white border border-neutral-700 focus:border-white"
+                className="flex-1 p-2 rounded w-full h-10 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-white"
                 {...register("keyword")}
               />
               <button
                 type="submit"
-                className=" px-4 h-10 bg-neutral-700 hover:bg-neutral-600 active:bg-neutral-500 active:scale-90 transition-all rounded text-white"
+                className=" px-4 h-10 bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 active:bg-gray-500 dark:active:bg-neutral-500 active:scale-90 transition-all rounded text-white dark:text-white"
               >
                 <Search />
               </button>
@@ -129,14 +129,14 @@ const SearchBtn = () => {
                   <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
                 </div>
               ) : error ? (
-                <p className="text-red-500 mt-3">{(error as Error).message}</p>
+                <p className="text-red-600 dark:text-red-500 mt-3">{(error as Error).message}</p>
               ) : users.length === 0 ? (
-                <p className="text-gray-400 text-center mt-3">No users found</p>
+                <p className="text-gray-500 dark:text-gray-400 text-center mt-3">No users found</p>
               ) : (
                 users.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center gap-2 p-2 hover:bg-neutral-800 rounded"
+                    className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded"
                   >
                     <Image
                       src={user.profilePic || "/default-avatar.png"}
@@ -153,7 +153,7 @@ const SearchBtn = () => {
               {hasNextPage && (
                 <div
                   ref={loadMoreRef}
-                  className="text-center p-2 text-gray-400"
+                  className="text-center p-2 text-gray-500 dark:text-gray-400"
                 >
                   {isFetchingNextPage
                     ? "Loading more..."

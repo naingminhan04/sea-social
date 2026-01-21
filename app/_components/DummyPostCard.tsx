@@ -7,13 +7,13 @@ const DummyPostCard = ({
   const images = Array.from({ length: image });
 
   return (
-    <div className="bg-neutral-900 p-4 space-y-4 w-full rounded-2xl animate-pulse">
+    <div className="bg-white dark:bg-neutral-900 p-4 space-y-4 w-full rounded-2xl animate-pulse">
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-full bg-neutral-700" />
+        <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-neutral-700" />
 
         <div className="flex-1 space-y-2">
-          <div className="w-32 h-4 bg-neutral-700 rounded-md" />
-          <div className="w-20 h-3 bg-neutral-800 rounded-md" />
+          <div className="w-32 h-4 bg-gray-300 dark:bg-neutral-700 rounded-md" />
+          <div className="w-20 h-3 bg-gray-400 dark:bg-neutral-800 rounded-md" />
         </div>
       </div>
 
@@ -22,7 +22,7 @@ const DummyPostCard = ({
           <div
             key={index}
             className={`h-4 rounded-md ${
-              index === 0 ? "bg-neutral-700 w-full" : "bg-neutral-800 w-5/6"
+              index === 0 ? "bg-gray-300 dark:bg-neutral-700 w-full" : "bg-gray-400 dark:bg-neutral-800 w-5/6"
             }`}
           />
         ))}
@@ -34,7 +34,7 @@ const DummyPostCard = ({
         {images.map((_, index) => (
           <div
             key={index}
-            className={`bg-neutral-700 ${
+            className={`bg-gray-300 dark:bg-neutral-700 ${
               images.length === 1 ? "h-72" : "h-40 sm:h-44 md:h-48"
             } ${images.length === 3 && index === 2 ? "col-span-2" : ""}`}
           />
@@ -43,9 +43,9 @@ const DummyPostCard = ({
 
       <div className="flex justify-between">
         <div className="flex gap-2">
-          <div className="w-6 h-4 bg-neutral-700 rounded-md" />
-          <div className="w-6 h-4 bg-neutral-700 rounded-md" />
-          <div className="w-6 h-4 bg-neutral-700 rounded-md" />
+          <div className="w-6 h-4 bg-gray-300 dark:bg-neutral-700 rounded-md" />
+          <div className="w-6 h-4 bg-gray-300 dark:bg-neutral-700 rounded-md" />
+          <div className="w-6 h-4 bg-gray-300 dark:bg-neutral-700 rounded-md" />
         </div>
         <div className="flex">
           <div className="w-4 h-4 bg-neutral-700 rounded-full" />

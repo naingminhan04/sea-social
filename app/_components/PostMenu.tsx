@@ -58,7 +58,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
             <button
               disabled={isDeleting}
               onClick={() => setOpen((p) => !p)}
-              className="text-2xl flex justify-center hover:bg-neutral-500 active:bg-neutral-400 rounded-2xl items-center w-10 h-8 active:scale-90 cursor-pointer disabled:opacity-50"
+              className="text-2xl flex justify-center hover:bg-gray-200 dark:hover:bg-neutral-500 active:bg-gray-200 dark:active:bg-neutral-400 rounded-2xl items-center w-10 h-8 active:scale-90 cursor-pointer disabled:opacity-50"
             >
               <Ellipsis />
             </button>
@@ -70,7 +70,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
               />
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-2 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-black/40 shadow-lg"
+                className="absolute right-2 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-white/40 dark:bg-black/40 shadow-lg"
               >
                 <button
                   disabled={isDeleting}
@@ -78,7 +78,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
                     setOpen(false);
                     setEdit(true);
                   }}
-                  className="w-full px-4 py-3 text-left hover:bg-neutral-950 active:scale-98 rounded-t-xl"
+                  className="w-full px-4 py-3 text-left text-black dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-950 active:scale-98 rounded-t-xl"
                 >
                   Edit
                 </button>
@@ -89,7 +89,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
                     setOpen(false);
                     setDel(true);
                   }}
-                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-950 active:scale-98 rounded-b-xl"
+                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-gray-200 dark:hover:bg-neutral-950 active:scale-98 rounded-b-xl"
                 >
                   Delete
                 </button>
@@ -103,12 +103,12 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
               />
               <div
                 onClick={(e) => e.stopPropagation()}
-                className="absolute right-0 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-black/40 shadow-lg"
+                className="absolute right-0 mt-2 z-50 w-48 rounded-xl backdrop-blur-2xl bg-white/40 dark:bg-black/40 shadow-lg"
               >
                 <button
                   disabled={isDeleting}
                   onClick={handleDel}
-                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-neutral-950 active:scale-98 rounded-b-xl rounded-t-xl"
+                  className="w-full px-4 py-3 text-left text-red-500 hover:bg-gray-200 dark:hover:bg-neutral-950 active:scale-98 rounded-b-xl rounded-t-xl"
                 >
                   Delete Permanently
                 </button>
@@ -116,7 +116,7 @@ const PostMenu = ({ post,onDeletingChange,view }: { post: PostType, view: boolea
                 <button
                   disabled={isDeleting}
                   onClick={() => setDel(false)}
-                  className="w-full px-4 py-3 text-left hover:bg-neutral-950 active:scale-98 rounded-b-xl"
+                  className="w-full px-4 py-3 text-left text-black dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-950 active:scale-98 rounded-b-xl"
                 >
                   Cancel
                 </button>
