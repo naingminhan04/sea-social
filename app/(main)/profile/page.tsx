@@ -8,7 +8,7 @@ const ProfilePage = () => {
   const userId = user?.id as string;  
 
   return (
-    <main className="p-2 lg:pt-0">
+    <main className="md:px-2">
       <Profile userId={userId}/>
     </main>
   );

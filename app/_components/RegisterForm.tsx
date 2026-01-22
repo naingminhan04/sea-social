@@ -70,14 +70,14 @@ const Register = () => {
           id="name"
           type="text"
           placeholder=" "
-          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 text-black dark:text-white rounded-md ${
+          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 rounded-md ${
             errors.name ? "border-red-600" : "focus:border-black dark:focus:border-white"
           }`}
           {...register("name", { required: "Please enter your name" })}
         />
         <label
           htmlFor="name"
-          className={`absolute bg-white dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
+          className={`absolute bg-neutral-100 dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
             errors.name &&
             "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
           }`}
@@ -92,7 +92,7 @@ const Register = () => {
           id="email"
           type="text"
           placeholder=" "
-          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 text-black dark:text-white rounded-md ${
+          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 rounded-md ${
             errors.email ? "border-red-600" : "focus:border-black dark:focus:border-white"
           }`}
           {...register("email", {
@@ -105,7 +105,7 @@ const Register = () => {
         />
         <label
           htmlFor="email"
-          className={`absolute bg-white dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
+          className={`absolute bg-neutral-100 dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
             errors.email &&
             "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
           }`}
@@ -120,7 +120,7 @@ const Register = () => {
           id="password"
           type="password"
           placeholder=" "
-          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 text-black dark:text-white rounded-md ${
+          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 rounded-md ${
             errors.password ? "border-red-600" : "focus:border-black dark:focus:border-white"
           }`}
           {...register("password", {
@@ -133,7 +133,7 @@ const Register = () => {
         />
         <label
           htmlFor="password"
-          className={`absolute bg-white dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
+          className={`absolute bg-neutral-100 dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
             errors.password &&
             "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
           }`}
@@ -148,7 +148,7 @@ const Register = () => {
           id="confirmPassword"
           type="password"
           placeholder=" "
-          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 text-black dark:text-white rounded-md ${
+          className={`peer w-full border border-gray-300 dark:border-neutral-700 outline-0 p-4 rounded-md ${
             errors.confirmPassword ? "border-red-600" : "focus:border-black dark:focus:border-white"
           }`}
           {...register("confirmPassword", {
@@ -159,7 +159,7 @@ const Register = () => {
         />
         <label
           htmlFor="confirmPassword"
-          className={`absolute bg-white dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
+          className={`absolute bg-neutral-100 dark:bg-neutral-950 px-2 left-4 top-4 text-gray-500 dark:text-gray-400 transition-all duration-200 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-2 peer-focus:left-2 peer-focus:text-xs peer-focus:text-gray-700 dark:peer-focus:text-gray-200 peer-not-placeholder-shown:-top-2 peer-not-placeholder-shown:left-2 peer-not-placeholder-shown:text-xs peer-not-placeholder-shown:text-gray-700 dark:peer-not-placeholder-shown:text-gray-200 ${
             errors.confirmPassword &&
             "peer-focus:text-red-600 peer-not-placeholder-shown:text-red-600"
           }`}
@@ -171,7 +171,7 @@ const Register = () => {
 
       <button
         type="submit"
-        className="p-3 font-bold bg-gray-300 dark:bg-neutral-300 cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-50 active:bg-gray-200 dark:active:bg-neutral-200 text-white dark:text-black rounded-md"
+        className="p-3 font-bold bg-neutral-800 dark:bg-neutral-300 hover:bg-neutral-950 dark:hover:bg-neutral-50 active:bg-neutral-800 dark:active:bg-neutral-200 text-white dark:text-black rounded-md"
         disabled={mutation.isPending}
       >
         {mutation.isPending ? "Creating an account..." : "Sign up"}

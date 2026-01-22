@@ -114,7 +114,7 @@ const PostReel = () => {
             </div>
           ) : (
             <div className="flex w-full justify-between items-center p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
-              <span>You have reached the end</span> <button onClick={handleRefresh} className="bg-gray-200 dark:bg-white active:scale-98 transition-all text-white dark:text-black rounded-md p-2">Refresh the feed</button>
+              <span>You have reached the end</span> <button onClick={handleRefresh} className="bg-blue-400 dark:bg-white active:scale-98 transition-all text-neutral-50 dark:text-black rounded-md p-2">Refresh the feed</button>
             </div>
           )}
         </>

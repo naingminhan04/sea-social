@@ -34,7 +34,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
 
   if (view)
     return (
-      <div className="flex items-center hover:bg-gray-200 dark:hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-black dark:hover:text-white active:text-black dark:active:text-white active:scale-95">
+      <div className="flex items-center hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-black dark:hover:text-white justify-center px-2 h-10 rounded-xl transition  active:scale-95">
         <button className="flex gap-1 transition">
           <MessageCircle size={18} />
           {post.stats.comments > 0 && (
@@ -48,7 +48,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
     <>
       <div
         onClick={() => setOpen(true)}
-        className="flex items-center hover:bg-gray-200 dark:hover:bg-neutral-500 justify-center px-2 h-10 rounded-xl transition hover:text-black dark:hover:text-white active:text-black dark:active:text-white active:scale-95"
+        className="flex items-center  justify-center px-2 h-10 rounded-xl transition hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-black dark:hover:text-white  active:scale-95"
       >
         <button className="flex gap-1 transition">
           <MessageCircle size={18} />
@@ -146,7 +146,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+        <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t animate-spin" />
       </div>
     );
   }
@@ -396,10 +396,10 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
           <button
             type="submit"
             disabled={isDisabled}
-            className={`px-3 py-1 h-10 rounded ${
+            className={`px-3 py-1 h-10 rounded bg-blue-400 text-white dark:bg-white dark:text-black ${
               isDisabled
-                ? "bg-neutral-700 text-gray-400 cursor-not-allowed"
-                : "bg-white text-black hover:bg-neutral-300 active:scale-90 transition cursor-pointer"
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-blue-500 dark:hover:bg-neutral-300 active:scale-90 transition-all"
             }`}
           >
             <SendHorizonal />

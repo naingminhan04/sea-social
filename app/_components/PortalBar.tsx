@@ -1,9 +1,9 @@
 "use client";
 const PortalBar = () => {
   return (
-    <main className=" hidden md:block md:w-2/5 sticky mt-2 lg:mt-0 top-0 right-0 bottom-0  overflow-scroll overscroll-none scrollbar-none h-[calc(100dvh-64px)] lg:h-dvh">
-      <div className="h-15 w-full flex items-center sticky top-0 bg-white dark:bg-black"></div>
-      <div className="bg-gray-100 dark:bg-neutral-900">
+    <main className=" hidden md:block md:w-2/5 sticky mt-2 lg:mt-0 top-0 right-0 bottom-0 overflow-scroll overscroll-none scrollbar-none lg:h-dvh h-[calc(100dvh-64px)]">
+      <div className="h-15 w-full flex items-center sticky top-0 bg-blue-400 dark:bg-black"></div>
+      <div className="bg-white dark:bg-neutral-900">
         Lorem ipsum, dolor sit amet consectetur adipisicing elit. Eum laborum
         iure tenetur molestiae modi illum veritatis facilis aperiam possimus
         maxime perferendis nisi aut reiciendis, voluptates rem ducimus tempora

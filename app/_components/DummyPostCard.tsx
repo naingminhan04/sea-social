@@ -48,9 +48,9 @@ const DummyPostCard = ({
           <div className="w-6 h-4 bg-gray-300 dark:bg-neutral-700 rounded-md" />
         </div>
         <div className="flex">
-          <div className="w-4 h-4 bg-neutral-700 rounded-full" />
-          <div className="w-4 h-4 bg-neutral-700 rounded-full" />
-          <div className="w-4 h-4 bg-neutral-700 rounded-full" />
+          <div className="w-4 h-4 bg-gray-300 dark:bg-neutral-700 rounded-full" />
+          <div className="w-4 h-4 bg-gray-300 dark:bg-neutral-700 rounded-full" />
+          <div className="w-4 h-4 bg-gray-300 dark:bg-neutral-700 rounded-full" />
         </div>
       </div>
     </div>

@@ -33,8 +33,8 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
 
   return (
     <div
-      className={`group bg-neutral-100 dark:bg-neutral-900 relative rounded-xl transition-all 
-      ${!view && "hover:bg-gray-200 dark:hover:bg-neutral-800"} 
+      className={`group bg-white dark:bg-neutral-900 border-2 border-white dark:border-black relative rounded-xl transition-all 
+      ${!view && "hover:bg-blue-100 dark:hover:bg-neutral-800"} 
       ${isDel && "opacity-50 pointer-events-none"}`}
     >
       {!view && (
@@ -47,7 +47,7 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
       )}
 
       <div className="relative pointer-events-none">
-        <div className="p-3 pb-0 space-y-4">
+        <div className="p-3 space-y-4">
           <div className="flex items-center gap-3 w-full">
             <div className="pointer-events-auto flex items-center gap-3">
               <Image
@@ -134,12 +134,12 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
           )}
         </div>
 
-        <div className="flex items-center justify-between text-sm p-1 text-gray-500 dark:text-gray-400">
+        <div className="flex items-center justify-between text-sm p-1 border-t-2 border-gray-100 dark:border-gray-950 text-gray-500 dark:text-gray-400">
           <div className="flex items-center pointer-events-auto">
             <ReactionBtn post={post} />
             <CommentBtn post={post} view={view} />
 
-            <div onClick={()=>{navigator.clipboard.writeText(`https://stareducationacademy.netlify.app/post/${post.id}`); toast.success("Link copied to clipboard",{id: `share-${post.id}`,duration: 1000});}} className="flex items-center gap-1 cursor-pointer px-2 h-10 hover:bg-gray-200 dark:hover:bg-neutral-500 rounded-xl justify-center active:scale-95 hover:text-black dark:hover:text-white">
+            <div onClick={()=>{navigator.clipboard.writeText(`https://stareducationacademy.netlify.app/post/${post.id}`); toast.success("Link copied to clipboard",{id: `share-${post.id}`,duration: 1000});}} className="flex items-center gap-1 cursor-pointer px-2 h-10 hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-neutral-900 dark:hover:text-neutral-100 rounded-xl justify-center active:scale-95 ">
               <Share2 size={18} />
               {post.stats.sharedCount > 0 && (
                 <span>{formatCount(post.stats.sharedCount)}</span>

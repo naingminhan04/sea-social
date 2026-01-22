@@ -163,7 +163,7 @@ export default function AddPostBtn({
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-white dark:bg-neutral-900 flex justify-center items-start p-4 overflow-auto z-70">
+        <div className="fixed inset-0 bg-neutral-50 dark:bg-neutral-950 flex justify-center items-start p-4 overflow-auto z-70">
           <div className="w-full max-w-2xl my-auto">
             <form
               className="w-full flex flex-col gap-4"
@@ -173,14 +173,14 @@ export default function AddPostBtn({
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-300 hover:bg-gray-100 dark:hover:bg-gray-400 active:scale-95 w-20 h-10 flex justify-center items-center text-white dark:text-black font-bold transition-all"
+                  className="px-4 py-2 rounded-xl bg-neutral-950 dark:bg-gray-300 hover:bg-neutral-700 dark:hover:bg-gray-400 active:scale-95 w-20 h-10 flex justify-center items-center text-white dark:text-black font-bold transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isPostDisabled}
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-all"
+                  className="px-4 py-2 rounded-xl bg-blue-500 hover:bg-blue-600 dark:bg-blue-500 dark:hover:bg-blue-600 active:scale-95 w-20 h-10 flex justify-center items-center text-white font-bold disabled:opacity-50 transition-all"
                 >
                   {isLoading ? (
                     <span className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin" />
@@ -207,11 +207,11 @@ export default function AddPostBtn({
                 </div>
               </div>
 
-              <div className="relative h-50">
+              <div className="relative h-50 ">
                 <textarea
                   placeholder="What's on your mind?"
                   maxLength={500}
-                  className="w-full p-4 rounded-md scrollbar-none bg-white dark:bg-black text-black dark:text-white resize-none h-full outline-0 border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-white focus:border-2 transition-colors"
+                  className="w-full p-4 rounded-md scrollbar-none resize-none h-full outline-0 border bg-white dark:bg-black border-gray-400 dark:border-neutral-600 focus:border-black dark:focus:border-white focus:border-2 transition-all"
                   {...register("content")}
                   disabled={isLoading}
                 />
@@ -238,7 +238,7 @@ export default function AddPostBtn({
                       <button
                         type="button"
                         onClick={() => removeFile(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 active:scale-85 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-100 transition-all disabled:opacity-50"
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 active:scale-85 rounded-full text-white w-6 h-6 flex items-center justify-center opacity-100 transition-all disabled:opacity-50"
                         disabled={isLoading}
                         aria-label={`Remove image ${index + 1}`}
                       >
@@ -249,7 +249,7 @@ export default function AddPostBtn({
 
                   {selectedFiles.length < MAX_IMAGES && (
                     <label
-                      className={`w-full aspect-square border-2 border-dashed border-neutral-600 hover:border-neutral-400 flex justify-center items-center cursor-pointer rounded-lg transition-colors ${
+                      className={`w-full aspect-square border-2 border-dashed border-neutral-400 hover:border-neutral-800 active:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-400 dark:active:border-neutral-600 flex justify-center items-center cursor-pointer rounded-lg transition-colors ${
                         isLoading ? "opacity-50 cursor-not-allowed" : ""
                       }`}
                     >
@@ -267,7 +267,7 @@ export default function AddPostBtn({
                 </div>
               ) : (
                 <label
-                  className={`w-full border-2 border-dashed border-neutral-600 hover:border-neutral-400 active:border-neutral-600 rounded-lg p-8 flex flex-col justify-center items-center cursor-pointer transition-colors ${
+                  className={`w-full border-2 border-dashed border-neutral-400 hover:border-neutral-800 active:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-400 dark:active:border-neutral-600 rounded-lg p-8 flex flex-col justify-center items-center cursor-pointer transition-colors ${
                     isLoading ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 >

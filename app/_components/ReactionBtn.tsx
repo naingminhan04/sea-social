@@ -229,7 +229,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       {reactionState ? (
         <button
           onClick={() => removeMutation.mutate(post.id)}
-          className="flex items-center justify-center px-2 h-10 gap-1 hover:bg-gray-200 dark:hover:bg-neutral-500 active:bg-gray-200 dark:active:bg-neutral-500 rounded-xl hover:text-black dark:hover:text-white active:scale-95 transition"
+          className="flex items-center justify-center px-2 h-10 gap-1 rounded-xl hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-neutral-900 dark:hover:text-neutral-100 active:scale-95 transition-all"
         >
             <Image
             src={reactionImageMap[reactionState]}
@@ -246,7 +246,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       ) : (
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center px-3 h-10 justify-center gap-1 hover:bg-gray-200 dark:hover:bg-neutral-500 active:bg-gray-200 dark:active:bg-neutral-500 rounded-xl hover:text-black dark:hover:text-white active:scale-95 transition"
+          className="flex items-center px-3 h-10 justify-center gap-1 hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-neutral-900 dark:hover:text-neutral-100 rounded-xl  active:scale-95 transition"
         >
           <ThumbsUp size={18} />
           {post.stats.reactions.total > 0 && (

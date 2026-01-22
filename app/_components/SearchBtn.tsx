@@ -90,7 +90,8 @@ const SearchBtn = () => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="p-2 rounded hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600"
+        className="rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600
+         active:scale-90 flex justify-center items-center transition-all"
       >
         <Search />
       </button>
@@ -99,7 +100,7 @@ const SearchBtn = () => {
         <div className="fixed inset-0 backdrop-blur-sm bg-black/40 flex justify-center items-start p-4 z-50">
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-neutral-900 w-full max-w-md p-4 rounded-md"
+            className="bg-neutral-100 dark:bg-neutral-900 w-full max-w-md p-4 rounded-md"
           >
             <form
               onSubmit={handleSubmit(onSubmit)}
@@ -109,12 +110,12 @@ const SearchBtn = () => {
                 type="text"
                 autoFocus
                 placeholder="Search users"
-                className="flex-1 p-2 rounded w-full h-10 bg-white dark:bg-black text-black dark:text-white border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-white"
+                className="flex-1 p-2 rounded w-full h-10 bg-white dark:bg-black border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-white"
                 {...register("keyword")}
               />
               <button
                 type="submit"
-                className=" px-4 h-10 bg-gray-300 dark:bg-neutral-700 hover:bg-gray-400 dark:hover:bg-neutral-600 active:bg-gray-500 dark:active:bg-neutral-500 active:scale-90 transition-all rounded text-white dark:text-white"
+                className=" px-4 h-10 bg-blue-300 dark:bg-neutral-700 hover:bg-blue-400 dark:hover:bg-neutral-600 active:bg-blue-400 dark:active:bg-neutral-600 active:scale-90 transition-all rounded"
               >
                 <Search />
               </button>
@@ -126,7 +127,7 @@ const SearchBtn = () => {
             >
               {!hasSearched ? null : isLoading ? (
                 <div className="flex justify-center items-center h-30 mt-3">
-                  <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white animate-spin" />
+                  <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t animate-spin" />
                 </div>
               ) : error ? (
                 <p className="text-red-600 dark:text-red-500 mt-3">{(error as Error).message}</p>
@@ -164,7 +165,7 @@ const SearchBtn = () => {
 
             <button
               onClick={handleClose}
-              className="mt-4 w-full py-2 bg-neutral-700 hover:bg-neutral-600 active:bg-neutral-500 rounded text-white"
+              className="mt-4 w-full py-2 bg-blue-300 dark:bg-neutral-700 hover:bg-blue-400 dark:hover:bg-neutral-600 active:bg-blue-400 dark:active:bg-neutral-600 rounded"
             >
               Close
             </button>
