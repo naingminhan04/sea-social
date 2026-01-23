@@ -56,7 +56,7 @@ const PostReel = () => {
           fetchNextPage();
         }
       },
-      { root: null, rootMargin: "5000px" }
+      { root: null, rootMargin: "5000px" },
     );
 
     observer.observe(loadMoreRef.current);
@@ -76,17 +76,21 @@ const PostReel = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center w-full h-[calc(100dvh-60px)] lg:h-dvh bg-white dark:bg-neutral-900 gap-4 p-2">
-        <div className="text-center text-red-600 dark:text-red-400">
-          <p className="text-lg font-semibold mb-2">Failed to load posts</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400">{error.message}</p>
+      <div className=" w-full h-[calc(100dvh-60px)] lg:h-dvh  p-2">
+        <div className="bg-white dark:bg-neutral-900 flex flex-col justify-center items-center gap-4 w-full h-full">
+          <div className="text-center text-red-600 dark:text-red-400">
+            <p className="text-lg font-semibold mb-2">Failed to load posts</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {error.message}
+            </p>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-blue-400 dark:bg-black active:scale-95 rounded-lg"
+          >
+            Try Again
+          </button>
         </div>
-        <button
-          onClick={() => refetch()}
-          className="px-4 py-2 bg-gray-200 dark:bg-black text-white dark:text-white rounded-lg"
-        >
-          Try Again
-        </button>
       </div>
     );
   }
@@ -114,7 +118,13 @@ const PostReel = () => {
             </div>
           ) : (
             <div className="flex w-full justify-between items-center p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
-              <span>You have reached the end</span> <button onClick={handleRefresh} className="bg-blue-400 dark:bg-white active:scale-98 transition-all text-neutral-50 dark:text-black rounded-md p-2">Refresh the feed</button>
+              <span>You have reached the end</span>{" "}
+              <button
+                onClick={handleRefresh}
+                className="bg-blue-400 dark:bg-white active:scale-98 transition-all text-neutral-50 dark:text-black rounded-md p-2"
+              >
+                Refresh the feed
+              </button>
             </div>
           )}
         </>

@@ -6,14 +6,19 @@ import { Toaster } from "react-hot-toast";
 import NextTopLoader from "nextjs-toploader";
 import BackendActivator from "./BackendActivator";
 import Refresher from "./Refresher";
-import { ThemeProvider } from "./ThemeProvider";
+import { ThemeProvider } from "next-themes";
 
 export function Provider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="system"
+        enableSystem
+        disableTransitionOnChange={false}
+      >
         <NextTopLoader color="white" height={2} showSpinner={false} />
         <Refresher />
         <BackendActivator />

@@ -1,6 +1,6 @@
 "use server";
 
-import { setCookies, setVerifyCookies } from "./cookies";
+import { setAuthCookies, setVerifyCookies } from "./cookies";
 import api from "@/libs/axios";
 import axios from "axios";
 import { LoginInput } from "@/types/auth";
@@ -13,7 +13,7 @@ export default async function loginAction(input: LoginInput): Promise<ActionResp
 
     if (data.access_token) {
       const token = data.access_token;
-      await setCookies(token);
+      await setAuthCookies(token);
       return {
         success: true,
         data: {

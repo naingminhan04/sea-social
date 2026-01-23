@@ -90,8 +90,7 @@ const SearchBtn = () => {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600
-         active:scale-90 flex justify-center items-center transition-all"
+        className="rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600 active:scale-90 flex justify-center items-center transition-all"
       >
         <Search />
       </button>

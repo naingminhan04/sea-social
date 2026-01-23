@@ -16,8 +16,10 @@ const MenuBtn = () => {
     <div className="flex lg:hidden">
       <button
         onClick={() => setMenu(!menu)}
-        className="rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600
-         active:scale-90 flex justify-center items-center transition-all"
+        className={
+          "rounded-md p-2 hover:bg-gray-200 dark:hover:bg-gray-700 active:bg-gray-300 dark:active:bg-gray-600 " +
+          "active:scale-90 flex justify-center items-center transition-all"
+        }
       >
         {menu ? <X /> : <Menu />}
       </button>
@@ -37,11 +39,9 @@ const MenuBtn = () => {
                 return (
                   <Link
                     key={item.name}
-                    className={`p-4 transition-all active:bg-gray-200 ${
-                      isActive
-                        ? "bg-gray-300 dark:bg-neutral-800 text-black dark:text-white"
-                        : "hover:bg-gray-200 dark:hover:bg-neutral-900 active:bg-gray-300 dark:active:bg-neutral-800"
-                    }`}
+                    className={`p-4 transition-all active:bg-gray-200 ${isActive
+                    ? "bg-gray-300 dark:bg-neutral-800 text-black dark:text-white"
+                    : "hover:bg-gray-200 dark:hover:bg-neutral-900 active:bg-gray-300 dark:active:bg-neutral-800"}`}
                     href={item.href}
                   >
                     {item.name}
@@ -51,7 +51,6 @@ const MenuBtn = () => {
               <li className="hover:bg-red-200 dark:hover:bg-red-700 active:bg-red-400 p-4">
                 <LogOutBtn />
               </li>
-                
             </ul>
             <div className="mt-auto flex justify-center bg-blue-100 dark:bg-neutral-800 p-2">
               <ThemeToggle />

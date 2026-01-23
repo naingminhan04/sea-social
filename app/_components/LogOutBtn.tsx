@@ -1,6 +1,6 @@
 'use client'
 
-import { clearCookies } from "../_actions/cookies";
+import { clearAuthCookies } from "../_actions/cookies";
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "nextjs-toploader/app";
 
@@ -9,7 +9,7 @@ export default function LogOutBtn() {
   const router = useRouter();
 
   const handleLogOut = async() => {
-    await clearCookies();
+    await clearAuthCookies();
     clearUser();
     router.replace("/");
   };

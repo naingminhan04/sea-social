@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 
-export async function setCookies(token: string) {
+export async function setAuthCookies(token: string) {
   const cookie = await cookies();
   cookie.set("access_token", token, {
     httpOnly: true,
@@ -13,7 +13,7 @@ export async function setCookies(token: string) {
   });
 }
 
-export async function clearCookies() {
+export async function clearAuthCookies() {
   const cookie = await cookies();
   cookie.delete("access_token");
 }
