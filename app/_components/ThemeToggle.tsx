@@ -24,7 +24,7 @@ export function ThemeToggle() {
       {mounted && (
         <div
           className={
-            `absolute top-1 left-1 w-10 h-8 rounded-full bg-blue-400 dark:bg-black shadow transition-transform duration-300 ease-out ${positions[theme as keyof typeof positions]}`
+            `absolute top-1 left-1 w-10 h-8 rounded-full bg-blue-400 dark:bg-black shadow  transition-transform! duration-300! ease-out ${positions[theme as keyof typeof positions]}`
           }
         />
       )}

@@ -5,9 +5,9 @@ import api from "@/libs/axios";
 import axios from "axios";
 import { LoginInput } from "@/types/auth";
 import { ActionResponse } from "@/types/action";
-import { LoginSuccessData } from "@/types/user";
+import { LoginSuccessResponse } from "@/types/auth";
 
-export default async function loginAction(input: LoginInput): Promise<ActionResponse<LoginSuccessData>> {
+export default async function loginAction(input: LoginInput): Promise<ActionResponse<LoginSuccessResponse>> {
   try {
     const { data } = await api.post("/auth/login", input);
 

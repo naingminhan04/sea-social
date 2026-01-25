@@ -2,7 +2,7 @@ import PostReel from "../../_components/PostReel";
 import AddPostBtn from "@/app/_components/AddPostForm";
 const HomePage = () => {
   return (
-    <main>
+    <main className="p-2">
       <PostReel />
       <AddPostBtn state={"reel"} />
     </main>

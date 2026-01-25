@@ -2,11 +2,11 @@ import { NextResponse, NextRequest } from "next/server";
 import { cookies } from "next/headers";
 
 export default async function proxy(req: NextRequest) {
-  const protectedRoutes = ["/home","/chatroom","/chat","/profile"];
+  const protectedRoutes = ["/home","/chatroom","/chat","/user","/post"];
   const guestRoutes = ["/", "/signup"];
   const verifyRoute = ["/verify"];
   const path = req.nextUrl.pathname;
-  const isProtectedRoute = protectedRoutes.includes(path);
+  const isProtectedRoute = protectedRoutes.some(route => path.startsWith(route));
   const isGuestRoute = guestRoutes.includes(path);
   const isVerifyRoute = verifyRoute.includes(path);
   const cookie = (await cookies()).get("access_token")?.value;

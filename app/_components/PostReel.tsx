@@ -10,7 +10,7 @@ import toast from "react-hot-toast";
 
 const LIMIT = 10;
 
-const PostReel = () => {
+const PostReel = ( {userId}: {userId?: string} ) => {
   const {
     data,
     isLoading,
@@ -20,9 +20,9 @@ const PostReel = () => {
     isFetchingNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ["posts"],
+    queryKey: ["posts", userId ?? "all"],
     queryFn: async ({ pageParam = 1 }) => {
-      const result = await getAllPostAction(pageParam, LIMIT);
+      const result = await getAllPostAction(pageParam, LIMIT, userId);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -38,11 +38,13 @@ const PostReel = () => {
   const handleRefresh = async () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    toast.promise(refetch(), {
+    if(!userId) {
+      toast.promise(refetch(), {
       loading: "Refreshing the feed",
       success: "Feed updated!",
       error: "Error refreshing feed",
     });
+    }
   };
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -66,7 +68,7 @@ const PostReel = () => {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-60px)] p-2 overflow-hidden">
+      <div className="flex flex-col w-full gap-2 lg:h-dvh h-[calc(100dvh-60px)] overflow-hidden">
         {Array.from({ length: 5 }).map((_, i) => (
           <DummyPostCard key={i} text={2 + (i % 3)} image={3 + (i % 4)} />
         ))}
@@ -76,7 +78,7 @@ const PostReel = () => {
 
   if (error) {
     return (
-      <div className=" w-full h-[calc(100dvh-60px)] lg:h-dvh  p-2">
+      <div className=" w-full h-[calc(100dvh-60px)] lg:h-dvh">
         <div className="bg-white dark:bg-neutral-900 flex flex-col justify-center items-center gap-4 w-full h-full">
           <div className="text-center text-red-600 dark:text-red-400">
             <p className="text-lg font-semibold mb-2">Failed to load posts</p>
@@ -98,7 +100,7 @@ const PostReel = () => {
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
-    <div className="flex flex-col w-full gap-2 overscroll-none p-2">
+    <div className="flex flex-col w-full gap-2 overscroll-none">
       {posts.length === 0 && !isLoading ? (
         <div className="flex flex-col justify-center items-center w-full h-full p-4">
           <p className="text-gray-500 dark:text-gray-400">No posts yet</p>
@@ -123,7 +125,7 @@ const PostReel = () => {
                 onClick={handleRefresh}
                 className="bg-blue-400 dark:bg-white active:scale-98 transition-all text-neutral-50 dark:text-black rounded-md p-2"
               >
-                Refresh the feed
+                {userId ? "Scroll to top" : "Refresh the feed"}
               </button>
             </div>
           )}

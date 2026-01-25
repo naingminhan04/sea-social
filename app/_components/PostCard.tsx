@@ -33,13 +33,13 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
 
   return (
     <div
-      className={`group bg-white dark:bg-neutral-900 border-2 border-white dark:border-black relative rounded-xl transition-all 
+      className={`group bg-white dark:bg-neutral-900 border-2 border-white dark:border-neutral-900 relative rounded-xl transition-all 
       ${!view && "hover:bg-blue-100 dark:hover:bg-neutral-800"} 
       ${isDel && "opacity-50 pointer-events-none"}`}
     >
       {!view && (
         <Link
-          href={`post/${post.id}`}
+          href={`/post/${post.id}`}
           prefetch={true}
           className="absolute inset-0 rounded-xl"
           aria-label="View post"

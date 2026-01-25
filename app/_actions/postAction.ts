@@ -9,12 +9,13 @@ import { PostsResponseType } from "@/types/post";
 import { ActionResponse } from "@/types/action";
 import {APIError} from "@/types/error";
 
-export async function getAllPostAction(nextPage: number = 1, limit: number = 10): Promise<ActionResponse<PostsResponseType>> {
+export async function getAllPostAction(nextPage: number = 1, limit: number = 10, userId?: string): Promise<ActionResponse<PostsResponseType>> {
     try {
         const res = await api.get<PostsResponseType>("/posts", {
             params: {
                 page: nextPage,
                 size: limit,
+                userId: userId,
             }
         });
         

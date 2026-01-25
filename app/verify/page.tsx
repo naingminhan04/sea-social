@@ -3,16 +3,8 @@
 import { useAuthStore } from "@/store/auth";
 import { useRouter } from "nextjs-toploader/app";
 import { useState, useEffect } from "react";
-import { AxiosError } from "axios";
-import api from "@/libs/axios";
 import { useMutation } from "@tanstack/react-query";
-import { setVerifyCookies, setAuthCookies, clearVerifyCookies } from "../_actions/cookies";
-
-interface Error {
-  message : string,
-  error : string,
-  statusCode : string,
-}
+import verifyAction from "../_actions/verify";
 
 const Verify = () => {
   const router = useRouter();
@@ -38,24 +30,18 @@ const Verify = () => {
 
   const verifyMutation = useMutation({
     mutationFn: async (verificationCode: string) => {
-      const res = await api.post("/auth/verify", {
-        email: user?.email,
-        verificationCode,
-      });
-      return res.data;
+      if (!user?.email) throw new Error("Missing email");
+      const result = await verifyAction(user.email, verificationCode);
+      if (!result.success) throw new Error(result.error);
+      return result.data;
     },
     onSuccess: (data) => {
-      clearVerifyCookies();
-      setAuthCookies(data.access_token);
       setUser(data.user);
       setCode(null);
       router.replace("/home");
     },
-    onError: (error: AxiosError<Error>) => {
-      const message =
-        error.response?.data?.message ||
-        "Verification failed. Please try again.";
-      setError(message);
+    onError: (err: Error) => {
+      setError(err.message);
     },
   });
 
@@ -63,18 +49,6 @@ const Verify = () => {
     if (otp.length !== 6) return;
     verifyMutation.mutate(otp);
   };
-
-  const resendCode = useMutation({
-    mutationFn: async (email: string) => {
-      const res = await api.post(`/auth/resend-code/${email}`);
-      return res.data;
-    },
-    onSuccess: (data) => {
-      setVerifyCookies();
-      setResendCooldown(60);
-      setCode(data.verificationCodeForTesting);
-    },
-  });
 
   if (!user || user.isVerified) return null;
 
@@ -98,27 +72,20 @@ const Verify = () => {
         />
 
         {verifyMutation.isError && (
-          <p className="text-xs text-red-600 dark:text-red-500 text-center">{error}</p>
+          <p className="text-xs text-red-600 dark:text-red-500 text-center">
+            {error}
+          </p>
         )}
 
         <button
           onClick={verifyHandler}
           disabled={verifyMutation.isPending || otp.length !== 6}
-          className="p-2 w-full font-bold bg-gray-200 dark:bg-neutral-200 disabled:opacity-50 disabled:hover:bg-gray-200 dark:disabled:hover:bg-neutral-200 hover:bg-gray-100 dark:hover:bg-neutral-50  text-white dark:text-black cursor-pointer"
+          className="p-2 w-full font-bold bg-black dark:bg-neutral-50 disabled:opacity-50 text-white dark:text-black cursor-pointer"
         >
           {verifyMutation.isPending ? "Verifying..." : "Verify"}
         </button>
-
-        <button
-          className="p-2 w-full font-bold border border-gray-300 dark:border-neutral-700 cursor-pointer disabled:opacity-50 text-black dark:text-white"
-          disabled={resendCode.isPending || resendCooldown !== 0}
-          onClick={() => resendCode.mutate(user.email)}
-        >
-          {(resendCooldown && `Resend Code in ${resendCooldown}s`) ||
-            (resendCode.isPending && "Resending") ||
-            "Resend Code"}
-        </button>
       </div>
+
       <p className="absolute bottom-3 text-center text-sm">
         Verification Code will expire in 5 minutes.
       </p>

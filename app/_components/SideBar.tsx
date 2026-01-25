@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogOutBtn from "./LogOutBtn";
+import { useAuthStore } from "@/store/auth";
 
-export const MenuArr = [
+export const getMenuArr = (username:string) => [
   {
     name: "Home",
     href: "/home",
@@ -19,11 +20,14 @@ export const MenuArr = [
   },
   {
     name: "Profile",
-    href: "/profile",
+    href: `/user/${username}`,
   },
 ];
 const SideBar = () => {
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+  const username = user?.username;
+  const MenuArr = getMenuArr(username as string);
 
   return (
     <div className="hidden lg:block w-9/10">

@@ -5,7 +5,7 @@ import { ReactNode, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import NextTopLoader from "nextjs-toploader";
 import BackendActivator from "./BackendActivator";
-import Refresher from "./Refresher";
+import UserRefresher from "./Refresher";
 import { ThemeProvider } from "next-themes";
 
 export function Provider({ children }: { children: ReactNode }) {
@@ -17,10 +17,10 @@ export function Provider({ children }: { children: ReactNode }) {
         attribute="class"
         defaultTheme="system"
         enableSystem
-        disableTransitionOnChange={false}
+        disableTransitionOnChange={true}
       >
         <NextTopLoader color="white" height={2} showSpinner={false} />
-        <Refresher />
+        <UserRefresher />
         <BackendActivator />
         {children}
         <Toaster position="top-center" reverseOrder={false} />

@@ -1,10 +1,5 @@
 import { Metadata } from "./post";
 
-export type LoginSuccessData = {
-  user: UserType;
-  verificationCode?: string;
-};
-
 export interface UserResponseType {
   metadata: Metadata;
   users: UserType[];

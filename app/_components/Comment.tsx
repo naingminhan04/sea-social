@@ -146,7 +146,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t animate-spin" />
+        <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t-white animate-spin" />
       </div>
     );
   }
@@ -391,7 +391,7 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
           </div>
         )}
         {isSubmitting ? (
-          <span className="w-8 h-8 rounded-full border-2 border-white/30 border-t-white cursor-progress animate-spin" />
+          <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t-white cursor-progress animate-spin" />
         ) : (
           <button
             type="submit"

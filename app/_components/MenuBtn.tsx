@@ -5,12 +5,16 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import LogOutBtn from "./LogOutBtn";
-import { MenuArr } from "./SideBar";
+import { getMenuArr } from "./SideBar";
 import { ThemeToggle } from "./ThemeToggle";
+import { useAuthStore } from "@/store/auth";
 
 const MenuBtn = () => {
   const [menu, setMenu] = useState(false);
   const pathname = usePathname();
+  const user = useAuthStore((state) => state.user);
+  const username = user?.username;
+  const MenuArr = getMenuArr(username as string);
   
   return (
     <div className="flex lg:hidden">

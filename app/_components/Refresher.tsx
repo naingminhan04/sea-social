@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useAuthStore } from "@/store/auth";
 import { refreshAction } from "../_actions/refresh";
 
-const Refresher = () => {
+const UserRefresher = () => {
   const { user, setUser, logOut } = useAuthStore();
 
   useEffect(() => {
@@ -33,4 +33,4 @@ const Refresher = () => {
   return null;
 };
 
-export default Refresher;
+export default UserRefresher;
