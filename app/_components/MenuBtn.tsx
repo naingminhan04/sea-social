@@ -36,7 +36,7 @@ const MenuBtn = () => {
           <div className="absolute flex flex-col top-15 left-0 h-[calc(100dvh-60px)] w-70 z-20 bg-white dark:bg-neutral-900">
             <ul
               onClick={() => setMenu(!menu)}
-              className="cursor-pointer flex flex-col"
+              className="cursor-pointer overflow-scroll scrollbar-none overscroll-contain flex flex-col"
             >
               {MenuArr.map((item) => {
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");

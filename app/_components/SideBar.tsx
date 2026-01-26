@@ -20,7 +20,7 @@ export const getMenuArr = (username:string) => [
   },
   {
     name: "Profile",
-    href: `/user/${username}`,
+    href: `/users/${username}`,
   },
 ];
 const SideBar = () => {
@@ -30,7 +30,7 @@ const SideBar = () => {
   const MenuArr = getMenuArr(username as string);
 
   return (
-    <div className="hidden lg:block w-9/10">
+    <div className="hidden lg:block w-9/10 overflow-scroll scrollbar-none overscroll-contain">
       <ul className="cursor-pointer flex w-full flex-col">
         {MenuArr.map((item) => {
           const isActive =

@@ -50,20 +50,19 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
         <div className="p-3 space-y-4">
           <div className="flex items-center gap-3 w-full">
             <div className="pointer-events-auto flex items-center gap-3">
-              <Image
-                src={post.author.profilePic || "/default-avatar.png"}
-                alt={post.author.name}
-                width={100}
-                height={100}
-                className="w-12 h-12 rounded-full object-cover"
-              />
+              <Link href={`/users/${post.author.username}`}>
+                <Image
+                  src={post.author.profilePic || "/default-avatar.png"}
+                  alt={post.author.name}
+                  width={100}
+                  height={100}
+                  className="w-12 h-12 hover:brightness-85 active:brightness-85 transition-all bg-gray-300 rounded-full object-cover"
+                />
+              </Link>
               <div>
-                <p className="font-semibold flex gap-1 text-black dark:text-white">
-                  {post.author.name}
-                  {post.author.id === userId && (
-                    <span className="text-blue-500">(You)</span>
-                  )}
-                </p>
+                <Link href={`/users/${post.author.username}`} className="font-semibold flex gap-1">
+                  <span className="hover:text-gray-500 dark:hover:text-gray-300 active:text-gray-500 dark:active:text-gray-300 transition-all">{post.author.name}</span>
+                </Link>
                 <p className="text-xs flex gap-1 text-gray-500 dark:text-gray-400 self-center">
                   {relativeTime}
                   {post.isEdited && <span>[Edited]</span>}
@@ -83,7 +82,7 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
           {images.length > 0 && (
             <div
               className={`grid gap-1 pointer-events-auto ${getGridClass(
-                images.length
+                images.length,
               )} min-h-90 sm:min-h-150 md:min-h-90 rounded-2xl overflow-hidden`}
             >
               {displayImages.map((img, index) => (
@@ -103,7 +102,8 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
                     fill
                     alt="Post Image"
                     className={`object-cover transition-opacity duration-300 ${
-                      imageState[index] === "broken" && "bg-gray-400 dark:bg-neutral-500"
+                      imageState[index] === "broken" &&
+                      "bg-gray-400 dark:bg-neutral-500"
                     } ${
                       imageState[index] === "loading"
                         ? " bg-gray-300 dark:bg-neutral-400 animate-pulse"
@@ -139,7 +139,18 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
             <ReactionBtn post={post} />
             <CommentBtn post={post} view={view} />
 
-            <div onClick={()=>{navigator.clipboard.writeText(`https://stareducationacademy.netlify.app/post/${post.id}`); toast.success("Link copied to clipboard",{id: `share-${post.id}`,duration: 1000});}} className="flex items-center gap-1 cursor-pointer px-2 h-10 hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-neutral-900 dark:hover:text-neutral-100 rounded-xl justify-center active:scale-95 ">
+            <div
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `https://stareducationacademy.netlify.app/post/${post.id}`,
+                );
+                toast.success("Link copied to clipboard", {
+                  id: `share-${post.id}`,
+                  duration: 1000,
+                });
+              }}
+              className="flex items-center gap-1 cursor-pointer px-2 h-10 hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-neutral-900 dark:hover:text-neutral-100 rounded-xl justify-center active:scale-95 "
+            >
               <Share2 size={18} />
               {post.stats.sharedCount > 0 && (
                 <span>{formatCount(post.stats.sharedCount)}</span>

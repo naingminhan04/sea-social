@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
+import Link from "next/link";
 
 const LIMIT = 10;
 
@@ -134,19 +135,16 @@ const SearchBtn = () => {
                 <p className="text-gray-500 dark:text-gray-400 text-center mt-3">No users found</p>
               ) : (
                 users.map((user) => (
-                  <div
-                    key={user.id}
-                    className="flex items-center gap-2 p-2 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded"
-                  >
+                  <Link onClick={handleClose} key={user.id} className="flex items-center gap-2 p-2 hover:bg-blue-200 dark:hover:bg-neutral-800 rounded" href={`/users/${user.username}`}>
                     <Image
                       src={user.profilePic || "/default-avatar.png"}
                       alt=""
-                      className="w-8 h-8 rounded-full object-cover"
+                      className="w-8 h-8 bg-gray-300 dark:bg-neutral-400 rounded-full object-cover"
                       width={50}
                       height={50}
                     />
                     <span>{user.name}</span>
-                  </div>
+                  </Link>
                 ))
               )}
 

@@ -2,7 +2,7 @@
 
 import api from "@/libs/axios";
 import axios from "axios";
-import { UserResponseType, UserType } from "@/types/user";
+import { UserResponseType, UserType, UniqueUsernameResponseType} from "@/types/user";
 import { APIError } from "@/types/error";
 import { ActionResponse } from "@/types/action";
 import { ImageType } from "@/types/post";
@@ -55,6 +55,26 @@ export async function getUserByUsernameAction(username: string): Promise<ActionR
         if (axios.isAxiosError(error)) {
             const data = error.response?.data as APIError | undefined;
             message = data?.message || data?.error || "Failed to load user's profile";
+        }
+        
+        return { success: false, error: message };
+    }
+}
+
+export async function checkUniqueUsernameAction(username: string):Promise<ActionResponse<UniqueUsernameResponseType>> {
+    try {
+        const res = await api.get(`/users/username/unique`, {
+            params: {
+                username
+            }
+        });
+        return { success: true, data: res.data };
+    } catch (error) {
+        let message = "Unexpected error checking username";
+
+        if (axios.isAxiosError(error)) {
+            const data = error.response?.data as APIError | undefined;
+            message = data?.message || data?.error || "Failed to check username";
         }
         
         return { success: false, error: message };

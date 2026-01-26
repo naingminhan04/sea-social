@@ -1,8 +1,21 @@
 "use client";
 
-import { getUserAction } from "../_actions/user";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowBigLeft, ShieldCheck } from "lucide-react";
+import {
+  getUserAction,
+  checkUniqueUsernameAction,
+  updateUsernameAction,
+  updateCoverPicAction,
+} from "../_actions/user";
+import { uploadImageAction } from "../_actions/postAction";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowBigLeft,
+  ShieldCheck,
+  PencilLine,
+  X,
+  Camera,
+  Check,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -10,12 +23,18 @@ import { formatDate } from "@/utils/formatDate";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
 import PostReel from "./PostReel";
+import { useState } from "react";
 
 const Profile = ({ userId }: { userId: string }) => {
+  const queryClient = useQueryClient();
   const router = useRouter();
   const viewer = useAuthStore((state) => state.user);
   const viewerId = viewer?.id;
-  const viewerUsername = viewer?.username;
+  const [menu, setMenu] = useState(false);
+  const [editCover, setEditCover] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
   const {
     data: user,
@@ -47,27 +66,144 @@ const Profile = ({ userId }: { userId: string }) => {
       </div>
     );
 
+  const isOwner = viewerId === user?.id;
+
   return (
     <main className="bg-white relative text-sm sm:text-base dark:bg-neutral-900 lg:min-h-dvh min-h-[calc(100dvh-60px)]">
-      <div className="flex w-full sticky top-15 bg-white dark:bg-neutral-900 lg:top-0 z-10 items-center gap-1 h-12 lg:h-15 font-semibold">
-        <button
-          onClick={() => router.back()}
-          className="p-2 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-600"
-        >
-          <ArrowBigLeft fill="black" className="dark:fill-white" />{" "}
-        </button>
-        <span className="text-black dark:text-white">{`${user?.name}'s Profile`}</span>
+      <div className="flex w-full sticky top-15 bg-white dark:bg-neutral-900 lg:top-0 z-10 justify-between h-12 lg:h-15 font-semibold">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => router.back()}
+            className="p-2 rounded-sm hover:bg-gray-200 dark:hover:bg-gray-600"
+          >
+            <ArrowBigLeft fill="black" className="dark:fill-white" />{" "}
+          </button>
+          <span className="text-black dark:text-white">{`${user?.name}'s Profile`}</span>
+        </div>
+        {isOwner && (
+          <div className="flex justify-center items-center">
+            <button
+              className="p-2"
+              onClick={() => {
+                setMenu(!menu);
+              }}
+            >
+              {menu ? <X size={22} /> : <PencilLine size={22} />}
+            </button>
+            {menu && (
+              <div className="absolute backdrop-blur-sm flex flex-col w-full top-1/1 right-0">
+                <button className="h-12 w-20">Yes</button>
+                <button className="h-12 w-20">Yes</button>
+                <button className="h-12 w-20">Yes</button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className="relative mb-[10vw] md:mb-[6vw] lg:mb-[clamp(10px,5vw,60px)]">
-        <div className="w-full aspect-5/2 relative bg-gray-300 dark:bg-neutral-400">
-          {user?.coverPic ? (
+        <div className="w-full aspect-5/2 relative bg-gray-300">
+          {user?.coverPic && (
             <Image
-              src={user?.coverPic}
-              fill
-              alt="Cover Picture"
-              className="object-cover"
-            />
-          ) : null}
+            src={previewUrl ? previewUrl : user.coverPic}
+            fill
+            alt="Cover Picture"
+            className="object-cover"
+          />
+          )}
+          {isOwner &&
+            (editCover ? (
+              <div className="absolute right-2 bottom-2 flex gap-2">
+                <button
+                  className="backdrop-blur-sm p-2 bg-blue-400 dark:bg-neutral-900 hover:bg-blue-300 dark:hover:bg-black rounded-lg"
+                  onClick={async () => {
+                    if (!selectedFile) return;
+
+                    setIsPending(true);
+                    const toastId = toast.loading("Updating cover photo...");
+                    setEditCover(false);
+                    try {
+                      const uploadResult = await uploadImageAction([
+                        selectedFile,
+                      ]);
+                      if (!uploadResult.success) {
+                        throw new Error(uploadResult.error);
+                      }
+
+                      const uploadedImage = uploadResult.data[0];
+                      const imageData = {
+                        id: uploadedImage.fileId,
+                        path: uploadedImage.path,
+                        fullPath: uploadedImage.url,
+                      };
+
+                      const updateResult =
+                        await updateCoverPicAction(imageData);
+                      if (!updateResult.success) {
+                        throw new Error(updateResult.error);
+                      }
+
+                      await queryClient.invalidateQueries({
+                        queryKey: ["user", userId],
+                      });
+
+                      toast.success("Cover photo updated successfully!", {
+                        id: toastId,
+                      });
+
+                      setSelectedFile(null);
+                      if (previewUrl) {
+                        URL.revokeObjectURL(previewUrl);
+                        setPreviewUrl(null);
+                      }
+                    } catch (error) {
+                      toast.error(
+                        `Failed to update cover photo: ${error instanceof Error ? error.message : "Unknown error"}`,
+                        { id: toastId },
+                      );
+                    }
+                    setIsPending(false);
+                  }}
+                >
+                  <Check className="w-[6vw] md:w-[3.5vw] lg:w-[clamp(20px,3.5vw,30px)] h-[6vw] md:h-[3.5vw] lg:h-[clamp(20px,3.5vw,30px)]" />
+                </button>
+                <button
+                  className="backdrop-blur-sm p-2 bg-gray-400 dark:bg-neutral-600 hover:bg-gray-300 dark:hover:bg-neutral-700 rounded-lg"
+                  onClick={() => {
+                    setEditCover(false);
+                    setSelectedFile(null);
+                    if (previewUrl) {
+                      URL.revokeObjectURL(previewUrl);
+                      setPreviewUrl(null);
+                    }
+                  }}
+                >
+                  <X className="w-[6vw] md:w-[3.5vw] lg:w-[clamp(20px,3.5vw,30px)] h-[6vw] md:h-[3.5vw] lg:h-[clamp(20px,3.5vw,30px)]" />
+                </button>
+              </div>
+            ) : (
+              <label
+                htmlFor="coverPic"
+                className="absolute right-2 bottom-2 p-2 backdrop-blur-md bg-white/50 dark:bg-black/50 cursor-pointer rounded-lg"
+              >
+                <Camera className="w-[6vw] md:w-[3.5vw] lg:w-[clamp(20px,3.5vw,30px)] h-[6vw] md:h-[3.5vw] lg:h-[clamp(20px,3.5vw,30px)]" />
+                <input
+                  disabled={isPending}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setSelectedFile(file);
+                      const url = URL.createObjectURL(file);
+                      setPreviewUrl(url);
+                      setEditCover(true);
+                    }
+                  }}
+                  id="coverPic"
+                  className="hidden"
+                />
+              </label>
+            ))}
         </div>
         <div className="absolute w-3/14 -bottom-2/9 left-1/10">
           <Image
@@ -139,39 +275,39 @@ const Profile = ({ userId }: { userId: string }) => {
           ))}
         </div>
 
-        {(viewerId === userId || viewerUsername === userId) && (
-            <div className="grid grid-cols-2 gap-3">
-              {user?.email && (
-                <div className="rounded-lg border border-black/5 dark:border-white/10 p-3">
-                  <p className="text-xs text-gray-400">Email</p>
-                  <p className="text-sm break-all">{user.email}</p>
-                </div>
-              )}
+        {isOwner && (
+          <div className="grid grid-cols-2 gap-3">
+            {user?.email && (
+              <div className="rounded-lg border border-black/5 dark:border-white/10 p-3">
+                <p className="text-xs text-gray-400">Email</p>
+                <p className="text-sm break-all">{user.email}</p>
+              </div>
+            )}
 
-              {user?.phone && (
-                <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
-                  <p className="text-xs text-gray-400">Phone</p>
-                  <p className="text-sm">{user.phone}</p>
-                </div>
-              )}
+            {user?.phone && (
+              <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
+                <p className="text-xs text-gray-400">Phone</p>
+                <p className="text-sm">{user.phone}</p>
+              </div>
+            )}
 
-              {user?.createdAt && (
-                <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
-                  <p className="text-xs text-gray-400">Account Created At</p>
-                  <p className="text-sm">{formatDate(user.createdAt)}</p>
-                </div>
-              )}
-              {user?.updatedAt && (
-                <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
-                  <p className="text-xs text-gray-400">Account Updated At</p>
-                  <p className="text-sm">{formatDate(user.updatedAt)}</p>
-                </div>
-              )}
-            </div>
-          )}
+            {user?.createdAt && (
+              <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
+                <p className="text-xs text-gray-400">Account Created At</p>
+                <p className="text-sm">{formatDate(user.createdAt)}</p>
+              </div>
+            )}
+            {user?.updatedAt && (
+              <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
+                <p className="text-xs text-gray-400">Account Updated At</p>
+                <p className="text-sm">{formatDate(user.updatedAt)}</p>
+              </div>
+            )}
+          </div>
+        )}
       </section>
 
-      <section className="bg-neutral-100 dark:bg-neutral-950 p-2 md:px-0">
+      <section className="bg-neutral-100 dark:bg-neutral-950 md:-mx-2">
         <PostReel userId={user?.id} />
       </section>
     </main>

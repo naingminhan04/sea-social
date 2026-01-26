@@ -11,7 +11,6 @@ import {
   PostReactionType,
 } from "@/types/post";
 import { useAuthStore } from "@/store/auth";
-import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 
 type ReactionFilter = ReactionType | "ALL";
 
@@ -31,7 +30,7 @@ const REACTIONS: {
 const ViewReaction = ({ post }: { post: PostType }) => {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState<ReactionFilter>("ALL");
-  useLockBodyScroll(open);
+  
 
   const stats = post.stats.reactions;
 
@@ -62,11 +61,11 @@ const ViewReaction = ({ post }: { post: PostType }) => {
       {open && (
         <>
           <div
-            className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm"
+            className="fixed overscroll-contain overflow-hidden inset-0 z-60 bg-black/40 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           />
 
-          <div className="fixed md:max-w-xl mx-auto z-60 bottom-0 md:bottom-1/2 md:translate-y-1/2 md:rounded-xl right-0 left-0 w-full h-100 bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 p-5 flex flex-col">
+          <div className="fixed overscroll-contain overflow-hidden md:max-w-xl mx-auto z-60 bottom-0 md:bottom-1/2 md:translate-y-1/2 md:rounded-xl right-0 left-0 w-full h-100 bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100 p-5 flex flex-col">
             <div className="flex justify-between items-center pb-4 border-b border-gray-300 dark:border-neutral-800">
               <div>
                 <h1 className="font-semibold text-lg">Reactions</h1>
@@ -110,7 +109,7 @@ const ViewReaction = ({ post }: { post: PostType }) => {
               ))}
             </div>
 
-            <div className="flex-1 mt-2 overflow-y-scroll scrollbar-none">
+            <div className="flex-1 mt-2 overflow-y-scroll overscroll-contain scrollbar-none">
               <ReactionPage postId={post.id} reaction={active} />
             </div>
           </div>
@@ -170,9 +169,8 @@ const ReactionPage = ({
               <Image
                 src={r.user.profilePic ?? "/default-avatar.png"}
                 alt={r.user.name}
-                width={32}
-                height={32}
-                className="rounded-full"
+                fill
+                className="rounded-full object-cover bg-gray-300"
               />
               {r.reactionType && (
                 <span className="absolute -bottom-1 -right-1 w-4 h-4">
@@ -191,9 +189,6 @@ const ReactionPage = ({
 
             <span className="text-sm">
               {r.user.name}
-              {r.user.id === currentUserId && (
-                <span className="ml-1 text-xs text-blue-400">(You)</span>
-              )}
             </span>
           </div>
         ))

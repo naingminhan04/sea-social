@@ -34,3 +34,7 @@ enum AccountStatusType {
   INACTIVE = "INACTIVE",
 }
 
+export interface UniqueUsernameResponseType {
+  message: string;
+  isUnique: boolean;
+}

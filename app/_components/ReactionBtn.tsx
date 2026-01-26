@@ -38,7 +38,7 @@ const reactionImageMap: Record<ReactionType, string> = {
   LOVE: "/love.png",
 };
 
-const ReactionBtn = ({ post }: ReactionBtnProps) => {
+export default function ReactionBtn({ post }: ReactionBtnProps) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
 
@@ -49,40 +49,67 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
     ? post.reaction?.reactionType ?? null
     : null;
 
-  /* ================= OUTSIDE CLICK ================= */
+  /* ================= CLOSE ON OUTSIDE CLICK ================= */
   useEffect(() => {
     if (!open) return;
 
-    const handleClick = (e: MouseEvent) => {
+    const handler = (e: MouseEvent) => {
       if (
         btnRef.current?.contains(e.target as Node) ||
         panelRef.current?.contains(e.target as Node)
       )
         return;
-
       setOpen(false);
     };
 
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
   /* ================= CLOSE ON SCROLL ================= */
   useEffect(() => {
     if (!open) return;
-
     const close = () => setOpen(false);
-
     window.addEventListener("wheel", close, { passive: true });
     window.addEventListener("touchmove", close, { passive: true });
-
     return () => {
       window.removeEventListener("wheel", close);
       window.removeEventListener("touchmove", close);
     };
   }, [open]);
 
-  /* ================= ADD REACTION (OPTIMISTIC) ================= */
+  /* ================= HELPERS ================= */
+  const updateAllPostLists = (
+    postId: string,
+    updater: (p: PostType) => void
+  ) => {
+    queryClient.setQueriesData<{
+      pages: PostsResponseType[];
+    }>({ queryKey: ["posts"] }, (old) => {
+      if (!old?.pages) return old;
+      const next = structuredClone(old);
+      next.pages.forEach((page) =>
+        page.posts.forEach((p) => {
+          if (p.id === postId) updater(p);
+        })
+      );
+      return next;
+    });
+  };
+
+  const updateSinglePost = (
+    postId: string,
+    updater: (p: PostType) => void
+  ) => {
+    queryClient.setQueryData<PostType>(["post", postId], (old) => {
+      if (!old) return old;
+      const next = structuredClone(old);
+      updater(next);
+      return next;
+    });
+  };
+
+  /* ================= ADD REACTION ================= */
   const addMutation = useMutation({
     mutationFn: async ({
       postId,
@@ -97,25 +124,9 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
     },
 
     onMutate: async ({ postId, reaction }) => {
-      if (removeMutation.isPending) removeMutation.reset();
-
       await queryClient.cancelQueries({ queryKey: ["posts"] });
 
-      const previous = queryClient.getQueryData<{
-        pages: PostsResponseType[];
-      }>(["posts"]);
-
-      const previousPost = queryClient.getQueryData<PostType>([
-        "post",
-        postId,
-      ]);
-
-      const newData = previous ? structuredClone(previous) : previous;
-      const newPostData = previousPost
-        ? structuredClone(previousPost)
-        : previousPost;
-
-      const applyOptimistic = (p: PostType) => {
+      const apply = (p: PostType) => {
         const prev = p.reaction?.reactionType ?? null;
 
         if (prev) {
@@ -125,38 +136,32 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
           p.stats.reactions.total += 1;
         }
 
-        const newKey = reaction.toLowerCase() as keyof typeof p.stats.reactions;
-        p.stats.reactions[newKey] += 1;
+        const nextKey =
+          reaction.toLowerCase() as keyof typeof p.stats.reactions;
+        p.stats.reactions[nextKey] += 1;
 
         p.isReacted = true;
         p.reaction = { id: "optimistic", reactionType: reaction };
       };
 
-      newData?.pages.forEach((page) =>
-        page.posts.forEach((p) => p.id === postId && applyOptimistic(p))
-      );
-
-      if (newPostData) applyOptimistic(newPostData);
-
-      queryClient.setQueryData(["posts"], newData);
-      queryClient.setQueryData(["post", postId], newPostData);
-
-      return { previous };
+      updateAllPostLists(postId, apply);
+      updateSinglePost(postId, apply);
     },
 
-    onError: (e: Error, _v, ctx) => {
-      if (ctx?.previous)
-        queryClient.setQueryData(["posts"], ctx.previous);
+    onError: (e: Error) => {
       toast.error(e.message);
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
 
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["post", post.id] });
-      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["post-reactions", post.id],
+      });
     },
   });
 
-  /* ================= REMOVE REACTION (OPTIMISTIC) ================= */
+  /* ================= REMOVE REACTION ================= */
   const removeMutation = useMutation({
     mutationFn: async (postId: string) => {
       const result = await removeReactionAction(postId);
@@ -165,73 +170,50 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
     },
 
     onMutate: async (postId) => {
-      if (addMutation.isPending) addMutation.reset();
-
       await queryClient.cancelQueries({ queryKey: ["posts"] });
 
-      const previous = queryClient.getQueryData<{
-        pages: PostsResponseType[];
-      }>(["posts"]);
-
-      const previousPost = queryClient.getQueryData<PostType>([
-        "post",
-        postId,
-      ]);
-
-      const newData = previous ? structuredClone(previous) : previous;
-      const newPostData = previousPost
-        ? structuredClone(previousPost)
-        : previousPost;
-
-      const applyOptimistic = (p: PostType) => {
+      const apply = (p: PostType) => {
         if (!p.reaction) return;
 
-        const key = p.reaction.reactionType.toLowerCase() as keyof typeof p.stats.reactions;
+        const key =
+          p.reaction.reactionType.toLowerCase() as keyof typeof p.stats.reactions;
+
         p.stats.reactions[key] = Math.max(0, p.stats.reactions[key] - 1);
-        p.stats.reactions.total = Math.max(0, p.stats.reactions.total - 1);
+        p.stats.reactions.total = Math.max(
+          0,
+          p.stats.reactions.total - 1
+        );
 
         p.isReacted = false;
         p.reaction = null;
       };
 
-      newData?.pages.forEach((page) =>
-        page.posts.forEach((p) => p.id === postId && applyOptimistic(p))
-      );
-
-      if (newPostData) applyOptimistic(newPostData);
-
-      queryClient.setQueryData(["posts"], newData);
-      queryClient.setQueryData(["post", postId], newPostData);
-
-      return { previous };
+      updateAllPostLists(postId, apply);
+      updateSinglePost(postId, apply);
     },
 
-    onError: (e: Error, _v, ctx) => {
-      if (ctx?.previous)
-        queryClient.setQueryData(["posts"], ctx.previous);
+    onError: (e: Error) => {
       toast.error(e.message);
+      queryClient.invalidateQueries({ queryKey: ["posts"] });
     },
 
     onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["post", post.id] });
-      queryClient.invalidateQueries({ queryKey: ["post-reactions", post.id] });
+      queryClient.invalidateQueries({
+        queryKey: ["post-reactions", post.id],
+      });
     },
   });
 
-  const handleReaction = (reaction: ReactionType) => {
-    setOpen(false);
-    addMutation.mutate({ postId: post.id, reaction });
-  };
-
+  /* ================= UI ================= */
   return (
     <div ref={btnRef} className="relative flex items-center rounded-xl">
-      {/* MAIN BUTTON */}
       {reactionState ? (
         <button
           onClick={() => removeMutation.mutate(post.id)}
-          className="flex items-center justify-center px-2 h-10 gap-1 rounded-xl hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-neutral-900 dark:hover:text-neutral-100 active:scale-95 transition-all"
+          className="flex items-center justify-center px-2 h-10 gap-1 rounded-xl hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500 dark:active:bg-neutral-500 active:scale-95 transition-all"
         >
-            <Image
+          <Image
             src={reactionImageMap[reactionState]}
             alt={reactionState}
             width={18}
@@ -246,7 +228,7 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       ) : (
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center px-3 h-10 justify-center gap-1 hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-neutral-900 dark:hover:text-neutral-100 rounded-xl  active:scale-95 transition"
+          className="flex items-center px-3 h-10 gap-1 hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500 dark:active:bg-neutral-500 rounded-xl active:scale-95 transition"
         >
           <ThumbsUp size={18} />
           {post.stats.reactions.total > 0 && (
@@ -257,28 +239,19 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
         </button>
       )}
 
-      {/* INLINE REACTION PANEL */}
       {open && (
         <div
           ref={panelRef}
-          className="
-            absolute bottom-full left-0 mb-2 z-40
-            flex gap-1 px-2 py-2
-            bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700
-            rounded-2xl shadow-xl
-            animate-in fade-in zoom-in-95 duration-150
-          "
+          className="absolute bottom-full left-0 mb-2 z-40 flex gap-1 px-2 py-2 bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-700 rounded-2xl shadow-xl animate-in fade-in zoom-in-95 duration-150"
         >
           {Object.values(ReactionType).map((reaction) => (
             <button
               key={reaction}
-              onClick={() => handleReaction(reaction)}
-              className={`
-                w-11 h-11 rounded-full
-                flex items-center justify-center
-                transition transform hover:scale-125
-                ${reactionHoverMap[reaction]}
-              `}
+              onClick={() => {
+                setOpen(false);
+                addMutation.mutate({ postId: post.id, reaction });
+              }}
+              className={`w-11 h-11 rounded-full flex items-center justify-center transition hover:scale-125 ${reactionHoverMap[reaction]}`}
             >
               <Image
                 src={reactionImageMap[reaction]}
@@ -292,6 +265,4 @@ const ReactionBtn = ({ post }: ReactionBtnProps) => {
       )}
     </div>
   );
-};
-
-export default ReactionBtn;
+}

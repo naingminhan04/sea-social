@@ -4,6 +4,7 @@ import { PostType } from "@/types/post";
 import { MessageCircle, SendHorizonal } from "lucide-react";
 import { formatCount } from "./PostCard";
 import { useState } from "react";
+import Link from "next/link";
 import {
   addCommentAction,
   getCommentAction,
@@ -26,11 +27,9 @@ import { formatDate } from "@/utils/formatDate";
 import { useForm, SubmitHandler } from "react-hook-form";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
-import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
 
 const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
   const [open, setOpen] = useState(false);
-  useLockBodyScroll(open);
 
   if (view)
     return (
@@ -48,7 +47,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
     <>
       <div
         onClick={() => setOpen(true)}
-        className="flex items-center  justify-center px-2 h-10 rounded-xl transition hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-black dark:hover:text-white  active:scale-95"
+        className="flex items-center justify-center px-2 h-10 rounded-xl transition hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-black dark:hover:text-white  active:scale-95"
       >
         <button className="flex gap-1 transition">
           <MessageCircle size={18} />
@@ -59,11 +58,15 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
       </div>
 
       {open && (
-        <>
-          <div onClick={()=>setOpen(false)} className="fixed inset-0 z-60 bg-black/40 backdrop-blur-sm"/>
-        <div className="fixed lg:max-w-3xl mx-auto bottom-0 left-0 right-0 lg:h-8/10 lg:bottom-1/2 lg:translate-y-1/2 z-60 bg-white dark:bg-neutral-900 overflow-hidden text-black dark:text-white">
-          <div className="flex flex-col h-[calc(100dvh-60px)]">
-            <div className="flex w-full p-5 justify-between pb-3 border-b border-gray-300 dark:border-neutral-800 z-10 sticky top-0">
+        <div
+          onClick={() => setOpen(false)}
+          className="fixed top-15 overscroll-contain overflow-auto lg:top-0 inset-0 z-60 bg-black/40 backdrop-blur-sm flex justify-center items-center"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative lg:top-auto w-full h-full lg:max-w-3xl mx-auto lg:h-[80vh] z-60 bg-white dark:bg-neutral-900  text-neutral-900 dark:text-neutral-100 flex flex-col"
+          >
+            <div className="flex w-full p-5 justify-between pb-3 border-b border-gray-300 dark:border-neutral-800 z-10 sticky top-0 bg-white dark:bg-neutral-900">
               <div>
                 <h1 className="font-bold text-lg">Comments</h1>
                 <p className="text-gray-500 dark:text-gray-500 text-xs">
@@ -77,14 +80,16 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
                 Close
               </button>
             </div>
-            <div className="flex-1 lg:mb-13 overflow-y-auto scrollbar-none">
+
+            <div className="flex-1 overflow-scroll overscroll-contain scrollbar-none">
               <CommentPage postId={post.id} />
             </div>
 
-            <CommentForm id={post.id} />
+            <div className="shrink-0 bg-white dark:bg-neutral-900">
+              <CommentForm id={post.id} />
+            </div>
           </div>
         </div>
-        </>
       )}
     </>
   );
@@ -145,7 +150,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-full min-h-[10vh] flex-1">
         <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t-white animate-spin" />
       </div>
     );
@@ -153,7 +158,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
 
   if (error) {
     return (
-      <div className="flex flex-col justify-center items-center w-full h-full gap-4 p-4">
+      <div className="flex flex-col justify-center items-center flex-1 min-h-[10vh] w-full h-full gap-4 p-4">
         <div className="text-center text-red-400">
           <p className="text-lg font-semibold mb-2">Failed to load comments</p>
           <p className="text-sm text-gray-400">
@@ -189,18 +194,26 @@ export const CommentPage = ({ postId }: { postId: string }) => {
                   isDel.includes(comment.id) && "opacity-50 pointer-events-none"
                 }`}
               >
-                <Image
-                  width={8}
-                  height={8}
-                  src={comment.user.profilePic || "/default-avatar.png"}
-                  alt={comment.user.name}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
+                <Link target="_blank" href={`/users/${comment.user.username}`}>
+                  <Image
+                    width={8}
+                    height={8}
+                    src={comment.user.profilePic || "/default-avatar.png"}
+                    alt={comment.user.name}
+                    className="w-8 h-8 rounded-full hover:brightness-85 active:brightness-85 transition-all bg-gray-300 object-cover"
+                  />
+                </Link>
 
                 <div className="flex flex-col max-w-[80%] w-fit">
                   <div className="rounded-xl w-fit max-w-full space-y-1">
                     <p className="text-gray-500 dark:text-neutral-400 text-sm">
-                      {comment.user.name}
+                      <Link
+                        target="_blank"
+                        href={`/users/${comment.user.username}`}
+                        className="hover:text-neutral-900 dark:hover:text-gray-300 active:text-neutral-900 dark:active:text-gray-300 transition-all"
+                      >
+                        {comment.user.name}
+                      </Link>
                       <span className="font-extralight text-xs mx-2 text-gray-400 dark:text-gray-300">
                         {formatDate(comment.createdAt, false, true)}
                       </span>
@@ -338,7 +351,7 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
           replyId: data.replyId ?? replyId ?? null,
           images: data.images ?? [],
         },
-        id
+        id,
       );
       if (!result.success) {
         throw new Error(result.error);
@@ -375,7 +388,7 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
   return (
     <form
       onSubmit={handleSubmit(onSubmit)}
-      className="w-full sticky mt-auto z-10 bottom-0 right-0 p-4 bg-white dark:bg-neutral-900 border-t border-gray-300 dark:border-neutral-800"
+      className="w-full z-10  p-4 bg-white dark:bg-neutral-900 border-t border-gray-300 dark:border-neutral-800"
     >
       <div className="flex gap-3 items-center">
         <textarea
