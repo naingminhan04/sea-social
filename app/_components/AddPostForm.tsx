@@ -195,7 +195,7 @@ export default function AddPostBtn({
                   alt={user?.name as string}
                   width={100}
                   height={100}
-                  className="w-12 h-12 rounded-full object-cover"
+                  className="w-12 h-12 bg-gray-300 rounded-full object-cover"
                 />
                 <div>
                   <p className="font-semibold flex gap-1 text-black dark:text-white">

@@ -11,6 +11,7 @@ import {
   PostReactionType,
 } from "@/types/post";
 import { useAuthStore } from "@/store/auth";
+import Link from "next/link";
 
 type ReactionFilter = ReactionType | "ALL";
 
@@ -126,9 +127,6 @@ const ReactionPage = ({
   postId: string;
   reaction: ReactionFilter;
 }) => {
-  const auth = useAuthStore();
-  const currentUserId = auth.user?.id;
-
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<PostReactionType>({
       queryKey: ["post-reactions", postId, reaction],
@@ -161,7 +159,9 @@ const ReactionPage = ({
     <div>
       {data?.pages.flatMap((page) =>
         page.reactions.map((r) => (
-          <div
+          <Link
+            href={`/users/${r.user.username}`}
+            target="_blank"
             key={r.id}
             className="flex items-center gap-3 px-2 py-3 rounded-lg hover:bg-neutral-200 active:bg-neutral-200 dark:hover:bg-neutral-950 dark:active:bg-neutral-950 transition-all"
           >
@@ -190,7 +190,7 @@ const ReactionPage = ({
             <span className="text-sm">
               {r.user.name}
             </span>
-          </div>
+          </Link>
         ))
       )}
 

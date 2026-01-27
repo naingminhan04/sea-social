@@ -233,7 +233,7 @@ export default function EditPostForm({
                 alt={post.author.name}
                 width={100}
                 height={100}
-                className="w-12 h-12 rounded-full object-cover"
+                className="w-12 h-12 rounded-full bg-gray-300 object-cover"
               />
               <div>
                 <p className="font-semibold flex gap-1 text-black dark:text-white">

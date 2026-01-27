@@ -2,7 +2,7 @@ import { getPostAction } from "@/app/_actions/postAction";
 import { notFound } from "next/navigation";
 import { CommentPage, CommentForm } from "@/app/_components/Comment";
 import PostViewClient from "@/app/_components/PostView";
-import BackButton from "@/app/_components/BackButton";
+import PostViewNav from "@/app/_components/PostViewNav";
 
 export default async function PostView({
   params,
@@ -15,14 +15,14 @@ export default async function PostView({
   if (!result.success || !result.data) notFound();
 
   return (
-    <div>
-      <div className="flex relative flex-col lg:min-h-dvh min-h-[calc(100dvh-64px)] w-full gap-2 p-2 pb-0">
-          <BackButton />
-        <PostViewClient initialPost={result.data} />
-          <CommentPage postId={postId} />
-        <div className="sticky mt-auto bottom-0">
-          <CommentForm id={postId} />
-        </div>
+    <div className="flex relative flex-col lg:min-h-dvh min-h-[calc(100dvh-64px)] w-full gap-2 px-2">
+      <div className="sticky top-15 lg:top-0 z-10 -mx-2 md:mx-0">
+        <PostViewNav user={result.data.author} />
+      </div>
+      <PostViewClient initialPost={result.data} />
+      <CommentPage postId={postId} />
+      <div className="sticky mt-auto -mx-2 md:mx-0 bottom-0">
+        <CommentForm id={postId} />
       </div>
     </div>
   );

@@ -119,7 +119,7 @@ const PostReel = ( {userId}: {userId?: string} ) => {
               {isFetchingNextPage && <DummyPostCard text={2} image={1} />}
             </div>
           ) : (
-            <div className="flex w-full justify-between items-center p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
+            <div className="flex w-full justify-between items-center rounded-xl p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
               <span>You have reached the end</span>{" "}
               <button
                 onClick={handleRefresh}
