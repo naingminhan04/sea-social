@@ -24,6 +24,8 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
 import PostReel from "./PostReel";
 import { useState } from "react";
+import ImageViewer from "./ImageViewer";
+import DummyProfile from "./DummyProfile";
 
 const Profile = ({ userId }: { userId: string }) => {
   const queryClient = useQueryClient();
@@ -33,8 +35,12 @@ const Profile = ({ userId }: { userId: string }) => {
   const [menu, setMenu] = useState(false);
   const [editCover, setEditCover] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | null>(null);
+  const [profilePreviewUrl, setProfilePreviewUrl] = useState<string | null>(
+    null,
+  );
   const [isPending, setIsPending] = useState(false);
+  const [imageView, setImageView] = useState<"cover" | "profile" | null>(null);
 
   const {
     data: user,
@@ -54,9 +60,7 @@ const Profile = ({ userId }: { userId: string }) => {
 
   if (isLoading)
     return (
-      <div className="flex justify-center items-center lg:h-dvh h-[calc(100dvh-60px)]">
-        <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t-white animate-spin" />
-      </div>
+        <DummyProfile />
     );
   if (error)
     return (
@@ -78,7 +82,7 @@ const Profile = ({ userId }: { userId: string }) => {
           >
             <ArrowBigLeft fill="black" className="dark:fill-white" />{" "}
           </button>
-          <span className="text-black dark:text-white">{`${user?.name}'s Profile`}</span>
+          <span className="text-lg">{user?.name}&apos;s Profile</span>
         </div>
         {isOwner && (
           <div className="flex justify-center items-center">
@@ -104,11 +108,12 @@ const Profile = ({ userId }: { userId: string }) => {
         <div className="w-full aspect-5/2 relative bg-gray-300">
           {user?.coverPic && (
             <Image
-            src={previewUrl ? previewUrl : user.coverPic}
-            fill
-            alt="Cover Picture"
-            className="object-cover"
-          />
+              src={coverPreviewUrl ? coverPreviewUrl : user.coverPic}
+              fill
+              alt="Cover Picture"
+              className="object-cover"
+              onClick={() => setImageView("cover")}
+            />
           )}
           {isOwner &&
             (editCover ? (
@@ -151,9 +156,9 @@ const Profile = ({ userId }: { userId: string }) => {
                       });
 
                       setSelectedFile(null);
-                      if (previewUrl) {
-                        URL.revokeObjectURL(previewUrl);
-                        setPreviewUrl(null);
+                      if (coverPreviewUrl) {
+                        URL.revokeObjectURL(coverPreviewUrl);
+                        setCoverPreviewUrl(null);
                       }
                     } catch (error) {
                       toast.error(
@@ -171,9 +176,9 @@ const Profile = ({ userId }: { userId: string }) => {
                   onClick={() => {
                     setEditCover(false);
                     setSelectedFile(null);
-                    if (previewUrl) {
-                      URL.revokeObjectURL(previewUrl);
-                      setPreviewUrl(null);
+                    if (coverPreviewUrl) {
+                      URL.revokeObjectURL(coverPreviewUrl);
+                      setCoverPreviewUrl(null);
                     }
                   }}
                 >
@@ -195,7 +200,7 @@ const Profile = ({ userId }: { userId: string }) => {
                     if (file) {
                       setSelectedFile(file);
                       const url = URL.createObjectURL(file);
-                      setPreviewUrl(url);
+                      setCoverPreviewUrl(url);
                       setEditCover(true);
                     }
                   }}
@@ -207,11 +212,16 @@ const Profile = ({ userId }: { userId: string }) => {
         </div>
         <div className="absolute w-3/14 -bottom-2/9 left-1/10">
           <Image
-            src={user?.profilePic || "/default-avatar.png"}
+            src={
+              profilePreviewUrl
+                ? profilePreviewUrl
+                : user?.profilePic || "/default-avatar.png"
+            }
             alt="Profile Picture"
             width={200}
             height={200}
             className="object-cover border-[1vw] md:border-[0.6vw] lg:border-[clamp(5px,1vw,7px)] border-white dark:border-neutral-900 bg-gray-300 w-full aspect-square relative rounded-full"
+            onClick={() => (user?.profilePic || profilePreviewUrl) && setImageView("profile")}
           />
           <span
             className={`absolute bottom-1/10 right-1/10 border w-[3vw] md:w-[1.8vw] lg:w-[clamp(17px,3vw,1px)] aspect-square ${user?.accountStatus ? "bg-green-500" : "bg-gray-500"} rounded-full`}
@@ -310,6 +320,12 @@ const Profile = ({ userId }: { userId: string }) => {
       <section className="bg-neutral-100 dark:bg-neutral-950 md:-mx-2">
         <PostReel userId={user?.id} />
       </section>
+      {imageView && (
+        <ImageViewer
+          images={ imageView === "cover" && (coverPreviewUrl ? coverPreviewUrl : user?.coverPic) || imageView === "profile" && (profilePreviewUrl ? profilePreviewUrl : user?.profilePic) || []}
+          onClose={() => setImageView(null)}
+        />
+      )}
     </main>
   );
 };

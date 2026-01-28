@@ -9,15 +9,12 @@ import PostMenu from "./PostMenu";
 import ReactionBtn from "./ReactionBtn";
 import { Share2 } from "lucide-react";
 import ViewReaction from "./ViewReaction";
-import { useAuthStore } from "@/store/auth";
 import { formatDate } from "@/utils/formatDate";
 import CommentBtn from "./Comment";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
 const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
-  const auth = useAuthStore();
-  const userId = auth.user?.id;
   const images = post.images || [];
   const moreCount = images.length > 4 ? images.length - 4 : 0;
   const displayImages = images.slice(0, 4);

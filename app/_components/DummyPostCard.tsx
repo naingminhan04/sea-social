@@ -1,14 +1,14 @@
 
 const DummyPostCard = ({
-  text = 2,
-  image = 3,
-}) => {
+  text,
+  image,
+}:{text: number; image: number}) => {
   const textLines = Array.from({ length: text });
   const images = Array.from({ length: image });
 
   return (
-    <div className="bg-white dark:bg-neutral-900 p-4 space-y-4 w-full rounded-2xl animate-pulse">
-      <div className="flex items-center gap-3">
+    <div className="bg-white dark:bg-neutral-900 w-full rounded-2xl">
+      <div className="animate-pulse p-4 space-y-4 "><div className="flex items-center gap-3">
         <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-neutral-700" />
 
         <div className="flex-1 space-y-2">
@@ -52,7 +52,7 @@ const DummyPostCard = ({
           <div className="w-4 h-4 bg-gray-300 dark:bg-neutral-700 rounded-full" />
           <div className="w-4 h-4 bg-gray-300 dark:bg-neutral-700 rounded-full" />
         </div>
-      </div>
+      </div></div>
     </div>
   );
 };

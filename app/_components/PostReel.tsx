@@ -9,6 +9,8 @@ import DummyPostCard from "./DummyPostCard";
 import toast from "react-hot-toast";
 
 const LIMIT = 10;
+const textOrder  = [2, 3, 1, 2, 2];
+const imageOrder = [3, 1, 4, 3, 2];
 
 const PostReel = ( {userId}: {userId?: string} ) => {
   const {
@@ -70,7 +72,11 @@ const PostReel = ( {userId}: {userId?: string} ) => {
     return (
       <div className="flex flex-col w-full gap-2 p-2 lg:h-dvh h-[calc(100dvh-60px)] overflow-hidden">
         {Array.from({ length: 5 }).map((_, i) => (
-          <DummyPostCard key={i} text={2 + (i % 3)} image={3 + (i % 4)} />
+          <DummyPostCard
+            key={i}
+            text={textOrder[i]}
+            image={imageOrder[i]}
+          />
         ))}
       </div>
     );
