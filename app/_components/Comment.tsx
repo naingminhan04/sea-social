@@ -29,7 +29,6 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
 
 const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
-  const [open, setOpen] = useState(false);
 
   if (view)
     return (
@@ -45,8 +44,8 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
 
   return (
     <>
-      <div
-        onClick={() => setOpen(true)}
+      <Link
+      href={`/posts/${post.id}`}
         className="flex items-center justify-center px-2 h-10 rounded-xl transition hover:bg-blue-300 active:bg-blue-300 dark:hover:bg-neutral-500  dark:active:bg-neutral-500  hover:text-black dark:hover:text-white  active:scale-95"
       >
         <button className="flex gap-1 transition">
@@ -55,42 +54,7 @@ const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
             <span>{formatCount(post.stats.comments)}</span>
           )}
         </button>
-      </div>
-
-      {open && (
-        <div
-          onClick={() => setOpen(false)}
-          className="fixed top-15 overscroll-contain overflow-auto lg:top-0 inset-0 z-60 bg-black/40 backdrop-blur-sm flex justify-center items-center"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="relative lg:top-auto w-full h-full lg:max-w-3xl mx-auto lg:h-[80vh] z-60 bg-white dark:bg-neutral-900  text-neutral-900 dark:text-neutral-100 flex flex-col"
-          >
-            <div className="flex w-full p-5 justify-between pb-3 border-b border-gray-300 dark:border-neutral-800 z-10 sticky top-0 bg-white dark:bg-neutral-900">
-              <div>
-                <h1 className="font-bold text-lg">Comments</h1>
-                <p className="text-gray-500 dark:text-gray-500 text-xs">
-                  See who commented to this post
-                </p>
-              </div>
-              <button
-                onClick={() => setOpen(false)}
-                className="px-4 py-2 rounded-full bg-gray-200 dark:bg-neutral-800 hover:bg-gray-300 dark:hover:bg-neutral-700 active:scale-90 transition"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-scroll overscroll-contain scrollbar-none">
-              <CommentPage postId={post.id} />
-            </div>
-
-            <div className="shrink-0 bg-white dark:bg-neutral-900">
-              <CommentForm id={post.id} />
-            </div>
-          </div>
-        </div>
-      )}
+      </Link>
     </>
   );
 };
@@ -255,7 +219,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
                   </div>
                 </div>
               </div>
-              {comment._count.replies > 0 && <Replies commentId={comment.id} />}
+              {comment._count.replies > 0 && <Replies postId={postId} commentId={comment.id} />}
             </div>
           ))}
         </main>
@@ -280,11 +244,11 @@ export const CommentPage = ({ postId }: { postId: string }) => {
   }
 };
 
-const Replies = ({ commentId }: { commentId: string }) => {
+const Replies = ({ commentId, postId }: { commentId: string, postId: string }) => {
   const { data, isLoading } = useQuery({
     queryKey: ["replies", commentId],
     queryFn: async () => {
-      const result = await getReplyAction(commentId);
+      const result = await getReplyAction(postId, commentId);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -365,7 +329,7 @@ export const CommentForm = ({ id, replyId = null }: CommentFormProps) => {
         queryClient.invalidateQueries({ queryKey: ["replies", replyId] });
       }
       toast.success(replyId ? "Reply posted" : "Comment posted");
-      reset(); // resets the textarea
+      reset();
     },
     onError: (error: Error) => toast.error(error.message),
   });

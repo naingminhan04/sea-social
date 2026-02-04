@@ -2,7 +2,7 @@ import { getToken } from "@/app/_actions/cookies";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:5000/v1/api",
+  baseURL: "https://seaapi.mine.bz/v1/api",
   headers: {
     "Content-Type": "application/json",
   },

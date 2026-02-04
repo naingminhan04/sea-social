@@ -21,8 +21,8 @@ const DummyPostCard = ({
         {textLines.map((_, index) => (
           <div
             key={index}
-            className={`h-4 rounded-md ${
-              index === 0 ? "bg-gray-300 dark:bg-neutral-700 w-full" : "bg-gray-400 dark:bg-neutral-800 w-5/6"
+            className={`h-4 rounded-md bg-gray-400 dark:bg-neutral-800 ${
+              index === 0 ? "w-full" : "w-5/6"
             }`}
           />
         ))}

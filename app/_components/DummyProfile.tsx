@@ -1,6 +1,6 @@
 import DummyPostCard from "./DummyPostCard";
 
-const textOrder = [2, 3, 1, 2, 2];
+const textOrder = [2, 2, 1, 1, 2];
 const imageOrder = [3, 1, 4, 3, 2];
 
 const DummyProfile = () => {
