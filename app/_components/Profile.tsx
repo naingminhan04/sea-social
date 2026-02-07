@@ -58,10 +58,7 @@ const Profile = ({ userId }: { userId: string }) => {
     },
   });
 
-  if (isLoading)
-    return (
-        <DummyProfile />
-    );
+  if (isLoading) return <DummyProfile />;
   if (error)
     return (
       <div className="flex justify-center items-center lg:h-dvh h-[calc(100dvh-60px)]">
@@ -106,14 +103,10 @@ const Profile = ({ userId }: { userId: string }) => {
       </div>
       <div className="relative mb-[10vw] md:mb-[6vw] lg:mb-[clamp(10px,5vw,60px)]">
         <div className="w-full aspect-5/2 relative bg-gray-300">
-          {user?.coverPic && (
-            <Image
-              src={coverPreviewUrl ? coverPreviewUrl : user.coverPic}
-              fill
-              alt="Cover Picture"
-              className="object-cover"
-              onClick={() => setImageView("cover")}
-            />
+          {coverPreviewUrl ? (
+            <Image src={coverPreviewUrl} onClick={()=>setImageView("cover")} fill alt="cover photo preview" className="object-cover" />
+          ) : (
+            user?.coverPic && <Image src={user.coverPic} onClick={()=>setImageView("cover")} fill alt="cover photo" className="object-cover" />
           )}
           {isOwner &&
             (editCover ? (
@@ -221,7 +214,9 @@ const Profile = ({ userId }: { userId: string }) => {
             width={200}
             height={200}
             className="object-cover border-[1vw] md:border-[0.6vw] lg:border-[clamp(5px,1vw,7px)] border-white dark:border-neutral-900 bg-gray-300 w-full aspect-square relative rounded-full"
-            onClick={() => (user?.profilePic || profilePreviewUrl) && setImageView("profile")}
+            onClick={() =>
+              (user?.profilePic || profilePreviewUrl) && setImageView("profile")
+            }
           />
           <span
             className={`absolute bottom-1/10 right-1/10 border w-[3vw] md:w-[1.8vw] lg:w-[clamp(17px,3vw,1px)] aspect-square ${user?.accountStatus ? "bg-green-500" : "bg-gray-500"} rounded-full`}
@@ -322,7 +317,13 @@ const Profile = ({ userId }: { userId: string }) => {
       </section>
       {imageView && (
         <ImageViewer
-          images={ imageView === "cover" && (coverPreviewUrl ? coverPreviewUrl : user?.coverPic) || imageView === "profile" && (profilePreviewUrl ? profilePreviewUrl : user?.profilePic) || []}
+          images={
+            (imageView === "cover" &&
+              (coverPreviewUrl ? coverPreviewUrl : user?.coverPic)) ||
+            (imageView === "profile" &&
+              (profilePreviewUrl ? profilePreviewUrl : user?.profilePic)) ||
+            []
+          }
           onClose={() => setImageView(null)}
         />
       )}
