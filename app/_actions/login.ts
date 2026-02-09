@@ -7,12 +7,14 @@ import { LoginInput } from "@/types/auth";
 import { ActionResponse } from "@/types/action";
 import { LoginSuccessResponse } from "@/types/auth";
 
-export default async function loginAction(input: LoginInput): Promise<ActionResponse<LoginSuccessResponse>> {
+export default async function loginAction(
+  input: LoginInput,
+): Promise<ActionResponse<LoginSuccessResponse>> {
   try {
     const { data } = await api.post("/auth/login", input);
 
-    if (data.access_token) {
-      const token = data.access_token;
+    if (data.accessToken) {
+      const token = data.accessToken;
       await setAuthCookies(token);
       return {
         success: true,

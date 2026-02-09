@@ -13,13 +13,18 @@ const nextConfig: NextConfig = {
         hostname: "famlinkapi.onrender.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "stareducationacademy.s3.ap-southeast-1.amazonaws.com",
+        pathname: "/**",
+      },
     ],
   },
-  experimental : {
+  experimental: {
     turbopackFileSystemCacheForDev: true,
     serverActions: {
-      bodySizeLimit: '10mb',
-    }
+      bodySizeLimit: "10mb",
+    },
   },
   reactCompiler: true,
 };

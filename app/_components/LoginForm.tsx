@@ -37,8 +37,10 @@ const LoginForm = () => {
     onSuccess: (data) => {
       reset();
       setError("");
+      console.log("User Data: ", data);
 
       if (data.user.isVerified) {
+        console.log("User is verified")
         setCode(null);
         setUser(data.user);
         router.replace("/home");
