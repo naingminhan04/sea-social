@@ -1,6 +1,5 @@
 import axios, { AxiosError } from "axios";
 import api from "@/libs/axios";
-import { UserType } from "@/types/user";
 import { ActionResponse } from "@/types/action";
 
 export type RegisterPayload = {
@@ -10,8 +9,8 @@ export type RegisterPayload = {
 };
 
 export type RegisterResponse = {
-  user: UserType;
-  verificationCodeForTesting: string;
+  message: string;
+  verificationCodeForTesting: number;
 };
 
 export async function registerUser(payload: RegisterPayload): Promise<ActionResponse<RegisterResponse>> {

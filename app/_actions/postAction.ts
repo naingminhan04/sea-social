@@ -64,7 +64,8 @@ export async function addPostAction(postData: AddPostType) {
     const response = await api.post("/posts", {
       content: postData.content || "",
       sharedPostId: postData.sharedPostId || null,
-      images: postData.images,
+      images: postData.images || [],
+      attachments: postData.attachments || [],
     });
 
     return { success: true, data: response.data };
@@ -88,8 +89,9 @@ export async function uploadImageAction(
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await api.post(`/upload/upload`, formData, {headers: { "Content-Type": "multipart/form-data" }});
-      ;
+      const response = await api.post(`/upload/upload`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       return response.data;
     });
     const results = await Promise.all(uploadPromises);
@@ -114,17 +116,11 @@ export async function patchPostAction(postId: string, postData: AddPostType) {
       return { success: false, error: "Failed to get auth token" };
     }
 
-    const images = (postData.images || []).map((img) => ({
-  id: img.id,
-  path: img.path,
-  fullPath: img.fullPath,
-}));
-
-
     const res = await api.patch(`/posts/${postId}`, {
       content: postData.content || "",
       sharedPostId: postData.sharedPostId || null,
-      images,
+      images: postData.images || [],
+      attachments: postData.attachments || [],
     });
 
     return { success: true, data: res.data };

@@ -1,15 +1,15 @@
 "use server";
 
-import { setAuthCookies, setVerifyCookies, setRefreshCookie } from "./cookies";
+import { setAuthCookies, setRefreshCookie } from "./cookies";
 import api from "@/libs/axios";
 import axios from "axios";
-import { LoginInput } from "@/types/auth";
+import { GoogleLoginInput } from "@/types/auth";
 import { ActionResponse } from "@/types/action";
 import { LoginSuccessResponse } from "@/types/auth";
 
-export default async function loginAction(input: LoginInput): Promise<ActionResponse<LoginSuccessResponse>> {
+export default async function googleLoginAction(input: GoogleLoginInput): Promise<ActionResponse<LoginSuccessResponse>> {
   try {
-    const { data } = await api.post("/auth/login", input);
+    const { data } = await api.post("/auth/google-login", input);
 
     const accessToken = data?.accessToken;
     const refreshToken = data?.refreshToken;
@@ -31,19 +31,15 @@ export default async function loginAction(input: LoginInput): Promise<ActionResp
       };
     }
 
-    await setVerifyCookies();
     return {
-      success: true,
-      data: {
-        user: data.user,
-        verificationCodeForTesting: data.verificationCodeForTesting
-      },
+      success: false,
+      error: "Google login failed: No access token received",
     };
   } catch (err) {
     let message = "Unexpected server error";
 
     if (axios.isAxiosError(err)) {
-      message = err.response?.data?.message || "Login Failed";
+      message = err.response?.data?.message || "Google login failed";
     }
 
     return { success: false, error: message };

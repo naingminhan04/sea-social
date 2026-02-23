@@ -45,8 +45,8 @@ export default function ReactionBtn({ post }: ReactionBtnProps) {
   const btnRef = useRef<HTMLDivElement | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
-  const reactionState = post.isReacted
-    ? post.reaction?.reactionType ?? null
+  const reactionState = post.reaction
+    ? post.reaction.reactionType
     : null;
 
   /* ================= CLOSE ON OUTSIDE CLICK ================= */
@@ -140,8 +140,15 @@ export default function ReactionBtn({ post }: ReactionBtnProps) {
           reaction.toLowerCase() as keyof typeof p.stats.reactions;
         p.stats.reactions[nextKey] += 1;
 
-        p.isReacted = true;
-        p.reaction = { id: "optimistic", reactionType: reaction };
+        p.reaction = { 
+          id: "optimistic", 
+          userId: "",
+          postId: p.id,
+          reactionType: reaction,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          user: { id: "", name: "", username: "", profilePic: null }
+        };
       };
 
       updateAllPostLists(postId, apply);
@@ -184,7 +191,6 @@ export default function ReactionBtn({ post }: ReactionBtnProps) {
           p.stats.reactions.total - 1
         );
 
-        p.isReacted = false;
         p.reaction = null;
       };
 

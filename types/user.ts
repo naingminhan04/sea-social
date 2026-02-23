@@ -7,31 +7,16 @@ export interface UserResponseType {
 
 export interface UserType {
   id: string;
+  email: string;
   name: string;
   username: string;
-  nickname: string | null;
-  bio: string | null;
-  points: number;
-  email: string;
-  phone: string | null;
-  role: "USER" | "ADMIN";
-  isVerified: boolean;
-  createdAt: string;
-  updatedAt: string;
   profilePic: string | null;
+  bio: string | null;
+  createdAt: string;
+  role: "USER" | "ADMIN";
+  postsCount: number;
+  likesCount: number;
   coverPic: string | null;
-  accountStatus: AccountStatusType;
-  _count: {
-    posts: number,
-    followers: number,
-    followings: number,
-    likes: number,
-  }
-}
-
-enum AccountStatusType {
-  ACTIVE = "ACTIVE",
-  INACTIVE = "INACTIVE",
 }
 
 export interface UniqueUsernameResponseType {

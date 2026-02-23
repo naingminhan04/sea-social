@@ -5,11 +5,47 @@ export type LoginInput = {
   password: string;
 };
 
+export type GoogleLoginInput = {
+  idToken: string;
+};
+
+export type ConfigsType = {
+  id: string;
+  freeNameChangePerMonth: number;
+  freeUsernameChangePerMonth: number;
+  maxBioLength: number;
+  maxImagesPerPost: number;
+  dailyLoginReward: number;
+  profileViewReward: number;
+  postLikeReward: number;
+  registrationReward: number;
+  nameChangeCost: number;
+  usernameChangeCost: number;
+  pollCreationCost: number;
+  allowProfileViews: boolean;
+  maintenanceMode: boolean;
+  inviteOnlyRegistration: boolean;
+  postCreationCost: number;
+  profileViewRangeInMinutes: number;
+  allowProfileViewsForAdmin: boolean;
+  hotItemThreshold: number;
+  chatroomParticipantsSize: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LoginSuccessResponse = {
+  message?: string;
+  accessToken?: string;
+  refreshToken?: string;
   user: UserType;
-  verificationCode?: string;
+  configs?: ConfigsType;
+  verificationCodeForTesting?: number;
 };
 
 export type VerifySuccessResponse = {
+  message?: string;
+  accessToken?: string;
+  refreshToken?: string;
   user: UserType;
 };

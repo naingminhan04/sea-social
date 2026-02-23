@@ -44,7 +44,7 @@ const LoginForm = () => {
         router.replace("/home");
       } else {
         setUser(data.user);
-        setCode(data.verificationCode || null);
+        setCode(data.verificationCodeForTesting || null);
         router.push("/verify");
       }
     },

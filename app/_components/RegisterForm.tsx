@@ -14,7 +14,6 @@ type Inputs = RegisterPayload & { confirmPassword: string };
 
 const Register = () => {
   const router = useRouter();
-  const setUser = useAuthStore((state) => state.setUser);
   const setCode = useAuthStore((state) => state.setTmpVerificationCode);
   const [error, setError] = useState("");
 
@@ -33,12 +32,13 @@ const Register = () => {
       }
       return result.data;
     },
-    onSuccess: (data: RegisterResponse) => {
+    onSuccess: (data: RegisterResponse, variables) => {
       reset();
       setError("");
       setVerifyCookies();
-      setUser(data.user);
       setCode(data.verificationCodeForTesting);
+      // Store temp email in localStorage for verification flow
+      localStorage.setItem("tempUserEmail", variables.email);
       router.push("/verify");
     },
     onError: (err: Error) => {

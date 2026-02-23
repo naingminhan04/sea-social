@@ -3,18 +3,34 @@
 import api from "@/libs/axios";
 import { ActionResponse } from "@/types/action";
 import { LoginSuccessResponse } from "@/types/auth";
-import { UserType } from "@/types/user";
 import { APIError } from "@/types/error";
+import { getRefreshToken } from "./cookies";
+import { setAuthCookies, setRefreshCookie } from "./cookies";
 import axios from "axios";
 
 export async function refreshAction(): Promise<ActionResponse<LoginSuccessResponse>> {
   try {
-    const { data } = await api.get("/auth/refresh");
+    const refreshToken = await getRefreshToken();
+    
+    if (!refreshToken) {
+      return { success: false, error: "Session refresh failed. Please sign in again." };
+    }
+
+    const { data } = await api.post("/auth/refresh-token", {
+      refreshToken,
+    });
+
+    if (data.accessToken) {
+      await setAuthCookies(data.accessToken);
+      if (data.refreshToken) await setRefreshCookie(data.refreshToken);
+    }
 
     return {
       success: true,
       data: {
-        user: data as UserType,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        user: data.user,
       },
     };
   } catch (error) {

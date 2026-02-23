@@ -1,4 +1,4 @@
-import { Metadata, ImageType,PostImageType, ReactionCountType, ReactionType, PostReactionUserType } from "./post"
+import { Metadata, ImageType, PostImageType } from "./post"
 import { UserType } from "./user"
 
 export interface CommentResponseType {
@@ -15,24 +15,14 @@ export interface CommentType {
   updatedAt: string
   content: string
   isEdited: boolean
-  _count: {
-    replies: number
-  }
-  user: UserType
+  isDeleted: boolean
+  user: Pick<UserType, 'id' | 'name' | 'username' | 'profilePic'>
   images: PostImageType[]
-  likes: PostReactionUserType[]
-  reply: CommentType | null
   stats: {
-    reactions: ReactionCountType
+    reactions: number
     replies: number
   }
   isReacted: boolean
-  reaction:
-    | {
-        id: string
-        reactionType: ReactionType
-      }
-    | null
 }
 
 export interface AddCommentType {

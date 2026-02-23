@@ -10,6 +10,7 @@ const Verify = () => {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [resendCooldown, setResendCooldown] = useState(60);
+  const [tempEmail, setTempEmail] = useState<string | null>(null);
 
   const user = useAuthStore((state) => state.user);
   const code = useAuthStore((state) => state.tmpVerificationCode);
@@ -17,6 +18,21 @@ const Verify = () => {
   const setCode = useAuthStore((state) => state.setTmpVerificationCode);
 
   const [otp, setOtp] = useState("");
+
+  // Check if user has temp email and is in verification flow
+  useEffect(() => {
+    const storedTempEmail = localStorage.getItem("tempUserEmail");
+    
+    // If no temp email and no user, redirect to signup
+    if (!storedTempEmail && !user) {
+      router.replace("/signup");
+      return;
+    }
+
+    if (storedTempEmail) {
+      setTempEmail(storedTempEmail);
+    }
+  }, [user, router]);
 
   useEffect(() => {
     if (resendCooldown === 0) return;
@@ -30,14 +46,17 @@ const Verify = () => {
 
   const verifyMutation = useMutation({
     mutationFn: async (verificationCode: string) => {
-      if (!user?.email) throw new Error("Missing email");
-      const result = await verifyAction(user.email, verificationCode);
+      const email = tempEmail || user?.email;
+      if (!email) throw new Error("Missing email");
+      const result = await verifyAction(email, verificationCode);
       if (!result.success) throw new Error(result.error);
       return result.data;
     },
     onSuccess: (data) => {
       setUser(data.user);
       setCode(null);
+      // Clear temp email from localStorage after successful verification
+      localStorage.removeItem("tempUserEmail");
       router.replace("/home");
     },
     onError: (err: Error) => {
@@ -50,15 +69,13 @@ const Verify = () => {
     verifyMutation.mutate(otp);
   };
 
-  if (!user || user.isVerified) return null;
-
   return (
     <main className="min-h-dvh w-dvw flex flex-col items-center p-5 gap-5">
       <div className="flex flex-col items-center justify-center w-full gap-5 pt-5">
         <h1 className="text-2xl font-bold">Verify Your Email</h1>
         <p className="text-gray-600 dark:text-gray-300 text-sm text-center">
           We sent a 6-digit verification code to{" "}
-          <b className="text-blue-600 dark:text-blue-300">{user.email}</b>
+          <b className="text-blue-600 dark:text-blue-300">{tempEmail || user?.email}</b>
         </p>
       </div>
 
@@ -67,7 +84,7 @@ const Verify = () => {
           value={otp}
           onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
           maxLength={6}
-          placeholder={code || ""}
+          placeholder={code ? code.toString() : ""}
           className="w-full border border-gray-300 dark:border-neutral-700 outline-0 focus:border-black dark:focus:border-white p-4 text-3xl text-center text-black dark:text-white"
         />
 

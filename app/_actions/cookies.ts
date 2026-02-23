@@ -9,6 +9,17 @@ export async function setAuthCookies(token: string) {
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
+    maxAge: 60 * 60,
+  });
+}
+
+export async function setRefreshCookie(token: string) {
+  const cookie = await cookies();
+  cookie.set("refresh_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });
 }
@@ -16,12 +27,24 @@ export async function setAuthCookies(token: string) {
 export async function clearAuthCookies() {
   const cookie = await cookies();
   cookie.delete("access_token");
+  cookie.delete("refresh_token");
+}
+
+export async function clearRefreshCookie() {
+  const cookie = await cookies();
+  cookie.delete("refresh_token");
 }
 
 export async function getToken() {
   const cookie = await cookies();
   
   return cookie.get("access_token")?.value;
+}
+
+export async function getRefreshToken() {
+  const cookie = await cookies();
+  
+  return cookie.get("refresh_token")?.value;
 }
 
 export async function setVerifyCookies() {

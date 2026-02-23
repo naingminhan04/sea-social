@@ -3,8 +3,7 @@
 import api from "@/libs/axios";
 import { ActionResponse } from "@/types/action";
 import axios from "axios";
-import { setAuthCookies } from "./cookies";
-import { clearVerifyCookies } from "./cookies";
+import { setAuthCookies, setRefreshCookie, clearVerifyCookies } from "./cookies";
 import { VerifySuccessResponse } from "@/types/auth";
 
 export default async function verifyAction(
@@ -17,13 +16,19 @@ export default async function verifyAction(
       verificationCode,
     });
 
-    await setAuthCookies(data.access_token);
+    if (data.accessToken) {
+      await setAuthCookies(data.accessToken);
+      if (data.refreshToken) await setRefreshCookie(data.refreshToken);
+    }
 
     await clearVerifyCookies();
 
     return {
       success: true,
       data: {
+        message: data.message,
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
         user: data.user,
       },
     };

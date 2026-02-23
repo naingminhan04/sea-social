@@ -16,12 +16,18 @@ export interface PostType {
     images: PostImageType[]
     stats: PostStats
     isEdited: boolean;
-    isReacted: boolean;
+    sharedPostId: string | null;
     reaction: {
         id: string;
-        reactionType: ReactionType 
+        userId: string;
+        postId: string;
+        reactionType: ReactionType;
+        createdAt: string;
+        updatedAt: string;
+        user: Pick<Author, 'id' | 'name' | 'username' | 'profilePic'>;
     } | null
-
+    attachments?: PostImageType[];
+    sharedPost?: string;
 }
 
 
@@ -82,26 +88,31 @@ interface Author {
  }
 
 export interface ImageKitResponse {
-  "url": string;
-  "thumbnailUrl": string;
-  "fileId": string;
-  "name": string;
-  "size": number;
-  "type": string;
-  "height": number;
-  "width": number;
-  "path": string;
+  key: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
+}
+
+export interface UploadedImageType {
+  key: string;
+  fileName: string;
+  fileSize: number;
+  mimeType: string;
 }
 
 export interface ImageType {
-    id: string;
-    path: string;
-    fullPath: string;
+    key: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
 }
+
 export interface AddPostType {
     content: string | null;
     sharedPostId?: string | null;
     images: ImageType[];
+    attachments?: ImageType[];
 }
 
 export interface PostReactionType {

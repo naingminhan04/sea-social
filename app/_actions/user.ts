@@ -32,7 +32,7 @@ export async function getAllUserAction(nextPage: number = 1, limit: number = 10,
 export async function getUserAction(userId: string): Promise<ActionResponse<UserType>> {
     try {
         const res = await api.get(`/users/profile/${userId}`);
-        return { success: true, data: res.data };
+        return { success: true, data: res.data.user };
     } catch (error) {
        let message = "Unexpected error loading user's profile";
 
@@ -113,7 +113,7 @@ export async function updateProfilePicAction(profilePic: ImageType): Promise<Act
     }
 }
 
-export async function updateCoverPicAction(coverPic: ImageType): Promise<ActionResponse<UserType>> {
+export async function updateCoverPicAction(coverPic: { key: string; fileName: string; mimeType: string; fileSize: number }): Promise<ActionResponse<{ message: string; coverPic: string }>> {
     try {
         const res = await api.patch("/users/cover-pic", { coverPic });
         return { success: true, data: res.data };

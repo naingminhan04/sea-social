@@ -10,7 +10,12 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "famlinkapi.onrender.com",
+        hostname: "stareducationacademy.s3.ap-southeast-1.amazonaws.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
         pathname: "/**",
       },
     ],

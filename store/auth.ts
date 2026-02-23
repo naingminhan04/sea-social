@@ -3,9 +3,9 @@ import { persist } from "zustand/middleware";
 import { UserType } from "@/types/user";
 
 interface AuthState {
-  tmpVerificationCode: string | null;
+  tmpVerificationCode: number | null;
   user: UserType | null;
-  setTmpVerificationCode: (code: string | null) => void;
+  setTmpVerificationCode: (code: number | null) => void;
   setUser: (user: UserType | null) => void;
   logOut: () => void;
 }

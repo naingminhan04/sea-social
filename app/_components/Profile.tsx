@@ -19,7 +19,6 @@ import {
 import { useForm } from "react-hook-form";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { formatDate } from "@/utils/formatDate";
 import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
 import PostReel from "./PostReel";
@@ -129,9 +128,10 @@ const Profile = ({ userId }: { userId: string }) => {
 
                       const uploadedImage = uploadResult.data[0];
                       const imageData = {
-                        id: uploadedImage.fileId,
-                        path: uploadedImage.path,
-                        fullPath: uploadedImage.url,
+                        key: uploadedImage.key,
+                        fileName: uploadedImage.fileName,
+                        fileSize: uploadedImage.fileSize,
+                        mimeType: uploadedImage.mimeType,
                       };
 
                       const updateResult =
@@ -219,7 +219,7 @@ const Profile = ({ userId }: { userId: string }) => {
             }
           />
           <span
-            className={`absolute bottom-1/10 right-1/10 border w-[3vw] md:w-[1.8vw] lg:w-[clamp(17px,3vw,1px)] aspect-square ${user?.accountStatus ? "bg-green-500" : "bg-gray-500"} rounded-full`}
+            className={`absolute bottom-1/10 right-1/10 border w-[3vw] md:w-[1.8vw] lg:w-[clamp(17px,3vw,1px)] aspect-square bg-green-500 rounded-full`}
           ></span>
         </div>
       </div>
@@ -249,10 +249,6 @@ const Profile = ({ userId }: { userId: string }) => {
               @{user?.username}
             </p>
           </div>
-          <div className="rounded-lg ring ring-neutral-200 dark:ring-neutral-800 p-3 flex justify-center items-center  gap-2 transition-all duration-300">
-            <p className="text-xs text-gray-600 dark:text-gray-400">Points</p>
-            <p className="text-sm">{user?.points}</p>
-          </div>
         </div>
 
         {user?.bio && (
@@ -263,10 +259,8 @@ const Profile = ({ userId }: { userId: string }) => {
 
         <div className="grid grid-cols-2 gap-4">
           {[
-            { label: "Followers", value: user?._count.followers },
-            { label: "Following", value: user?._count.followings },
-            { label: "Posts", value: user?._count.posts },
-            { label: "Likes", value: user?._count.likes },
+            { label: "Posts", value: user?.postsCount },
+            { label: "Likes", value: user?.likesCount },
           ].map((item) => (
             <div
               key={item.label}
@@ -279,37 +273,6 @@ const Profile = ({ userId }: { userId: string }) => {
             </div>
           ))}
         </div>
-
-        {isOwner && (
-          <div className="grid grid-cols-2 gap-3">
-            {user?.email && (
-              <div className="rounded-lg border border-black/5 dark:border-white/10 p-3">
-                <p className="text-xs text-gray-400">Email</p>
-                <p className="text-sm break-all">{user.email}</p>
-              </div>
-            )}
-
-            {user?.phone && (
-              <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
-                <p className="text-xs text-gray-400">Phone</p>
-                <p className="text-sm">{user.phone}</p>
-              </div>
-            )}
-
-            {user?.createdAt && (
-              <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
-                <p className="text-xs text-gray-400">Account Created At</p>
-                <p className="text-sm">{formatDate(user.createdAt)}</p>
-              </div>
-            )}
-            {user?.updatedAt && (
-              <div className="rounded-lg border border-black/10 dark:border-white/10 p-3">
-                <p className="text-xs text-gray-400">Account Updated At</p>
-                <p className="text-sm">{formatDate(user.updatedAt)}</p>
-              </div>
-            )}
-          </div>
-        )}
       </section>
 
       <section className="bg-neutral-100 dark:bg-neutral-950 md:-mx-2">

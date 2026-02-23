@@ -219,7 +219,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
                   </div>
                 </div>
               </div>
-              {comment._count.replies > 0 && <Replies postId={postId} commentId={comment.id} />}
+              {comment.stats.replies > 0 && <Replies postId={postId} commentId={comment.id} />}
             </div>
           ))}
         </main>

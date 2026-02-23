@@ -81,9 +81,10 @@ export default function AddPostBtn({
       if (selectedFiles.length > 0) {
         const uploadedImages = await uploadMutation.mutateAsync(selectedFiles);
         imagesForPost = uploadedImages.map((img) => ({
-          id: img.fileId,
-          path: img.path,
-          fullPath: img.url,
+          key: img.key,
+          fileName: img.fileName,
+          fileSize: img.fileSize,
+          mimeType: img.mimeType,
         }));
       }
 
@@ -91,6 +92,7 @@ export default function AddPostBtn({
         content: data.content || null,
         sharedPostId: null,
         images: imagesForPost,
+        attachments: [],
       });
       toast.success("Post uploaded successfully", { id: toastId });
     } catch (error) {
