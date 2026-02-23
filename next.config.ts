@@ -20,11 +20,11 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  experimental : {
+  experimental: {
     turbopackFileSystemCacheForDev: true,
     serverActions: {
-      bodySizeLimit: '10mb',
-    }
+      bodySizeLimit: "10mb",
+    },
   },
   reactCompiler: true,
 };

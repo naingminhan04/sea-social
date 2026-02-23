@@ -11,12 +11,16 @@ export interface UserType {
   name: string;
   username: string;
   profilePic: string | null;
+  isVerified: boolean;
   bio: string | null;
   createdAt: string;
+  updatedAt:string;
+  hasPassword: boolean;
   role: "USER" | "ADMIN";
   postsCount: number;
   likesCount: number;
   coverPic: string | null;
+  googleId: string | null;
 }
 
 export interface UniqueUsernameResponseType {

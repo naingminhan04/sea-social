@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "dev:debug": "set NODE_OPTIONS=--inspect && next dev"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.90.12",
