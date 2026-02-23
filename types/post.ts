@@ -42,9 +42,11 @@ interface Author {
 
  export interface PostImageType {
     id: string;
-    path: string;
-    imageId: string;
-    fullPath: string;
+    key: string;
+    fileName: string;
+    fileSize: number;
+    mimeType: string;
+    createdAt: string;
     url: string;
  }
 

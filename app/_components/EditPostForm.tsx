@@ -11,6 +11,7 @@ import {
   ImageType,
   ImageKitResponse,
   PostType,
+  PostImageType,
 } from "@/types/post";
 import toast from "react-hot-toast";
 import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
@@ -30,19 +31,14 @@ export default function EditPostForm({
   post: PostType;
   onClose: () => void;
 }) {
-  const getSrc = (i: Partial<ImageType & { url?: string }>) =>
-    i.fullPath || i.path || "";
+  const getSrc = (img: PostImageType) => img.url || "";
   const relativeTime = formatDate(post.createdAt);
   const user = useAuthStore((state) => state.user);
   const userId = user?.id;
   useLockBodyScroll(true);
 
-  const [existingImages, setExistingImages] = useState<ImageType[]>(
-    (post.images ?? []).map((img) => ({
-      id: img.imageId,
-      path: img.path,
-      fullPath: img.fullPath,
-    }))
+  const [existingImages, setExistingImages] = useState<PostImageType[]>(
+    post.images ?? []
   );
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -83,7 +79,7 @@ export default function EditPostForm({
       reset();
     },
 
-    onError: (error: Error) => toast.error(`Failed to update post`),
+    onError: () => toast.error(`Failed to update post`),
   });
 
   const isLoading = uploadMutation.isPending || postMutation.isPending;
@@ -119,19 +115,24 @@ export default function EditPostForm({
     if (isLoading) return;
 
     try {
-      let imagesForPost: ImageType[] = [...existingImages];
+      let imagesForPost: ImageType[] = existingImages.map((img) => ({
+        key: img.key,
+        fileName: img.fileName,
+        fileSize: img.fileSize,
+        mimeType: img.mimeType,
+      }));
 
       if (selectedFiles.length > 0) {
         const uploaded = await uploadMutation.mutateAsync(selectedFiles);
 
         const newImages: ImageType[] = uploaded.map((img) => ({
-          id: img.fileId,
-          path: img.path,
-          fullPath: img.url,
+          key: img.key,
+          fileName: img.fileName,
+          fileSize: img.fileSize,
+          mimeType: img.mimeType,
         }));
 
-        const keyOf = (i: { id?: string; fullPath?: string }) =>
-          i.id || i.fullPath || "";
+        const keyOf = (i: { key?: string }) => i.key || "";
         const existingKeys = new Set(imagesForPost.map(keyOf));
         imagesForPost = imagesForPost.concat(
           newImages.filter((n) => !existingKeys.has(keyOf(n)))
@@ -144,7 +145,7 @@ export default function EditPostForm({
         images: imagesForPost,
       });
       toast.success("Post updated successfully!", { id: toastId });
-    } catch (error) {
+    } catch {
       toast.error(`Unexpected error while editing post`, { id: toastId });
     }
   };
