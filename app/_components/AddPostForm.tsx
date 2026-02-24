@@ -1,15 +1,15 @@
 "use client";
 
-import { Plus, X, LoaderIcon, PenBox } from "lucide-react";
+import { Plus, X, LoaderIcon, PenBox, FileIcon } from "lucide-react";
 import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
-import { addPostAction, uploadImageAction } from "../_actions/postAction";
+import { addPostAction } from "../_actions/postAction";
+import { getAuthToken } from "../_actions/cookies";
 import { AddPostType, ImageType, ImageKitResponse } from "@/types/post";
 import toast from "react-hot-toast";
 import { useLockBodyScroll } from "@/hooks/useLockBodyScroll";
-import { formatDate } from "@/utils/formatDate";
 import { useAuthStore } from "@/store/auth";
 
 type FormValues = {
@@ -17,6 +17,39 @@ type FormValues = {
 };
 
 const MAX_IMAGES = 20;
+const MAX_ATTACHMENTS = 10;
+
+// Upload files directly to backend API
+async function uploadFiles(files: File[]): Promise<ImageKitResponse[]> {
+  const results: ImageKitResponse[] = [];
+  
+  const token = await getAuthToken();
+  if (!token) {
+    throw new Error("Authentication required. Please log in again.");
+  }
+  
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const response = await fetch("https://seaapi.mine.bz/v1/api/upload/upload", {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to upload ${file.name} (${response.status})`);
+    }
+    
+    const data = await response.json();
+    results.push(data);
+  }
+  
+  return results;
+}
 
 export default function AddPostBtn({
   state,
@@ -26,6 +59,7 @@ export default function AddPostBtn({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [selectedAttachments, setSelectedAttachments] = useState<File[]>([]);
   const queryClient = useQueryClient();
   const { register, handleSubmit, reset, watch } = useForm<FormValues>();
   const user = useAuthStore((state) => state.user);
@@ -34,11 +68,7 @@ export default function AddPostBtn({
 
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]): Promise<ImageKitResponse[]> => {
-      const result = await uploadImageAction(files);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return result.data;
+      return await uploadFiles(files);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -64,12 +94,13 @@ export default function AddPostBtn({
     setSelectedFiles([]);
     previewUrls.forEach((url) => URL.revokeObjectURL(url));
     setPreviewUrls([]);
+    setSelectedAttachments([]);
     reset();
   }, [previewUrls, reset]);
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
-    if (selectedFiles.length === 0 && !data.content.trim()) {
-      toast.error("Please add content or at least one image.");
+    if (selectedFiles.length === 0 && selectedAttachments.length === 0 && !data.content.trim()) {
+      toast.error("Please add content, images, or attachments.");
       return;
     }
 
@@ -78,25 +109,48 @@ export default function AddPostBtn({
 
     try {
       let imagesForPost: ImageType[] = [];
+      let attachmentsForPost: ImageType[] = [];
+      
+      // Upload images first
       if (selectedFiles.length > 0) {
-        const uploadedImages = await uploadMutation.mutateAsync(selectedFiles);
-        imagesForPost = uploadedImages.map((img) => ({
-          key: img.key,
-          fileName: img.fileName,
-          fileSize: img.fileSize,
-          mimeType: img.mimeType,
-        }));
+        try {
+          const uploadedImages = await uploadMutation.mutateAsync(selectedFiles);
+          imagesForPost = uploadedImages.map((img) => ({
+            key: img.key,
+            fileName: img.fileName,
+            fileSize: img.fileSize,
+            mimeType: img.mimeType,
+          }));
+        } catch (error) {
+          throw new Error(error instanceof Error ? error.message : "Failed to upload images");
+        }
+      }
+
+      // Upload attachments
+      if (selectedAttachments.length > 0) {
+        try {
+          const uploadedAttachments = await uploadMutation.mutateAsync(selectedAttachments);
+          attachmentsForPost = uploadedAttachments.map((att) => ({
+            key: att.key,
+            fileName: att.fileName,
+            fileSize: att.fileSize,
+            mimeType: att.mimeType,
+          }));
+        } catch (error) {
+          throw new Error(error instanceof Error ? error.message : "Failed to upload attachments");
+        }
       }
 
       await postMutation.mutateAsync({
         content: data.content || null,
         sharedPostId: null,
         images: imagesForPost,
-        attachments: [],
+        attachments: attachmentsForPost,
       });
       toast.success("Post uploaded successfully", { id: toastId });
     } catch (error) {
-      toast.error("Failed to create post", { id: toastId });
+      const errorMsg = error instanceof Error ? error.message : "Failed to create post";
+      toast.error(errorMsg, { id: toastId });
     }
   };
 
@@ -109,34 +163,51 @@ export default function AddPostBtn({
         return;
       }
 
-      const newFiles = [...selectedFiles, ...filesArray].slice(0, MAX_IMAGES);
-      setSelectedFiles(newFiles);
-
+      setSelectedFiles((prev) => [...prev, ...filesArray]);
       const newPreviewUrls = filesArray.map((file) =>
         URL.createObjectURL(file)
       );
       setPreviewUrls((prev) => [...prev, ...newPreviewUrls]);
     },
-    [selectedFiles]
+    [selectedFiles.length]
+  );
+
+  const handleAttachmentChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const filesArray = Array.from(e.target.files || []);
+      const totalAttachments = selectedAttachments.length + filesArray.length;
+      if (totalAttachments > MAX_ATTACHMENTS) {
+        toast.error(`You can upload up to ${MAX_ATTACHMENTS} attachments.`);
+        return;
+      }
+
+      setSelectedAttachments((prev) => [...prev, ...filesArray]);
+    },
+    [selectedAttachments.length]
   );
 
   const removeFile = useCallback(
     (index: number) => {
-      const newFiles = [...selectedFiles];
-      const newPreviews = [...previewUrls];
-      URL.revokeObjectURL(newPreviews[index]);
-      newFiles.splice(index, 1);
-      newPreviews.splice(index, 1);
-      setSelectedFiles(newFiles);
-      setPreviewUrls(newPreviews);
+      setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+      setPreviewUrls((prev) => {
+        URL.revokeObjectURL(prev[index]);
+        return prev.filter((_, i) => i !== index);
+      });
     },
-    [selectedFiles, previewUrls]
+    []
+  );
+
+  const removeAttachment = useCallback(
+    (index: number) => {
+      setSelectedAttachments((prev) => prev.filter((_, i) => i !== index));
+    },
+    []
   );
 
   const isLoading = uploadMutation.isPending || postMutation.isPending;
   const contentValue = watch("content") || "";
   const isPostDisabled =
-    isLoading || (selectedFiles.length === 0 && contentValue.trim() === "");
+    isLoading || (selectedFiles.length === 0 && selectedAttachments.length === 0 && contentValue.trim() === "");
 
   return (
     <>
@@ -288,10 +359,57 @@ export default function AddPostBtn({
                 </label>
               )}
 
+              {selectedAttachments.length > 0 && (
+                <div className="border-t border-gray-200 dark:border-neutral-700 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Attachments ({selectedAttachments.length}/{MAX_ATTACHMENTS})</h3>
+                  <div className="space-y-2">
+                    {selectedAttachments.map((file, index) => (
+                      <div
+                        key={`${file.name}-${index}`}
+                        className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-neutral-800 rounded-lg"
+                      >
+                        <FileIcon size={18} className="text-gray-500 dark:text-gray-400 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{file.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => removeAttachment(index)}
+                          className="p-1 hover:bg-red-200 dark:hover:bg-red-900 rounded text-red-500 hover:text-red-600 transition-all"
+                          disabled={isLoading}
+                          aria-label={`Remove attachment ${index + 1}`}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedAttachments.length < MAX_ATTACHMENTS && (
+                <label className={`w-full border-2 border-dashed border-neutral-400 hover:border-neutral-800 active:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-400 dark:active:border-neutral-600 rounded-lg p-4 flex flex-col justify-center items-center cursor-pointer transition-colors ${
+                  isLoading ? "opacity-50 cursor-not-allowed" : ""
+                }`}>
+                  <div className="flex items-center gap-2 text-neutral-400">
+                    <FileIcon size={20} />
+                    <span className="text-sm">Add attachments ({selectedAttachments.length}/{MAX_ATTACHMENTS} max)</span>
+                  </div>
+                  <input
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleAttachmentChange}
+                    disabled={isLoading}
+                  />
+                </label>
+              )}
+
               {isLoading && (
                 <div className="text-center text-neutral-400 text-sm">
                   {uploadMutation.isPending
-                    ? "Uploading images..."
+                    ? "Uploading files..."
                     : "Creating post..."}
                 </div>
               )}

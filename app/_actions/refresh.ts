@@ -5,7 +5,7 @@ import { ActionResponse } from "@/types/action";
 import { LoginSuccessResponse } from "@/types/auth";
 import { APIError } from "@/types/error";
 import { getRefreshToken } from "./cookies";
-import { setAuthCookies, setRefreshCookie } from "./cookies";
+import { setAccessCookies, setRefreshCookie } from "./cookies";
 import axios from "axios";
 
 export async function refreshAction(): Promise<ActionResponse<LoginSuccessResponse>> {
@@ -21,7 +21,7 @@ export async function refreshAction(): Promise<ActionResponse<LoginSuccessRespon
     });
 
     if (data.accessToken) {
-      await setAuthCookies(data.accessToken);
+      await setAccessCookies(data.accessToken);
       if (data.refreshToken) await setRefreshCookie(data.refreshToken);
     }
 

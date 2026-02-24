@@ -1,6 +1,6 @@
 "use server";
 
-import { setAuthCookies, setVerifyCookies, setRefreshCookie } from "./cookies";
+import { setAccessCookies, setVerifyCookies, setRefreshCookie } from "./cookies";
 import api from "@/libs/axios";
 import axios from "axios";
 import { LoginInput } from "@/types/auth";
@@ -17,7 +17,7 @@ export default async function loginAction(
     const refreshToken = data?.refreshToken;
 
     if (accessToken) {
-      await setAuthCookies(accessToken);
+      await setAccessCookies(accessToken);
       if (refreshToken) await setRefreshCookie(refreshToken);
 
       return {

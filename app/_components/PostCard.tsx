@@ -7,7 +7,7 @@ import Image from "next/image";
 import PostContent from "./PostContent";
 import PostMenu from "./PostMenu";
 import ReactionBtn from "./ReactionBtn";
-import { Share2 } from "lucide-react";
+import { Share2, Download, FileIcon } from "lucide-react";
 import ViewReaction from "./ViewReaction";
 import { formatDate } from "@/utils/formatDate";
 import CommentBtn from "./Comment";
@@ -127,6 +127,38 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {post.attachments && post.attachments.length > 0 && (
+            <div className="pointer-events-auto border-t border-gray-200 dark:border-neutral-700 pt-3">
+              <div className="space-y-2">
+                {post.attachments.map((attachment) => (
+                  <div
+                    key={attachment.id}
+                    className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-neutral-800 rounded-lg group hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
+                  >
+                    <FileIcon size={18} className="text-gray-500 dark:text-gray-400 shrink-0" />
+                    <a
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 min-w-0"
+                    >
+                      <p className="text-sm text-gray-700 dark:text-gray-300 truncate hover:underline">{attachment.fileName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{(attachment.fileSize / 1024).toFixed(1)} KB</p>
+                    </a>
+                    <a
+                      href={attachment.url}
+                      download={attachment.fileName}
+                      className="p-1 hover:bg-blue-200 dark:hover:bg-blue-900 rounded text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-all opacity-0 group-hover:opacity-100"
+                      aria-label={`Download ${attachment.fileName}`}
+                    >
+                      <Download size={16} />
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

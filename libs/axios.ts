@@ -3,17 +3,29 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "https://seaapi.mine.bz/v1/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
 });
 
 api.interceptors.request.use(async (config) => {
   const token = await getToken();
 
-  if (!token) return config;
+  if (!token) {
+    // Set default Content-Type for non-FormData requests
+    if (!(config.data instanceof FormData) && !config.headers["Content-Type"]) {
+      config.headers["Content-Type"] = "application/json";
+    }
+    return config;
+  }
 
   config.headers.Authorization = `Bearer ${token}`;
+  
+  // For FormData, explicitly remove Content-Type so axios sets it with boundary
+  if (config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  } else if (!config.headers["Content-Type"]) {
+    // Only set Content-Type for non-FormData requests
+    config.headers["Content-Type"] = "application/json";
+  }
+  
   return config;
 });
 

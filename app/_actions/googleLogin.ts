@@ -1,6 +1,6 @@
 "use server";
 
-import { setAuthCookies, setRefreshCookie } from "./cookies";
+import { setAccessCookies, setRefreshCookie } from "./cookies";
 import api from "@/libs/axios";
 import axios from "axios";
 import { GoogleLoginInput } from "@/types/auth";
@@ -15,7 +15,7 @@ export default async function googleLoginAction(input: GoogleLoginInput): Promis
     const refreshToken = data?.refreshToken;
 
     if (accessToken) {
-      await setAuthCookies(accessToken);
+      await setAccessCookies(accessToken);
       if (refreshToken) await setRefreshCookie(refreshToken);
 
       return {

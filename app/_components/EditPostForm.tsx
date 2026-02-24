@@ -1,11 +1,12 @@
 "use client";
 
-import { Plus, X } from "lucide-react";
+import { Plus, X, FileIcon } from "lucide-react";
 import Image from "next/image";
 import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
-import { patchPostAction, uploadImageAction } from "../_actions/postAction";
+import { patchPostAction } from "../_actions/postAction";
+import { getAuthToken } from "../_actions/cookies";
 import {
   AddPostType,
   ImageType,
@@ -23,6 +24,39 @@ type FormValues = {
 };
 
 const MAX_IMAGES = 20;
+const MAX_ATTACHMENTS = 10;
+
+// Upload files directly to backend API
+async function uploadFiles(files: File[]): Promise<ImageKitResponse[]> {
+  const results: ImageKitResponse[] = [];
+  
+  const token = await getAuthToken();
+  if (!token) {
+    throw new Error("Authentication required. Please log in again.");
+  }
+  
+  for (const file of files) {
+    const formData = new FormData();
+    formData.append("file", file);
+    
+    const response = await fetch("https://seaapi.mine.bz/v1/api/upload/upload", {
+      method: "POST",
+      body: formData,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to upload ${file.name} (${response.status})`);
+    }
+    
+    const data = await response.json();
+    results.push(data);
+  }
+  
+  return results;
+}
 
 export default function EditPostForm({
   post,
@@ -43,6 +77,11 @@ export default function EditPostForm({
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  
+  const [existingAttachments, setExistingAttachments] = useState<PostImageType[]>(
+    post.attachments ?? []
+  );
+  const [selectedAttachments, setSelectedAttachments] = useState<File[]>([]);
 
   const queryClient = useQueryClient();
 
@@ -54,11 +93,7 @@ export default function EditPostForm({
 
   const uploadMutation = useMutation({
     mutationFn: async (files: File[]): Promise<ImageKitResponse[]> => {
-      const result = await uploadImageAction(files);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return result.data;
+      return uploadFiles(files);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -73,6 +108,7 @@ export default function EditPostForm({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: ["post", post.id] });
       setSelectedFiles([]);
       previewUrls.forEach((url) => URL.revokeObjectURL(url));
       setPreviewUrls([]);
@@ -103,9 +139,11 @@ export default function EditPostForm({
     if (
       existingImages.length === 0 &&
       selectedFiles.length === 0 &&
+      existingAttachments.length === 0 &&
+      selectedAttachments.length === 0 &&
       !data.content.trim()
     ) {
-      toast.error("Please add content or at least one image.");
+      toast.error("Please add content, images, or attachments.");
       return;
     }
 
@@ -123,26 +161,59 @@ export default function EditPostForm({
       }));
 
       if (selectedFiles.length > 0) {
-        const uploaded = await uploadMutation.mutateAsync(selectedFiles);
+        try {
+          const uploaded = await uploadMutation.mutateAsync(selectedFiles);
 
-        const newImages: ImageType[] = uploaded.map((img) => ({
-          key: img.key,
-          fileName: img.fileName,
-          fileSize: img.fileSize,
-          mimeType: img.mimeType,
-        }));
+          const newImages: ImageType[] = uploaded.map((img) => ({
+            key: img.key,
+            fileName: img.fileName,
+            fileSize: img.fileSize,
+            mimeType: img.mimeType,
+          }));
 
-        const keyOf = (i: { key?: string }) => i.key || "";
-        const existingKeys = new Set(imagesForPost.map(keyOf));
-        imagesForPost = imagesForPost.concat(
-          newImages.filter((n) => !existingKeys.has(keyOf(n)))
-        );
+          const keyOf = (i: { key?: string }) => i.key || "";
+          const existingKeys = new Set(imagesForPost.map(keyOf));
+          imagesForPost = imagesForPost.concat(
+            newImages.filter((n) => !existingKeys.has(keyOf(n)))
+          );
+        } catch (error) {
+          throw new Error(error instanceof Error ? error.message : "Failed to upload images");
+        }
+      }
+
+      let attachmentsForPost: ImageType[] = existingAttachments.map((att) => ({
+        key: att.key,
+        fileName: att.fileName,
+        fileSize: att.fileSize,
+        mimeType: att.mimeType,
+      }));
+
+      if (selectedAttachments.length > 0) {
+        try {
+          const uploaded = await uploadMutation.mutateAsync(selectedAttachments);
+
+          const newAttachments: ImageType[] = uploaded.map((att) => ({
+            key: att.key,
+            fileName: att.fileName,
+            fileSize: att.fileSize,
+            mimeType: att.mimeType,
+          }));
+
+          const keyOf = (a: { key?: string }) => a.key || "";
+          const existingKeys = new Set(attachmentsForPost.map(keyOf));
+          attachmentsForPost = attachmentsForPost.concat(
+            newAttachments.filter((n) => !existingKeys.has(keyOf(n)))
+          );
+        } catch (error) {
+          throw new Error(error instanceof Error ? error.message : "Failed to upload attachments");
+        }
       }
 
       await postMutation.mutateAsync({
         content: data.content || null,
         sharedPostId: null,
         images: imagesForPost,
+        attachments: attachmentsForPost,
       });
       toast.success("Post updated successfully!", { id: toastId });
     } catch {
@@ -172,6 +243,24 @@ export default function EditPostForm({
     [existingImages.length, selectedFiles.length, isLoading]
   );
 
+  const handleAttachmentChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (isLoading) return;
+
+      const filesArray = Array.from(e.target.files || []);
+      const total =
+        existingAttachments.length + selectedAttachments.length + filesArray.length;
+
+      if (total > MAX_ATTACHMENTS) {
+        toast.error(`You can upload up to ${MAX_ATTACHMENTS} attachments.`);
+        return;
+      }
+
+      setSelectedAttachments((prev) => [...prev, ...filesArray]);
+    },
+    [existingAttachments.length, selectedAttachments.length, isLoading]
+  );
+
   const removeNewFile = useCallback(
     (index: number) => {
       if (isLoading) return;
@@ -193,11 +282,28 @@ export default function EditPostForm({
     [isLoading]
   );
 
+  const removeExistingAttachment = useCallback(
+    (index: number) => {
+      if (isLoading) return;
+      setExistingAttachments((prev) => prev.filter((_, i) => i !== index));
+    },
+    [isLoading]
+  );
+
+  const removeNewAttachment = useCallback(
+    (index: number) => {
+      if (isLoading) return;
+      setSelectedAttachments((prev) => prev.filter((_, i) => i !== index));
+    },
+    [isLoading]
+  );
+
   const allImagesCount = existingImages.length + selectedFiles.length;
+  const allAttachmentsCount = existingAttachments.length + selectedAttachments.length;
   const contentValue = watch("content") || "";
 
   const isPostDisabled =
-    isLoading || (allImagesCount === 0 && contentValue.trim() === "");
+    isLoading || (allImagesCount === 0 && allAttachmentsCount === 0 && contentValue.trim() === "");
 
   return (
     <>
@@ -353,10 +459,86 @@ export default function EditPostForm({
               </label>
             )}
 
+            {allAttachmentsCount > 0 && (
+              <div className="border-t border-gray-200 dark:border-neutral-700 pt-4">
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Attachments ({allAttachmentsCount}/{MAX_ATTACHMENTS})</h3>
+                <div className="space-y-2">
+                  {existingAttachments.map((att, index) => {
+                    const src = getSrc(att);
+                    return (
+                      <div
+                        key={att.id || index}
+                        className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-neutral-800 rounded-lg group"
+                      >
+                        <FileIcon size={18} className="text-gray-500 dark:text-gray-400 shrink-0" />
+                        <a
+                          href={src}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex-1 min-w-0 hover:underline"
+                        >
+                          <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{att.fileName}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{(att.fileSize / 1024).toFixed(1)} KB</p>
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => removeExistingAttachment(index)}
+                          className="p-1 hover:bg-red-200 dark:hover:bg-red-900 rounded text-red-500 hover:text-red-600 transition-all"
+                          disabled={isLoading}
+                          aria-label={`Remove attachment ${index + 1}`}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                  {selectedAttachments.map((file, index) => (
+                    <div
+                      key={`new-${file.name}-${index}`}
+                      className="flex items-center gap-2 p-2 bg-gray-100 dark:bg-neutral-800 rounded-lg"
+                    >
+                      <FileIcon size={18} className="text-gray-500 dark:text-gray-400 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-gray-700 dark:text-gray-300 truncate">{file.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{(file.size / 1024).toFixed(1)} KB</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeNewAttachment(index)}
+                        className="p-1 hover:bg-red-200 dark:hover:bg-red-900 rounded text-red-500 hover:text-red-600 transition-all"
+                        disabled={isLoading}
+                        aria-label={`Remove attachment ${index + 1}`}
+                      >
+                        <X size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {allAttachmentsCount < MAX_ATTACHMENTS && (
+              <label className={`w-full border-2 border-dashed border-neutral-400 hover:border-neutral-800 active:border-neutral-400 dark:border-neutral-600 dark:hover:border-neutral-400 dark:active:border-neutral-600 rounded-lg p-4 flex flex-col justify-center items-center cursor-pointer transition-colors ${
+                isLoading ? "opacity-50 cursor-not-allowed" : ""
+              }`}>
+                <div className="flex items-center gap-2 text-neutral-400">
+                  <FileIcon size={20} />
+                  <span className="text-sm">Add attachments ({allAttachmentsCount}/{MAX_ATTACHMENTS} max)</span>
+                </div>
+                <input
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleAttachmentChange}
+                  disabled={isLoading}
+                />
+              </label>
+            )}
+
             {isLoading && (
               <div className="text-center text-neutral-400 text-sm">
                 {uploadMutation.isPending
-                  ? "Uploading images..."
+                  ? "Uploading files..."
                   : "Updating post..."}
               </div>
             )}

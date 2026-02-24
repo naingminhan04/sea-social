@@ -2,7 +2,7 @@
 
 import { cookies } from "next/headers";
 
-export async function setAuthCookies(token: string) {
+export async function setAccessCookies(token: string) {
   const cookie = await cookies();
   cookie.set("access_token", token, {
     httpOnly: true,
@@ -61,4 +61,9 @@ export async function setVerifyCookies() {
 export async function clearVerifyCookies() {
   const cookie = await cookies();
   cookie.delete("verify_state");
+}
+
+export async function getAuthToken(): Promise<string | null> {
+  const cookie = await cookies();
+  return cookie.get("access_token")?.value || null;
 }
