@@ -28,5 +28,10 @@ export interface CommentType {
 export interface AddCommentType {
   content: string
   replyId?: string | null
-  images: ImageType[]
+  images: Array<{
+    key: string
+    fileName: string
+    mimeType: string
+    fileSize: number
+  }>
 }

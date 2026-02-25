@@ -6,7 +6,7 @@ import {
   updateUsernameAction,
   updateCoverPicAction,
 } from "../_actions/user";
-import { uploadImageAction } from "../_actions/postAction";
+import { uploadFiles } from "@/utils/uploadUtils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowBigLeft,
@@ -119,14 +119,14 @@ const Profile = ({ userId }: { userId: string }) => {
                     const toastId = toast.loading("Updating cover photo...");
                     setEditCover(false);
                     try {
-                      const uploadResult = await uploadImageAction([
+                      const uploadedImages = await uploadFiles([
                         selectedFile,
                       ]);
-                      if (!uploadResult.success) {
-                        throw new Error(uploadResult.error);
+                      if (!uploadedImages || uploadedImages.length === 0) {
+                        throw new Error("Upload failed");
                       }
 
-                      const uploadedImage = uploadResult.data[0];
+                      const uploadedImage = uploadedImages[0];
                       const imageData = {
                         key: uploadedImage.key,
                         fileName: uploadedImage.fileName,

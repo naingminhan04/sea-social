@@ -6,14 +6,13 @@ import { useForm, SubmitHandler } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useCallback } from "react";
 import { patchPostAction } from "../_actions/postAction";
-import { getAuthToken } from "../_actions/cookies";
 import {
   AddPostType,
   ImageType,
-  ImageKitResponse,
   PostType,
   PostImageType,
 } from "@/types/post";
+import { uploadFiles } from "@/utils/uploadUtils";
 import toast from "react-hot-toast";
 import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 import { formatDate } from "@/utils/formatDate";
@@ -25,38 +24,6 @@ type FormValues = {
 
 const MAX_IMAGES = 20;
 const MAX_ATTACHMENTS = 10;
-
-// Upload files directly to backend API
-async function uploadFiles(files: File[]): Promise<ImageKitResponse[]> {
-  const results: ImageKitResponse[] = [];
-  
-  const token = await getAuthToken();
-  if (!token) {
-    throw new Error("Authentication required. Please log in again.");
-  }
-  
-  for (const file of files) {
-    const formData = new FormData();
-    formData.append("file", file);
-    
-    const response = await fetch("https://seaapi.mine.bz/v1/api/upload/upload", {
-      method: "POST",
-      body: formData,
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    
-    if (!response.ok) {
-      throw new Error(`Failed to upload ${file.name} (${response.status})`);
-    }
-    
-    const data = await response.json();
-    results.push(data);
-  }
-  
-  return results;
-}
 
 export default function EditPostForm({
   post,
@@ -92,7 +59,7 @@ export default function EditPostForm({
   });
 
   const uploadMutation = useMutation({
-    mutationFn: async (files: File[]): Promise<ImageKitResponse[]> => {
+    mutationFn: async (files: File[]) => {
       return uploadFiles(files);
     },
     onError: (error: Error) => toast.error(error.message),

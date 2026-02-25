@@ -46,15 +46,12 @@ export async function addCommentAction(commentData: AddCommentType, postId: stri
     }
 }
 
-export async function patchCommentAction(commentId:string, commentData: AddCommentType, page: number) {
+export async function patchCommentAction(commentId: string, commentData: AddCommentType) {
     try {
         const res = await api.patch(`/comments/${commentId}`, {
             content: commentData.content || "",
             replyId: commentData.replyId || null,
             images: commentData.images,
-            params: {
-                page
-            }
         });
         return { success: true, data: res.data };
     } catch (error) {

@@ -3,7 +3,6 @@
 import axios from "axios";
 import { getToken } from "./cookies";
 import { AddPostType } from "@/types/post";
-import { ImageKitResponse } from "@/types/post";
 import api from "@/libs/axios";
 import { PostsResponseType } from "@/types/post";
 import { ActionResponse } from "@/types/action";
@@ -75,31 +74,6 @@ export async function addPostAction(postData: AddPostType) {
     if (axios.isAxiosError(error)) {
       const data = error.response?.data as APIError;
       message = data?.message ?? data?.error ?? "Failed to create post";
-    }
-
-    return { success: false, error: message };
-  }
-}
-
-export async function uploadImageAction(
-  files: File[]
-): Promise<ActionResponse<ImageKitResponse[]>> {
-  try {
-    const uploadPromises = files.map(async (file) => {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const response = await api.post(`/upload/upload`, formData);
-      return response.data;
-    });
-    const results = await Promise.all(uploadPromises);
-    return { success: true, data: results };
-  } catch (error) {
-    let message = "Unexpected error uploading image";
-
-    if (axios.isAxiosError(error)) {
-      const data = error.response?.data as APIError;
-      message = data?.message ?? data?.error ?? "Failed to upload image";
     }
 
     return { success: false, error: message };
