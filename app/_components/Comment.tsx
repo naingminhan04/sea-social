@@ -3,7 +3,7 @@
 import { PostType } from "@/types/post";
 import { MessageCircle, SendHorizonal, ChevronDown, ChevronUp, Pencil, Trash2, X } from "lucide-react";
 import { formatCount } from "./PostCard";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import {
   addCommentAction,
@@ -18,11 +18,7 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import {
-  AddCommentType,
-  CommentResponseType,
-  CommentType,
-} from "@/types/comment";
+import { AddCommentType, CommentResponseType, CommentType } from "@/types/comment";
 import Image from "next/image";
 import { formatDate } from "@/utils/formatDate";
 import { useForm, SubmitHandler } from "react-hook-form";
@@ -66,8 +62,34 @@ export const CommentPage = ({ postId }: { postId: string }) => {
   const queryClient = useQueryClient();
   const [isDel, setIsDel] = useState<string[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<string[]>([]);
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+
+  // Single bottom form state: create / reply / edit, and which comment it's targeting
+  const [activeFormMode, setActiveFormMode] = useState<"create" | "reply" | "edit">("create");
+  const [activeComment, setActiveComment] = useState<CommentType | null>(null);
+  const bottomFormRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToForm = () => {
+    if (bottomFormRef.current) {
+      bottomFormRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  };
+
+  const openFormForReply = (comment: CommentType) => {
+    setActiveFormMode("reply");
+    setActiveComment(comment);
+    scrollToForm();
+  };
+
+  const openFormForEdit = (comment: CommentType) => {
+    setActiveFormMode("edit");
+    setActiveComment(comment);
+    scrollToForm();
+  };
+
+  const resetFormState = () => {
+    setActiveFormMode("create");
+    setActiveComment(null);
+  };
 
   const {
     data,
@@ -168,27 +190,9 @@ export const CommentPage = ({ postId }: { postId: string }) => {
               isDel={isDel}
               isOwner={userId === comment.user.id}
               onDelete={handleDelete}
-              onReply={() => setReplyingTo(comment.id)}
-              onEdit={() => setEditingCommentId(comment.id)}
-              isEditing={editingCommentId === comment.id}
-              onCancelEdit={() => setEditingCommentId(null)}
-              repliesExpanded={expandedReplies.includes(comment.id)}
-              onToggleReplies={() => toggleReplies(comment.id)}
+              onReply={() => openFormForReply(comment)}
+              onEdit={() => openFormForEdit(comment)}
             />
-
-            {/* Show reply form if replying to this comment */}
-            {replyingTo === comment.id && (
-              <div className="ml-10 mt-3 p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-                <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                  Replying to <span className="font-semibold">{comment.user.name}</span>
-                </p>
-                <CommentForm
-                  postId={postId}
-                  replyId={comment.id}
-                  onSuccess={() => setReplyingTo(null)}
-                />
-              </div>
-            )}
 
             {/* Show replies if expanded */}
             {comment.stats.replies > 0 && expandedReplies.includes(comment.id) && (
@@ -196,7 +200,8 @@ export const CommentPage = ({ postId }: { postId: string }) => {
                 postId={postId}
                 commentId={comment.id}
                 userId={userId}
-                onReply={(replyId) => setReplyingTo(replyId)}
+                onReply={openFormForReply}
+                onEdit={openFormForEdit}
               />
             )}
 
@@ -236,6 +241,36 @@ export const CommentPage = ({ postId }: { postId: string }) => {
           </button>
         </footer>
       )}
+
+      {/* Single bottom CommentForm used for create, reply, and edit */}
+      <div ref={bottomFormRef} className="px-5 pb-4 pt-2 space-y-2">
+        {(activeFormMode === "reply" || activeFormMode === "edit") && activeComment && (
+          <div className="flex items-center justify-between text-xs px-2 py-1 rounded-md bg-gray-100 dark:bg-neutral-800 text-gray-600 dark:text-gray-300">
+            <span>
+              {activeFormMode === "edit"
+                ? "Editing your comment"
+                : `Replying to ${activeComment.user.name}`}
+            </span>
+            <button
+              type="button"
+              onClick={resetFormState}
+              className="ml-2 text-gray-500 hover:text-red-500 dark:hover:text-red-400"
+              aria-label="Cancel editing or replying"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
+
+        <CommentForm
+          postId={postId}
+          mode={activeFormMode}
+          targetComment={activeComment ?? undefined}
+          commentToEdit={activeFormMode === "edit" ? activeComment ?? undefined : undefined}
+          onSuccess={resetFormState}
+          onCancel={resetFormState}
+        />
+      </div>
     </div>
   );
 };
@@ -248,10 +283,6 @@ interface CommentCardProps {
   onDelete: (id: string) => void;
   onReply: () => void;
   onEdit: () => void;
-  isEditing: boolean;
-  onCancelEdit: () => void;
-  repliesExpanded: boolean;
-  onToggleReplies: () => void;
 }
 
 const CommentCard = ({
@@ -266,13 +297,9 @@ const CommentCard = ({
   onCancelEdit,
   onToggleReplies,
 }: CommentCardProps) => {
-  const [showMenu, setShowMenu] = useState(false);
-
   return (
     <div
       className={`flex gap-3 p-3 rounded-lg transition ${
-        isEditing ? "bg-blue-100 dark:bg-blue-900/30 border-2 border-blue-400 dark:border-blue-600" : ""
-      } ${
         isDel.includes(comment.id) && "opacity-50 pointer-events-none"
       }`}
     >
@@ -297,9 +324,10 @@ const CommentCard = ({
         <div className="flex flex-col flex-1 max-w-[80%]">
           {/* Edit Mode */}
           {isEditing ? (
-            <CommentEditForm
-              comment={comment}
+            <CommentForm
               postId={postId}
+              mode="edit"
+              commentToEdit={comment}
               onSuccess={onCancelEdit}
               onCancel={onCancelEdit}
             />
@@ -383,11 +411,11 @@ interface RepliesProps {
   commentId: string;
   postId: string;
   userId?: string;
+  onReply: (comment: CommentType) => void;
+  onEdit: (comment: CommentType) => void;
 }
 
-const Replies = ({ commentId, postId, userId }: RepliesProps) => {
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
+const Replies = ({ commentId, postId, userId, onReply, onEdit }: RepliesProps) => {
   const [isDel, setIsDel] = useState<string[]>([]);
   const queryClient = useQueryClient();
 
@@ -435,47 +463,44 @@ const Replies = ({ commentId, postId, userId }: RepliesProps) => {
             isDel={isDel}
             isOwner={userId === reply.user.id}
             onDelete={handleDelete}
-            onReply={() => setReplyingTo(reply.id)}
-            onEdit={() => setEditingReplyId(reply.id)}
-            isEditing={editingReplyId === reply.id}
-            onCancelEdit={() => setEditingReplyId(null)}
-            repliesExpanded={false}
-            onToggleReplies={() => {}}
+            onReply={() => onReply(reply)}
+            onEdit={() => onEdit(reply)}
           />
-
-          {/* Reply form for nested replies */}
-          {replyingTo === reply.id && (
-            <div className="mt-3 p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-                Replying to <span className="font-semibold">{reply.user.name}</span>
-              </p>
-              <CommentForm
-                postId={postId}
-                replyId={reply.id}
-                onSuccess={() => setReplyingTo(null)}
-              />
-            </div>
-          )}
         </div>
       ))}
     </div>
   );
 };
 
+type CommentFormMode = "create" | "reply" | "edit";
+
 interface CommentFormProps {
   postId: string;
-  replyId?: string | null;
+  mode?: CommentFormMode;
+  /** The comment this action is targeting (replying to or editing). */
+  targetComment?: CommentType;
+  /** For edit: the existing comment being edited. */
+  commentToEdit?: CommentType;
   onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
 export const CommentForm = ({
   postId,
-  replyId = null,
+  mode = "create",
+  targetComment,
+  commentToEdit,
   onSuccess,
+  onCancel,
 }: CommentFormProps) => {
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(
+    commentToEdit?.images[0]?.url || null
+  );
+
+  const isEdit = mode === "edit" && !!commentToEdit;
+  const isReply = mode === "reply" && !!targetComment;
 
   const {
     register,
@@ -484,11 +509,49 @@ export const CommentForm = ({
     watch,
   } = useForm<AddCommentType>({
     defaultValues: {
-      content: "",
-      replyId: replyId ?? null,
-      images: [],
+      content: isEdit && commentToEdit ? commentToEdit.content : "",
+      replyId: isEdit && commentToEdit
+        ? commentToEdit.replyId ?? null
+        : isReply && targetComment
+        ? targetComment.id
+        : null,
+      images:
+        isEdit && commentToEdit && commentToEdit.images.length > 0
+          ? [
+              {
+                key: commentToEdit.images[0].key,
+                fileName: commentToEdit.images[0].fileName,
+                mimeType: commentToEdit.images[0].mimeType,
+                fileSize: commentToEdit.images[0].fileSize,
+              },
+            ]
+          : [],
     },
   });
+
+  // Keep form in sync when mode / target / commentToEdit change
+  useEffect(() => {
+    reset({
+      content: isEdit && commentToEdit ? commentToEdit.content : "",
+      replyId: isEdit && commentToEdit
+        ? commentToEdit.replyId ?? null
+        : isReply && targetComment
+        ? targetComment.id
+        : null,
+      images:
+        isEdit && commentToEdit && commentToEdit.images.length > 0
+          ? [
+              {
+                key: commentToEdit.images[0].key,
+                fileName: commentToEdit.images[0].fileName,
+                mimeType: commentToEdit.images[0].mimeType,
+                fileSize: commentToEdit.images[0].fileSize,
+              },
+            ]
+          : [],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, commentToEdit, targetComment, reset]);
 
   const content = watch("content");
 
@@ -499,9 +562,19 @@ export const CommentForm = ({
         fileName: string;
         mimeType: string;
         fileSize: number;
-      }> = [];
+      }> =
+        isEdit && commentToEdit && commentToEdit.images.length > 0
+          ? [
+              {
+                key: commentToEdit.images[0].key,
+                fileName: commentToEdit.images[0].fileName,
+                mimeType: commentToEdit.images[0].mimeType,
+                fileSize: commentToEdit.images[0].fileSize,
+              },
+            ]
+          : [];
 
-      // Upload image if selected
+      // Upload new image if selected
       if (selectedFile) {
         try {
           const uploadedImages = await uploadFiles([selectedFile]);
@@ -509,34 +582,61 @@ export const CommentForm = ({
             images = [uploadedImages[0]];
           }
         } catch (error) {
-          throw new Error(error instanceof Error ? error.message : "Failed to upload image");
+          throw new Error(
+            error instanceof Error ? error.message : "Failed to upload image"
+          );
         }
       }
 
-      const result = await addCommentAction(
-        {
+      if (isEdit && commentToEdit) {
+        const result = await patchCommentAction(commentToEdit.id, {
           content: data.content || "",
-          replyId: data.replyId ?? replyId ?? null,
+          replyId: data.replyId ?? commentToEdit.replyId ?? null,
           images,
-        },
-        postId
-      );
-      if (!result.success) {
-        throw new Error(result.error);
+        });
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        return result.data;
+      } else {
+        const replyTarget = data.replyId ?? (isReply && targetComment ? targetComment.id : null);
+        const result = await addCommentAction(
+          {
+            content: data.content || "",
+            replyId: replyTarget,
+            images,
+          },
+          postId
+        );
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        return result.data;
       }
-      return result.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["comments", postId] });
       queryClient.invalidateQueries({ queryKey: ["posts"] });
-      if (replyId) {
-        queryClient.invalidateQueries({ queryKey: ["replies", replyId] });
+
+      // Invalidate replies if this is a reply or editing a reply
+      const replyKey =
+        (isEdit && commentToEdit?.replyId) || parentCommentId;
+      if (replyKey) {
+        queryClient.invalidateQueries({ queryKey: ["replies", replyKey] });
       }
-      toast.success(replyId ? "Reply posted" : "Comment posted");
+
+      toast.success(
+        isEdit ? "Comment updated" : isReply ? "Reply posted" : "Comment posted"
+      );
+
       reset();
       setSelectedFile(null);
-      setPreviewUrl(null);
+      if (previewUrl && !isEdit) {
+        URL.revokeObjectURL(previewUrl);
+      }
+      setPreviewUrl(isEdit ? commentToEdit?.images[0]?.url || null : null);
       onSuccess?.();
+      if (isEdit && onCancel) onCancel();
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -565,7 +665,7 @@ export const CommentForm = ({
 
   const removeImage = () => {
     setSelectedFile(null);
-    if (previewUrl) {
+    if (previewUrl && !isEdit) {
       URL.revokeObjectURL(previewUrl);
     }
     setPreviewUrl(null);
@@ -613,7 +713,13 @@ export const CommentForm = ({
 
         <div className="flex-1 space-y-1">
           <textarea
-            placeholder={replyId ? "Write a reply..." : "Write a comment..."}
+            placeholder={
+              isEdit
+                ? "Edit your comment..."
+                : isReply
+                ? "Write a reply..."
+                : "Write a comment..."
+            }
             maxLength={500}
             className="w-full p-2 rounded-md bg-white dark:bg-black text-black dark:text-white resize-none h-10 outline-none border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-neutral-500 scrollbar-none text-sm"
             {...register("content")}
@@ -642,177 +748,6 @@ export const CommentForm = ({
             <SendHorizonal size={18} />
           </button>
         )}
-      </div>
-    </form>
-  );
-};
-
-interface CommentEditFormProps {
-  comment: CommentType;
-  postId: string;
-  onSuccess: () => void;
-  onCancel: () => void;
-}
-
-const CommentEditForm = ({
-  comment,
-  postId,
-  onSuccess,
-  onCancel,
-}: CommentEditFormProps) => {
-  const queryClient = useQueryClient();
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(
-    comment.images[0]?.url || null
-  );
-
-  const {
-    register,
-    handleSubmit,
-    watch,
-  } = useForm<AddCommentType>({
-    defaultValues: {
-      content: comment.content,
-      replyId: comment.replyId ?? null,
-      images: comment.images.length > 0 ? [{
-        key: comment.images[0].key,
-        fileName: comment.images[0].fileName,
-        mimeType: comment.images[0].mimeType,
-        fileSize: comment.images[0].fileSize,
-      }] : [],
-    },
-  });
-
-  const content = watch("content");
-
-  const mutation = useMutation({
-    mutationFn: async (data: AddCommentType) => {
-      let images: Array<{
-        key: string;
-        fileName: string;
-        mimeType: string;
-        fileSize: number;
-      }> = comment.images.length > 0 ? [{
-        key: comment.images[0].key,
-        fileName: comment.images[0].fileName,
-        mimeType: comment.images[0].mimeType,
-        fileSize: comment.images[0].fileSize,
-      }] : [];
-
-      // Upload new image if selected
-      if (selectedFile) {
-        try {
-          const uploadedImages = await uploadFiles([selectedFile]);
-          if (uploadedImages && uploadedImages.length > 0) {
-            images = [uploadedImages[0]];
-          }
-        } catch (error) {
-          throw new Error(error instanceof Error ? error.message : "Failed to upload image");
-        }
-      }
-
-      const result = await patchCommentAction(comment.id, {
-        content: data.content || "",
-        replyId: data.replyId || null,
-        images,
-      });
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      return result.data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["comments", postId] });
-      if (comment.replyId) {
-        queryClient.invalidateQueries({ queryKey: ["replies", comment.replyId] });
-      }
-      toast.success("Comment updated");
-      onSuccess();
-    },
-    onError: (error: Error) => toast.error(error.message),
-  });
-
-  const onSubmit: SubmitHandler<AddCommentType> = async (data) => {
-    if (!data.content || !data.content.trim()) {
-      toast.error("Please add content.");
-      return;
-    }
-    try {
-      await mutation.mutateAsync(data);
-    } catch (error) {
-      console.error("Submit error:", error);
-    }
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-    }
-  };
-
-  const removeImage = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
-  };
-
-  return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-2">
-      {previewUrl && (
-        <div className="relative w-20 h-20">
-          <Image
-            src={previewUrl}
-            alt="Preview"
-            fill
-            className="rounded-lg object-cover"
-          />
-          <button
-            type="button"
-            onClick={removeImage}
-            className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 rounded-full p-1 text-white transition"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      )}
-
-      <textarea
-        placeholder="Edit your comment..."
-        maxLength={500}
-        className="w-full p-2 rounded-md bg-white dark:bg-black text-black dark:text-white resize-none h-20 outline-none border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-neutral-500 scrollbar-none text-sm"
-        {...register("content")}
-        disabled={mutation.isPending}
-      />
-
-      <div className="flex gap-2 items-center">
-        <label className="p-2 hover:bg-gray-200 dark:hover:bg-neutral-700 rounded cursor-pointer transition text-lg">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageChange}
-            disabled={mutation.isPending}
-            className="hidden"
-          />
-          📷
-        </label>
-
-        <button
-          type="submit"
-          disabled={mutation.isPending || !content.trim()}
-          className="px-3 py-1 rounded bg-blue-400 text-white text-sm disabled:opacity-50"
-        >
-          {mutation.isPending ? "Saving..." : "Save"}
-        </button>
-
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-3 py-1 rounded bg-gray-300 dark:bg-neutral-700 text-sm"
-        >
-          Cancel
-        </button>
       </div>
     </form>
   );

@@ -1,6 +1,6 @@
 import { getPostAction } from "@/app/_actions/postAction";
 import { notFound } from "next/navigation";
-import { CommentPage, CommentForm } from "@/app/_components/Comment";
+import { CommentPage } from "@/app/_components/Comment";
 import PostViewClient from "@/app/_components/PostView";
 import PostViewNav from "@/app/_components/PostViewNav";
 
@@ -21,9 +21,6 @@ export default async function PostView({
       </div>
       <PostViewClient initialPost={result.data} />
       <CommentPage postId={postId} />
-      <div className="sticky mt-auto -mx-2 md:mx-0 bottom-0">
-        <CommentForm id={postId} />
-      </div>
     </div>
   );
 }
