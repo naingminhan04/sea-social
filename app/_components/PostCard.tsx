@@ -171,7 +171,7 @@ const PostCard = ({ post, view }: { post: PostType; view: boolean }) => {
             <div
               onClick={() => {
                 navigator.clipboard.writeText(
-                  `https://stareducationacademy.netlify.app/post/${post.id}`,
+                  `https://stareducationacademy.netlify.app/posts/${post.id}`,
                 );
                 toast.success("Link copied to clipboard", {
                   id: `share-${post.id}`,

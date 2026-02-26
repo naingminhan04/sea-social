@@ -38,8 +38,8 @@ const Profile = ({ userId }: { userId: string }) => {
   const [profilePreviewUrl, setProfilePreviewUrl] = useState<string | null>(
     null,
   );
-  const [isPending, setIsPending] = useState(false);
   const [imageView, setImageView] = useState<"cover" | "profile" | null>(null);
+  const [isPending, setIsPending] = useState(false);
 
   const {
     data: user,

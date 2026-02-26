@@ -35,3 +35,39 @@ export interface AddCommentType {
     fileSize: number
   }>
 }
+
+export type CommentFormMode = "create" | "reply" | "edit";
+
+export interface CommentCardProps {
+  comment: CommentType;
+  postId: string;
+  isDel: string[];
+  isOwner: boolean;
+  onDelete: (id: string) => void;
+  onReply: () => void;
+  onEdit: () => void;
+  onViewImage?: (url: string) => void;
+}
+
+export interface RepliesProps {
+  commentId: string;
+  postId: string;
+  userId?: string;
+  onReply: (comment: CommentType) => void;
+  onEdit: (comment: CommentType) => void;
+}
+
+export interface CommentFormProps {
+  postId: string;
+  mode?: CommentFormMode;
+  /** The comment this action is targeting (replying to or editing). */
+  targetComment?: CommentType;
+  /** For edit: the existing comment being edited. */
+  commentToEdit?: CommentType;
+  /** If true, autofocus the textarea when the form mounts. */
+  autoFocus?: boolean;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+  onViewImage?: (url: string) => void;
+}
+
