@@ -63,7 +63,6 @@ export const CommentPage = ({ postId }: { postId: string }) => {
   const [isDel, setIsDel] = useState<string[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<string[]>([]);
 
-  // Single bottom form state: create / reply / edit, and which comment it's targeting
   const [activeFormMode, setActiveFormMode] = useState<"create" | "reply" | "edit">("create");
   const [activeComment, setActiveComment] = useState<CommentType | null>(null);
   const bottomFormRef = useRef<HTMLDivElement | null>(null);
@@ -129,7 +128,6 @@ export const CommentPage = ({ postId }: { postId: string }) => {
       await queryClient.invalidateQueries({ queryKey: ["posts"] });
       toast.success("Comment Deleted Successfully");
     } catch (error) {
-      console.error(error);
       toast.error("Failed to delete comment");
     } finally {
       setIsDel((prev) => prev.filter((id) => id !== commentId));
@@ -191,8 +189,11 @@ export const CommentPage = ({ postId }: { postId: string }) => {
               isOwner={userId === comment.user.id}
               onDelete={handleDelete}
               onReply={() => openFormForReply(comment)}
-              onEdit={() => openFormForEdit(comment)}
-            />
+              onEdit={() => openFormForEdit(comment)} isEditing={false} onCancelEdit={function (): void {
+                throw new Error("Function not implemented.");
+              } } onToggleReplies={function (): void {
+                throw new Error("Function not implemented.");
+              } }            />
 
             {/* Show replies if expanded */}
             {comment.stats.replies > 0 && expandedReplies.includes(comment.id) && (
@@ -283,6 +284,9 @@ interface CommentCardProps {
   onDelete: (id: string) => void;
   onReply: () => void;
   onEdit: () => void;
+  isEditing: boolean;
+  onCancelEdit: () => void;
+  onToggleReplies: () => void;
 }
 
 const CommentCard = ({
@@ -464,8 +468,11 @@ const Replies = ({ commentId, postId, userId, onReply, onEdit }: RepliesProps) =
             isOwner={userId === reply.user.id}
             onDelete={handleDelete}
             onReply={() => onReply(reply)}
-            onEdit={() => onEdit(reply)}
-          />
+            onEdit={() => onEdit(reply)} isEditing={false} onCancelEdit={function (): void {
+              throw new Error("Function not implemented.");
+            } } onToggleReplies={function (): void {
+              throw new Error("Function not implemented.");
+            } }          />
         </div>
       ))}
     </div>
@@ -550,8 +557,7 @@ export const CommentForm = ({
             ]
           : [],
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, commentToEdit, targetComment, reset]);
+  }, [mode, commentToEdit, targetComment, reset, isEdit,isReply]);
 
   const content = watch("content");
 
@@ -620,7 +626,7 @@ export const CommentForm = ({
 
       // Invalidate replies if this is a reply or editing a reply
       const replyKey =
-        (isEdit && commentToEdit?.replyId) || parentCommentId;
+        (isEdit && commentToEdit?.replyId);
       if (replyKey) {
         queryClient.invalidateQueries({ queryKey: ["replies", replyKey] });
       }
@@ -650,7 +656,7 @@ export const CommentForm = ({
     try {
       await mutation.mutateAsync(data);
     } catch (error) {
-      console.error("Submit error:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to add comment");
     }
   };
 
