@@ -19,6 +19,12 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { AddCommentType, CommentResponseType, CommentType } from "@/types/comment";
+import type {
+  CommentCardProps,
+  RepliesProps,
+  CommentFormProps,
+  CommentFormMode,
+} from "./comment";
 import Image from "next/image";
 import { formatDate } from "@/utils/formatDate";
 import { useForm, SubmitHandler } from "react-hook-form";
@@ -63,7 +69,7 @@ export const CommentPage = ({ postId }: { postId: string }) => {
   const [isDel, setIsDel] = useState<string[]>([]);
   const [expandedReplies, setExpandedReplies] = useState<string[]>([]);
 
-  const [activeFormMode, setActiveFormMode] = useState<"create" | "reply" | "edit">("create");
+  const [activeFormMode, setActiveFormMode] = useState<CommentFormMode>("create");
   const [activeComment, setActiveComment] = useState<CommentType | null>(null);
   const bottomFormRef = useRef<HTMLDivElement | null>(null);
 
@@ -189,11 +195,8 @@ export const CommentPage = ({ postId }: { postId: string }) => {
               isOwner={userId === comment.user.id}
               onDelete={handleDelete}
               onReply={() => openFormForReply(comment)}
-              onEdit={() => openFormForEdit(comment)} isEditing={false} onCancelEdit={function (): void {
-                throw new Error("Function not implemented.");
-              } } onToggleReplies={function (): void {
-                throw new Error("Function not implemented.");
-              } }            />
+              onEdit={() => openFormForEdit(comment)}
+            />
 
             {/* Show replies if expanded */}
             {comment.stats.replies > 0 && expandedReplies.includes(comment.id) && (
@@ -276,19 +279,6 @@ export const CommentPage = ({ postId }: { postId: string }) => {
   );
 };
 
-interface CommentCardProps {
-  comment: CommentType;
-  postId: string;
-  isDel: string[];
-  isOwner: boolean;
-  onDelete: (id: string) => void;
-  onReply: () => void;
-  onEdit: () => void;
-  isEditing: boolean;
-  onCancelEdit: () => void;
-  onToggleReplies: () => void;
-}
-
 const CommentCard = ({
   comment,
   postId,
@@ -297,9 +287,6 @@ const CommentCard = ({
   onDelete,
   onReply,
   onEdit,
-  isEditing,
-  onCancelEdit,
-  onToggleReplies,
 }: CommentCardProps) => {
   return (
     <div
@@ -326,17 +313,7 @@ const CommentCard = ({
         </Link>
 
         <div className="flex flex-col flex-1 max-w-[80%]">
-          {/* Edit Mode */}
-          {isEditing ? (
-            <CommentForm
-              postId={postId}
-              mode="edit"
-              commentToEdit={comment}
-              onSuccess={onCancelEdit}
-              onCancel={onCancelEdit}
-            />
-          ) : (
-            <>
+          <>
               {/* Comment Header */}
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1">
@@ -403,21 +380,12 @@ const CommentCard = ({
                   </>
                 )}
               </div>
-            </>
-          )}
+          </>
         </div>
       </div>
     </div>
   );
 };
-
-interface RepliesProps {
-  commentId: string;
-  postId: string;
-  userId?: string;
-  onReply: (comment: CommentType) => void;
-  onEdit: (comment: CommentType) => void;
-}
 
 const Replies = ({ commentId, postId, userId, onReply, onEdit }: RepliesProps) => {
   const [isDel, setIsDel] = useState<string[]>([]);
@@ -468,29 +436,13 @@ const Replies = ({ commentId, postId, userId, onReply, onEdit }: RepliesProps) =
             isOwner={userId === reply.user.id}
             onDelete={handleDelete}
             onReply={() => onReply(reply)}
-            onEdit={() => onEdit(reply)} isEditing={false} onCancelEdit={function (): void {
-              throw new Error("Function not implemented.");
-            } } onToggleReplies={function (): void {
-              throw new Error("Function not implemented.");
-            } }          />
+            onEdit={() => onEdit(reply)}
+          />
         </div>
       ))}
     </div>
   );
 };
-
-type CommentFormMode = "create" | "reply" | "edit";
-
-interface CommentFormProps {
-  postId: string;
-  mode?: CommentFormMode;
-  /** The comment this action is targeting (replying to or editing). */
-  targetComment?: CommentType;
-  /** For edit: the existing comment being edited. */
-  commentToEdit?: CommentType;
-  onSuccess?: () => void;
-  onCancel?: () => void;
-}
 
 export const CommentForm = ({
   postId,
@@ -517,11 +469,12 @@ export const CommentForm = ({
   } = useForm<AddCommentType>({
     defaultValues: {
       content: isEdit && commentToEdit ? commentToEdit.content : "",
-      replyId: isEdit && commentToEdit
-        ? commentToEdit.replyId ?? null
-        : isReply && targetComment
-        ? targetComment.id
-        : null,
+      replyId:
+        isEdit && commentToEdit
+          ? commentToEdit.replyId ?? null
+          : isReply && targetComment
+          ? targetComment.replyId ?? targetComment.id
+          : null,
       images:
         isEdit && commentToEdit && commentToEdit.images.length > 0
           ? [
@@ -540,11 +493,12 @@ export const CommentForm = ({
   useEffect(() => {
     reset({
       content: isEdit && commentToEdit ? commentToEdit.content : "",
-      replyId: isEdit && commentToEdit
-        ? commentToEdit.replyId ?? null
-        : isReply && targetComment
-        ? targetComment.id
-        : null,
+      replyId:
+        isEdit && commentToEdit
+          ? commentToEdit.replyId ?? null
+          : isReply && targetComment
+          ? targetComment.replyId ?? targetComment.id
+          : null,
       images:
         isEdit && commentToEdit && commentToEdit.images.length > 0
           ? [
@@ -557,7 +511,7 @@ export const CommentForm = ({
             ]
           : [],
     });
-  }, [mode, commentToEdit, targetComment, reset, isEdit,isReply]);
+  }, [mode, commentToEdit, targetComment, reset, isEdit, isReply]);
 
   const content = watch("content");
 
@@ -605,7 +559,11 @@ export const CommentForm = ({
         }
         return result.data;
       } else {
-        const replyTarget = data.replyId ?? (isReply && targetComment ? targetComment.id : null);
+        const replyTarget =
+          data.replyId ??
+          (isReply && targetComment
+            ? targetComment.replyId ?? targetComment.id
+            : null);
         const result = await addCommentAction(
           {
             content: data.content || "",
@@ -626,7 +584,10 @@ export const CommentForm = ({
 
       // Invalidate replies if this is a reply or editing a reply
       const replyKey =
-        (isEdit && commentToEdit?.replyId);
+        (isEdit && commentToEdit?.replyId) ||
+        (isReply && targetComment
+          ? targetComment.replyId ?? targetComment.id
+          : undefined);
       if (replyKey) {
         queryClient.invalidateQueries({ queryKey: ["replies", replyKey] });
       }
@@ -656,7 +617,8 @@ export const CommentForm = ({
     try {
       await mutation.mutateAsync(data);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to add comment");
+      // Error toast is handled in mutation.onError
+      console.error("Failed to submit comment:", error);
     }
   };
 
