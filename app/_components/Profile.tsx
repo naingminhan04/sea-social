@@ -25,6 +25,7 @@ import PostReel from "./PostReel";
 import { useState } from "react";
 import ImageViewer from "./ImageViewer";
 import DummyProfile from "./DummyProfile";
+import { vi } from "date-fns/locale";
 
 const Profile = ({ userId }: { userId: string }) => {
   const queryClient = useQueryClient();
@@ -103,9 +104,23 @@ const Profile = ({ userId }: { userId: string }) => {
       <div className="relative mb-[10vw] md:mb-[6vw] lg:mb-[clamp(10px,5vw,60px)]">
         <div className="w-full aspect-5/2 relative bg-gray-300">
           {coverPreviewUrl ? (
-            <Image src={coverPreviewUrl} onClick={()=>setImageView("cover")} fill alt="cover photo preview" className="object-cover" />
+            <Image
+              src={coverPreviewUrl}
+              onClick={() => setImageView("cover")}
+              fill
+              alt="cover photo preview"
+              className="object-cover"
+            />
           ) : (
-            user?.coverPic && <Image src={user.coverPic} onClick={()=>setImageView("cover")} fill alt="cover photo" className="object-cover" />
+            user?.coverPic && (
+              <Image
+                src={user.coverPic}
+                onClick={() => setImageView("cover")}
+                fill
+                alt="cover photo"
+                className="object-cover"
+              />
+            )
           )}
           {isOwner &&
             (editCover ? (
@@ -119,9 +134,7 @@ const Profile = ({ userId }: { userId: string }) => {
                     const toastId = toast.loading("Updating cover photo...");
                     setEditCover(false);
                     try {
-                      const uploadedImages = await uploadFiles([
-                        selectedFile,
-                      ]);
+                      const uploadedImages = await uploadFiles([selectedFile]);
                       if (!uploadedImages || uploadedImages.length === 0) {
                         throw new Error("Upload failed");
                       }
@@ -249,6 +262,16 @@ const Profile = ({ userId }: { userId: string }) => {
               @{user?.username}
             </p>
           </div>
+
+          {user?.id === viewerId && (
+            <button onClick={()=>{
+              toast.success(`You have ${viewer?.points} points`,{
+                id:"points"
+              })
+            }} className="w-20 flex justify-center items-center h-[14vw] md:h-[9vw] lg:h-[clamp(70px,4.5vw,80px)] rounded-lg bg-gray-200 dark:bg-neutral-700">
+            <p>Points</p>
+          </button>
+          )}
         </div>
 
         {user?.bio && (

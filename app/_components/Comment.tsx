@@ -46,6 +46,7 @@ import toast from "react-hot-toast";
 import { useAuthStore } from "@/store/auth";
 import { uploadFiles } from "@/utils/uploadUtils";
 import ImageViewer from "./ImageViewer";
+import DummyComment from "./DummyComment";
 
 const CommentBtn = ({ post, view }: { post: PostType; view: boolean }) => {
   if (view)
@@ -177,9 +178,9 @@ export const CommentPage = ({ postId }: { postId: string }) => {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full min-h-[10vh] flex-1">
-        <span className="w-8 h-8 rounded-full border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t-white animate-spin" />
-      </div>
+       <div className="mb-2"><DummyComment />
+        <DummyComment />
+       </div>
     );
   }
 
@@ -263,19 +264,19 @@ export const CommentPage = ({ postId }: { postId: string }) => {
         </main>
 
         {hasNextPage && (
-          <footer className="p-4 w-full flex justify-center">
+          <div>
+            {isFetchingNextPage ? <DummyComment /> :<footer className="p-4 w-full flex justify-center">
             <button
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
               className="text-blue-400 w-full flex justify-center items-center  dark:text-neutral-50 hover:underline disabled:opacity-50"
             >
-              {isFetchingNextPage ? (
-                <span className="w-8 h-8 rounded-full flex border-2 border-black/30 border-t-black dark:border-white/30 dark:border-t-white animate-spin" />
-              ) : (
-                "Load More Comments"
-              )}
+                Load More Comments
             </button>
-          </footer>
+          </footer>}
+            
+          </div>
+          
         )}
       </div>
       <div className="pb-2 bg-gray-100 dark:bg-neutral-950 -mx-2 px-2 sticky bottom-0 z-10 pt-2 space-y-2">
@@ -332,7 +333,6 @@ const CommentCard = ({
 }: CommentCardProps) => {
   return (
     <div
-      onClick={onReply}
       className={`flex gap-3 px-3 py-2 hover:bg-gray-200 dark:hover:bg-neutral-800 rounded-lg transition ${
         isDel.includes(comment.id) && "opacity-50 pointer-events-none"
       }`}
@@ -396,6 +396,7 @@ const CommentCard = ({
             {/* Actions */}
             <div className="flex gap-2 text-xs text-gray-400 mt-2 items-center">
               <button
+                onClick={onReply}
                 className="hover:text-blue-500 active:text-blue-400 transition-colors"
               >
                 Reply
@@ -405,15 +406,19 @@ const CommentCard = ({
                 <>
                   <span className="text-gray-300 dark:text-gray-600">|</span>
                   <button
-                    onClick={(e)=>{e.stopPropagation();
-                         onEdit()}}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit();
+                    }}
                     className="hover:text-amber-500 active:text-amber-400 transition-colors flex items-center gap-1"
                   >
                     <Pencil size={12} /> Edit
                   </button>
                   <button
-                    onClick={(e)=>{e.stopPropagation();
-                         onDelete(comment.id)}}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(comment.id);
+                    }}
                     className="hover:text-red-500 active:text-red-400 transition-colors flex items-center gap-1"
                   >
                     <Trash2 size={12} /> Delete
@@ -470,13 +475,14 @@ const Replies = ({
 
   if (isLoading)
     return (
-      <div className="ml-10 text-xs text-gray-400">Loading replies...</div>
+      <div className="ml-10"><DummyComment/></div>
+      
     );
 
   const replies = (data?.replies ?? data?.comments ?? []) as CommentType[];
 
   return (
-    <div className="ml-10 border-l-2 border-gray-300 dark:border-neutral-600 pl-4">
+    <div className="ml-10">
       {replies.toReversed().map((reply: CommentType) => (
         <div key={reply.id}>
           <CommentCard

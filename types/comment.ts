@@ -60,11 +60,8 @@ export interface RepliesProps {
 export interface CommentFormProps {
   postId: string;
   mode?: CommentFormMode;
-  /** The comment this action is targeting (replying to or editing). */
   targetComment?: CommentType;
-  /** For edit: the existing comment being edited. */
   commentToEdit?: CommentType;
-  /** If true, autofocus the textarea when the form mounts. */
   autoFocus?: boolean;
   onSuccess?: () => void;
   onCancel?: () => void;

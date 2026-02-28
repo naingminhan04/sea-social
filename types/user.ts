@@ -10,6 +10,7 @@ export interface UserType {
   email: string;
   name: string;
   username: string;
+  points : number;
   profilePic: string | null;
   isVerified: boolean;
   bio: string | null;
