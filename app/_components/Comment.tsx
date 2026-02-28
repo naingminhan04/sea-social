@@ -805,7 +805,7 @@ export const CommentForm = ({
                   : "Write a comment..."
             }
             maxLength={500}
-            className="w-full p-2 rounded-md bg-white dark:bg-black text-black dark:text-white resize-none h-10 outline-none border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-neutral-500 scrollbar-none text-sm"
+            className="w-full text-base p-2 rounded-md bg-white dark:bg-black text-black dark:text-white resize-none h-10 outline-none border border-gray-300 dark:border-neutral-700 focus:border-black dark:focus:border-neutral-500 scrollbar-none"
             {...contentRegister}
             ref={(el) => {
               contentRegister.ref(el);

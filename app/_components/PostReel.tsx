@@ -7,12 +7,13 @@ import { getAllPostAction } from "../_actions/postAction";
 import { PostType } from "@/types/post";
 import DummyPostCard from "./DummyPostCard";
 import toast from "react-hot-toast";
+import PullToRefresh from "react-simple-pull-to-refresh";
 
 const LIMIT = 10;
-const textOrder  = [2, 2, 1, 1, 2];
+const textOrder = [2, 2, 1, 1, 2];
 const imageOrder = [3, 1, 4, 3, 2];
 
-const PostReel = ( {userId}: {userId?: string} ) => {
+const PostReel = ({ userId }: { userId?: string }) => {
   const {
     data,
     isLoading,
@@ -40,13 +41,20 @@ const PostReel = ( {userId}: {userId?: string} ) => {
   const handleRefresh = async () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
 
-    if(!userId) {
-      toast.promise(refetch(), {
-      loading: "Refreshing the feed",
-      success: "Feed updated!",
-      error: "Error refreshing feed",
-    });
+    if (!userId) {
+      return toast.promise(
+        refetch(),
+        {
+          loading: "Refreshing the feed",
+          success: "Feed updated!",
+          error: "Error refreshing feed",
+        },
+        {
+          id: "feed-refresh",
+        },
+      );
     }
+    return Promise.resolve();
   };
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -72,11 +80,7 @@ const PostReel = ( {userId}: {userId?: string} ) => {
     return (
       <div className="flex flex-col w-full gap-2 p-2 lg:h-dvh h-[calc(100dvh-60px)] overflow-hidden">
         {Array.from({ length: 5 }).map((_, i) => (
-          <DummyPostCard
-            key={i}
-            text={textOrder[i]}
-            image={imageOrder[i]}
-          />
+          <DummyPostCard key={i} text={textOrder[i]} image={imageOrder[i]} />
         ))}
       </div>
     );
@@ -106,38 +110,47 @@ const PostReel = ( {userId}: {userId?: string} ) => {
   const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
-    <div className="flex flex-col w-full gap-2 p-2 overscroll-none">
-      {posts.length === 0 && !isLoading ? (
-        <div className="flex flex-col justify-center items-center w-full h-full p-4">
-          <p className="text-gray-500 dark:text-gray-400">No posts yet</p>
+    <PullToRefresh
+      pullingContent={
+        <div className="flex justify-center items-center m-2">
+          Pull to refresh the feed
         </div>
-      ) : (
-        <>
-          {posts.map((post: PostType) => (
-            <PostCard key={post.id} post={post} view={false} />
-          ))}
+      }
+      onRefresh={handleRefresh}
+    >
+      <div className="flex flex-col w-full gap-2 p-2 overscroll-contain">
+        {posts.length === 0 && !isLoading ? (
+          <div className="flex flex-col justify-center items-center w-full h-full p-4">
+            <p className="text-gray-500 dark:text-gray-400">No posts yet</p>
+          </div>
+        ) : (
+          <>
+            {posts.map((post: PostType) => (
+              <PostCard key={post.id} post={post} view={false} />
+            ))}
 
-          {hasNextPage ? (
-            <div
-              ref={loadMoreRef}
-              className={`h-10 flex justify-center items-center ${isFetchingNextPage && "w-full h-auto"}`}
-            >
-              {isFetchingNextPage && <DummyPostCard text={2} image={1} />}
-            </div>
-          ) : (
-            <div className="flex w-full justify-between items-center rounded-xl p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
-              <span>You have reached the end</span>{" "}
-              <button
-                onClick={handleRefresh}
-                className="bg-blue-400 dark:bg-white active:scale-98 transition-all text-neutral-50 dark:text-black rounded-md p-2"
+            {hasNextPage ? (
+              <div
+                ref={loadMoreRef}
+                className={`h-10 flex justify-center items-center ${isFetchingNextPage && "w-full h-auto"}`}
               >
-                {userId ? "Scroll to top" : "Refresh the feed"}
-              </button>
-            </div>
-          )}
-        </>
-      )}
-    </div>
+                {isFetchingNextPage && <DummyPostCard text={2} image={1} />}
+              </div>
+            ) : (
+              <div className="flex w-full justify-between items-center rounded-xl p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
+                <span>You have reached the end</span>{" "}
+                <button
+                  onClick={handleRefresh}
+                  className="bg-blue-400 dark:bg-white active:scale-98 transition-all text-neutral-50 dark:text-black rounded-md p-2"
+                >
+                  {userId ? "Scroll to top" : "Refresh the feed"}
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </PullToRefresh>
   );
 };
 
