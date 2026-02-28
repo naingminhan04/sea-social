@@ -14,6 +14,10 @@ const textOrder = [2, 2, 1, 1, 2];
 const imageOrder = [3, 1, 4, 3, 2];
 
 const PostReel = ({ userId }: { userId?: string }) => {
+  const isTouchDevice =
+  typeof window !== "undefined" &&
+  ("ontouchstart" in window || navigator.maxTouchPoints > 0);
+
   const {
     data,
     isLoading,
@@ -39,9 +43,7 @@ const PostReel = ({ userId }: { userId?: string }) => {
   });
 
   const handleRefresh = async () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-
-    if (!userId) {
+      scrollToTop();
       return toast.promise(
         refetch(),
         {
@@ -53,8 +55,10 @@ const PostReel = ({ userId }: { userId?: string }) => {
           id: "feed-refresh",
         },
       );
-    }
-    return Promise.resolve();
+  };
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
@@ -117,6 +121,7 @@ const PostReel = ({ userId }: { userId?: string }) => {
         </div>
       }
       onRefresh={handleRefresh}
+      isPullable={isTouchDevice && !userId}
     >
       <div className="flex flex-col w-full gap-2 p-2 overscroll-contain">
         {posts.length === 0 && !isLoading ? (
@@ -140,7 +145,7 @@ const PostReel = ({ userId }: { userId?: string }) => {
               <div className="flex w-full justify-between items-center rounded-xl p-2 bg-white dark:bg-neutral-900 text-gray-500 dark:text-gray-400 text-sm">
                 <span>You have reached the end</span>{" "}
                 <button
-                  onClick={handleRefresh}
+                  onClick={userId? scrollToTop :handleRefresh}
                   className="bg-blue-400 dark:bg-white active:scale-98 transition-all text-neutral-50 dark:text-black rounded-md p-2"
                 >
                   {userId ? "Scroll to top" : "Refresh the feed"}
