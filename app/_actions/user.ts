@@ -81,7 +81,9 @@ export async function checkUniqueUsernameAction(username: string):Promise<Action
     }
 }
 
-export async function updateUsernameAction(username: string): Promise<ActionResponse<UserType>> {
+export async function updateUsernameAction(
+  username: string,
+): Promise<ActionResponse<{ message: string; userId: string; username: string }>> {
     try {
         const res = await api.patch("/users/username", { username });
         return { success: true, data: res.data };
@@ -97,7 +99,9 @@ export async function updateUsernameAction(username: string): Promise<ActionResp
     }
 }
 
-export async function updateProfilePicAction(profilePic: ImageType): Promise<ActionResponse<UserType>> {
+export async function updateProfilePicAction(
+  profilePic: ImageType,
+): Promise<ActionResponse<{ message: string; profilePic: string }>> {
     try {
         const res = await api.patch("/users/profile-pic", { profilePic });
         return { success: true, data: res.data };
@@ -129,14 +133,18 @@ export async function updateCoverPicAction(coverPic: { key: string; fileName: st
     }
 }
 
-export async function changePasswordAction(oldPassword: string, newPassword: string, confirmPassword: string): Promise<ActionResponse<null>> {
+export async function changePasswordAction(
+  oldPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<ActionResponse<{ message: string }>> {
     try {
-        await api.patch("/users/change-password", {
+        const res = await api.patch("/users/change-password", {
             oldPassword,
             newPassword,
             confirmPassword,
         });
-        return { success: true, data: null };
+        return { success: true, data: res.data };
     } catch (error) {
         let message = "Unexpected error changing password";
 
@@ -154,7 +162,19 @@ export async function updateProfileAction(data: {
     nickname?: string;
     bio?: string;
     phone?: string;
-}): Promise<ActionResponse<UserType>> {
+}): Promise<
+  ActionResponse<{
+    message: string;
+    user: {
+      id: string;
+      name: string;
+      username: string;
+      profilePic: string | null;
+      bio: unknown;
+      updatedAt: string;
+    };
+  }>
+> {
     try {
         const res = await api.patch("/users/update-profile", data);
         return { success: true, data: res.data };

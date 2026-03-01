@@ -5,7 +5,7 @@ import { useAuthStore } from "@/store/auth";
 import { useRouter } from "nextjs-toploader/app";
 import toast from "react-hot-toast";
 
-export default function LogOutBtn() {
+export default function LogOutBtn({ className = "" }: { className?: string }) {
   const clearUser = useAuthStore((state) => state.logOut);
   const router = useRouter();
 
@@ -25,5 +25,9 @@ export default function LogOutBtn() {
     }
   };
 
-  return <div onClick={handleLogOut}>Log-Out</div>;
+  return (
+    <button type="button" onClick={handleLogOut} className={className}>
+      Log-Out
+    </button>
+  );
 }
