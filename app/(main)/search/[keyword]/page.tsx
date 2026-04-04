@@ -9,9 +9,11 @@ import PostCard from "@/app/_components/PostCard";
 import DummyPostCard from "@/app/_components/DummyPostCard";
 import { searchAction } from "@/app/_actions/search";
 import { PostType } from "@/types/post";
+import { SearchResponseType } from "@/types/search";
 
 const INITIAL_LIMIT = 5;
 const LIMIT_STEP = 5;
+const MAX_LIMIT = 20;
 const textOrder = [2, 2, 1];
 const imageOrder = [3, 1, 4];
 
@@ -38,12 +40,14 @@ const SearchPage = () => {
 const SearchResults = ({ keyword }: { keyword: string }) => {
   const [activeTab, setActiveTab] = useState<SearchTab>("posts");
   const [limit, setLimit] = useState(INITIAL_LIMIT);
+  const [cachedData, setCachedData] = useState<SearchResponseType | null>(null);
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const queryLimit = Math.min(limit, MAX_LIMIT);
 
   const { data, isLoading, isFetching, error } = useQuery({
-    queryKey: ["search", keyword, limit],
+    queryKey: ["search", keyword, queryLimit],
     queryFn: async () => {
-      const result = await searchAction(keyword, limit);
+      const result = await searchAction(keyword, queryLimit);
       if (!result.success) {
         throw new Error(result.error);
       }
@@ -54,17 +58,30 @@ const SearchResults = ({ keyword }: { keyword: string }) => {
     refetchOnWindowFocus: false,
   });
 
-  const hasMorePosts = useMemo(() => {
-    if (!data) return false;
-    return data.posts.length < data.totalPosts;
+  useEffect(() => {
+    if (data) {
+      setCachedData(data);
+    }
   }, [data]);
+
+  const visibleData = data ?? cachedData;
+
+  const hasMorePosts = useMemo(() => {
+    if (!visibleData) return false;
+    return visibleData.posts.length < Math.min(visibleData.totalPosts, MAX_LIMIT);
+  }, [visibleData]);
 
   const hasMoreUsers = useMemo(() => {
-    if (!data) return false;
-    return data.users.length < data.totalUsers;
-  }, [data]);
+    if (!visibleData) return false;
+    return visibleData.users.length < Math.min(visibleData.totalUsers, MAX_LIMIT);
+  }, [visibleData]);
 
   const canLoadMore = activeTab === "posts" ? hasMorePosts : hasMoreUsers;
+  const isPostsCapped = visibleData?.totalPosts ? visibleData.totalPosts > MAX_LIMIT : false;
+  const isUsersCapped = visibleData?.totalUsers ? visibleData.totalUsers > MAX_LIMIT : false;
+
+  const showErrorFullPage = Boolean(error && !visibleData);
+  const showErrorBanner = Boolean(error && visibleData);
 
   useEffect(() => {
     if (!loadMoreRef.current || !canLoadMore || isFetching || !keyword) return;
@@ -72,7 +89,10 @@ const SearchResults = ({ keyword }: { keyword: string }) => {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          setLimit((prev) => prev + LIMIT_STEP);
+          setLimit((prev) => {
+            if (prev >= MAX_LIMIT) return prev;
+            return Math.min(prev + LIMIT_STEP, MAX_LIMIT);
+          });
         }
       },
       { root: null, rootMargin: "120px" },
@@ -82,9 +102,9 @@ const SearchResults = ({ keyword }: { keyword: string }) => {
     return () => observer.disconnect();
   }, [canLoadMore, isFetching, keyword]);
 
-  const posts = data?.posts ?? [];
-  const users = data?.users ?? [];
-  const showInitialLoading = isLoading && !!keyword;
+  const posts = visibleData?.posts ?? [];
+  const users = visibleData?.users ?? [];
+  const showInitialLoading = isLoading && !visibleData && !!keyword;
   const showLoadingMore = isFetching && !isLoading && canLoadMore;
 
   return (
@@ -103,7 +123,7 @@ const SearchResults = ({ keyword }: { keyword: string }) => {
                   : " hover:bg-blue-100 dark:bg-neutral-800 dark:hover:bg-neutral-900"
             }`}
           >
-            Posts ({data?.totalPosts ?? 0})
+            Posts
           </button>
           <button
             onClick={() => setActiveTab("users")}
@@ -113,17 +133,25 @@ const SearchResults = ({ keyword }: { keyword: string }) => {
                   : " hover:bg-blue-100 dark:bg-neutral-800 dark:hover:bg-neutral-900"
             }`}
           >
-            Users ({data?.totalUsers ?? 0})
+            Users
           </button>
           </div>
         </div>
       </div>
 
-      {error ? (
+      {showErrorFullPage ? (
         <div className="p-4 text-red-600 dark:text-red-400">
           {(error as Error).message}
         </div>
-      ) : activeTab === "posts" ? (
+      ) : null}
+
+      {showErrorBanner ? (
+        <div className="p-4 text-yellow-700 bg-yellow-100 dark:bg-yellow-900/20 dark:text-yellow-300 rounded-lg m-2">
+          {(error as Error).message}. Showing cached results while the latest search request completes.
+        </div>
+      ) : null}
+
+      {activeTab === "posts" ? (
         <div className="flex flex-col gap-2 pt-2">
           {showInitialLoading ? (
             Array.from({ length: 3 }).map((_, i) => (
@@ -139,9 +167,39 @@ const SearchResults = ({ keyword }: { keyword: string }) => {
             ))
           )}
 
-          {canLoadMore && <div ref={loadMoreRef} className="h-2 w-full" />}
+          {canLoadMore && limit < MAX_LIMIT && <div ref={loadMoreRef} className="h-2 w-full" />}
 
-          {showLoadingMore && <DummyPostCard text={2} image={1} />}
+          {limit >= MAX_LIMIT && (
+            <div className="flex w-full justify-center items-center rounded-xl p-4 bg-gray-50 dark:bg-neutral-800 text-gray-600 dark:text-gray-300 text-sm">
+              <div className="text-center">
+                <p className="font-medium mb-1">
+                  {(() => {
+                    const remaining = Math.max(0, (visibleData?.totalPosts ?? 0) - MAX_LIMIT);
+                    return remaining > 0 
+                      ? `And ${remaining}+ posts found. Try being more specific with your search terms.`
+                      : 'Try being more specific with your search terms to find exactly what you\'re looking for.';
+                  })()}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Temporary: Always show loading skeletons for testing */}
+          {canLoadMore && (
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <DummyPostCard key={`loading-${i}`} text={2} image={1} />
+              ))}
+            </div>
+          )}
+
+          {showLoadingMore && (
+            <div className="flex flex-col gap-2">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <DummyPostCard key={`loading-${i}`} text={2} image={1} />
+              ))}
+            </div>
+          )}
         </div>
       ) : (
         <div className="p-2 bg-white dark:bg-neutral-900">
@@ -188,11 +246,55 @@ const SearchResults = ({ keyword }: { keyword: string }) => {
             ))
           )}
 
-          {canLoadMore && <div ref={loadMoreRef} className="h-2 w-full" />}
+          {canLoadMore && limit < MAX_LIMIT && <div ref={loadMoreRef} className="h-2 w-full" />}
+
+          {limit >= MAX_LIMIT && (
+            <div className="flex w-full justify-center items-center rounded-xl p-4 bg-gray-50 dark:bg-neutral-800 text-gray-600 dark:text-gray-300 text-sm mt-4">
+              <div className="text-center">
+                <p className="font-medium mb-1">
+                  {(() => {
+                    const remaining = Math.max(0, (visibleData?.totalUsers ?? 0) - MAX_LIMIT);
+                    return remaining > 0 
+                      ? `And ${remaining}+ users found. Try being more specific with your search terms.`
+                      : 'Try being more specific with your search terms to find exactly what you\'re looking for.';
+                  })()}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Temporary: Always show loading skeletons for testing */}
+          {canLoadMore && (
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={`loading-user-${i}`}
+                  className="animate-pulse flex items-center gap-2 p-2 rounded-lg bg-gray-100 dark:bg-neutral-800"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-neutral-700" />
+                  <div className="space-y-2">
+                    <div className="w-30 h-3 rounded bg-gray-300 dark:bg-neutral-700" />
+                    <div className="w-24 h-3 rounded bg-gray-300 dark:bg-neutral-700" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           {showLoadingMore && (
-            <div className="flex justify-center py-3 text-sm text-gray-500 dark:text-gray-400">
-              Loading more users...
+            <div className="space-y-2">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={`loading-user-${i}`}
+                  className="animate-pulse flex items-center gap-2 p-2 rounded-lg bg-gray-100 dark:bg-neutral-800"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-neutral-700" />
+                  <div className="space-y-2">
+                    <div className="w-30 h-3 rounded bg-gray-300 dark:bg-neutral-700" />
+                    <div className="w-24 h-3 rounded bg-gray-300 dark:bg-neutral-700" />
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
