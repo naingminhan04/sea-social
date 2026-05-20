@@ -7,3 +7,7 @@ channel = "stable-25_05"
 
 [workflows]
 runButton = "Project"
+
+[[ports]]
+localPort = 23636
+externalPort = 80
