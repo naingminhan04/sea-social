@@ -242,7 +242,7 @@ function PostMediaTile({
 }) {
   const isVideo = isVideoMedia(media);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const [showControls, setShowControls] = useState(false);
+  const isPlaying = !!videoState?.isPlaying;
 
   useEffect(() => {
     if (!isVideo || !videoRef.current || !videoState) return;
@@ -250,9 +250,9 @@ function PostMediaTile({
     if (Math.abs(video.currentTime - videoState.currentTime) > 0.4) {
       video.currentTime = Math.max(videoState.currentTime, 0);
     }
-
     if (videoState.isPlaying) {
-      void video.play().catch(() => {});    } else {
+      void video.play().catch(() => {});
+    } else {
       video.pause();
     }
   }, [isVideo, videoState]);
@@ -273,27 +273,9 @@ function PostMediaTile({
       },
       { threshold: 0.2 },
     );
-
     observer.observe(video);
     return () => observer.disconnect();
   }, [isVideo, media.id, onVideoStateChange]);
-
-  useEffect(() => {
-    if (!isVideo || !videoRef.current) return;
-
-    const handleFullscreenChange = () => {
-      if (document.fullscreenElement === videoRef.current) {
-        void document.exitFullscreen().finally(() => {
-          onOpen();
-        });
-      }
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-    };
-  }, [isVideo, onOpen]);
 
   return (
     <div
@@ -307,9 +289,7 @@ function PostMediaTile({
             src={media.url}
             className="h-full w-full object-cover"
             preload="metadata"
-            controls={showControls || !!videoState?.isPlaying || (videoState?.currentTime ?? 0) > 0}
             playsInline
-            onClick={(event) => event.stopPropagation()}
             onTimeUpdate={(event) => {
               onVideoStateChange({
                 mediaId: media.id,
@@ -332,25 +312,28 @@ function PostMediaTile({
               });
             }}
           />
-          {!showControls && (
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                setShowControls(true);
-                const video = videoRef.current;
-                if (!video) return;
+          <button
+            type="button"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              const video = videoRef.current;
+              if (!video) return;
+              if (video.paused) {
                 void video.play().catch(() => {});
-              }}
-              className="absolute inset-0 z-10 flex items-center justify-center bg-black/20 text-white"
-              aria-label="Play video preview"
-            >
+              } else {
+                video.pause();
+              }
+            }}
+            className="absolute inset-0 z-10 flex items-center justify-center text-white"
+            aria-label={isPlaying ? "Pause" : "Play video preview"}
+          >
+            {!isPlaying && (
               <span className="flex h-14 w-14 items-center justify-center rounded-full bg-black/55">
                 <Play size={28} fill="currentColor" />
               </span>
-            </button>
-          )}
+            )}
+          </button>
         </>
       ) : (
         <RecoverableImage
