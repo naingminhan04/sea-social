@@ -12,6 +12,7 @@ import {
 import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 import OverlayPortal from "./OverlayPortal";
 import { isVideoMedia } from "@/utils/media";
+import VideoPlayer from "./VideoPlayer";
 
 type ImageType = {
   id: string;
@@ -198,39 +199,37 @@ const ImageViewer = ({
           )}
           <div className="relative h-full w-full">
             {isVideo ? (
-              <>
-                <video
-                  key={`${image.id}-${safeIndex}`}
-                  ref={videoRef}
-                  src={image.url}
-                  className="h-full w-full object-contain"
-                  controls
-                  autoPlay
-                  playsInline
-                  preload="metadata"
-                  onTimeUpdate={(event) => {
-                    onVideoStateChange?.({
-                      mediaId: image.id,
-                      currentTime: event.currentTarget.currentTime,
-                      isPlaying: !event.currentTarget.paused,
-                    });
-                  }}
-                  onPlay={(event) => {
-                    onVideoStateChange?.({
-                      mediaId: image.id,
-                      currentTime: event.currentTarget.currentTime,
-                      isPlaying: true,
-                    });
-                  }}
-                  onPause={(event) => {
-                    onVideoStateChange?.({
-                      mediaId: image.id,
-                      currentTime: event.currentTarget.currentTime,
-                      isPlaying: false,
-                    });
-                  }}
-                />
-              </>
+              <VideoPlayer
+                key={`${image.id}-${safeIndex}`}
+                ref={videoRef}
+                src={image.url}
+                className="h-full w-full"
+                objectFit="contain"
+                autoPlay
+                playsInline
+                preload="metadata"
+                onTimeUpdate={(event) => {
+                  onVideoStateChange?.({
+                    mediaId: image.id,
+                    currentTime: event.currentTarget.currentTime,
+                    isPlaying: !event.currentTarget.paused,
+                  });
+                }}
+                onPlay={(event) => {
+                  onVideoStateChange?.({
+                    mediaId: image.id,
+                    currentTime: event.currentTarget.currentTime,
+                    isPlaying: true,
+                  });
+                }}
+                onPause={(event) => {
+                  onVideoStateChange?.({
+                    mediaId: image.id,
+                    currentTime: event.currentTarget.currentTime,
+                    isPlaying: false,
+                  });
+                }}
+              />
             ) : (
               <Image
                 key={`${image.id}-${safeIndex}-${viewerState.retryKey}`}
