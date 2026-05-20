@@ -19,6 +19,11 @@ const MenuBtn = () => {
   const user = useAuthStore((state) => state.user);
   const profileSlug = getProfileSlug(user);
   const MenuArr = getMenuArr(profileSlug);
+  const openProfile = () => {
+    setMenu(false);
+    if (window.innerWidth >= 768) return;
+    router.push(`/users/${getProfileSlug(user)}`);
+  };
   
   return (
     <div className="flex lg:hidden">
@@ -77,10 +82,7 @@ const MenuBtn = () => {
             <div className="mt-auto space-y-2 p-2 pb-0">
               {user && (
                 <div
-                  onClick={() => {
-                    router.push(`/users/${getProfileSlug(user)}`);
-                    setMenu(false);
-                  }}
+                  onClick={openProfile}
                   className="cursor-pointer rounded-xl overflow-hidden border border-blue-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
                 >
                   <div className="relative h-20 bg-gray-200 dark:bg-neutral-800">

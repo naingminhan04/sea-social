@@ -387,6 +387,10 @@ const Profile = ({ username, isPortal = false }: ProfileProps) => {
     );
   }
 
+  const displayedCoverSrc = coverPreviewUrl || user?.coverPic || null;
+  const displayedProfileSrc =
+    profilePreviewUrl || user?.profilePic || "/default-avatar.png";
+
   return (
     <main
       className={`bg-white relative text-sm sm:text-base dark:bg-neutral-900 ${
@@ -676,27 +680,69 @@ const Profile = ({ username, isPortal = false }: ProfileProps) => {
 
               <div className="min-h-0 flex-1 overflow-y-auto p-5 scrollbar-none overscroll-contain">
                 {activeEditTab === "photo" && (
-                  <div className="mx-auto max-w-2xl rounded-3xl border border-black/10 bg-slate-100 p-5 dark:border-white/10 dark:bg-neutral-900">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-black dark:text-white">
+                  <div className="mx-auto max-w-2xl overflow-hidden rounded-3xl border border-black/10 bg-white dark:border-white/10 dark:bg-neutral-900">
+                    <div className="flex items-center gap-2 px-5 pt-5 text-sm font-semibold text-black dark:text-white">
                       <ImageUp size={18} />
-                      Profile Photo
+                      Profile Photos
                     </div>
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                      Choose a new photo and preview it before saving.
-                    </p>
-                    <div className="mt-4 flex flex-col gap-4 rounded-2xl border border-black/5 bg-white p-4 dark:border-white/10 dark:bg-neutral-800 sm:flex-row sm:items-center">
-                      <Image
-                        src={
-                          profilePreviewUrl
-                            ? profilePreviewUrl
-                            : user?.profilePic || "/default-avatar.png"
-                        }
-                        alt="Profile preview"
-                        width={96}
-                        height={96}
-                        className="h-24 w-24 rounded-full border border-gray-200 object-cover dark:border-neutral-700"
-                      />
-                      <div className="flex flex-wrap items-center gap-2">
+                    <div className="mt-4">
+                      <div className="relative mb-14">
+                        <div className="relative aspect-5/2 w-full overflow-hidden bg-gray-300 dark:bg-neutral-800">
+                          {displayedCoverSrc ? (
+                            coverPreviewUrl ? (
+                              <Image
+                                src={coverPreviewUrl}
+                                fill
+                                alt="Cover photo preview"
+                                className="object-cover"
+                              />
+                            ) : (
+                              <RecoverableImage
+                                src={displayedCoverSrc}
+                                fill
+                                alt="Cover photo"
+                                className="object-cover"
+                                wrapperClassName="h-full w-full"
+                                showRetryButton
+                                retryButtonClassName="h-10 w-10"
+                              />
+                            )
+                          ) : null}
+
+                          <label className="absolute bottom-2 right-2 inline-flex h-10 cursor-pointer items-center justify-center rounded-lg bg-white/70 p-2 text-neutral-900 backdrop-blur-md transition hover:bg-white dark:bg-black/60 dark:text-white dark:hover:bg-black/75">
+                            <Camera size={18} />
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              disabled={isCoverPending || isProfilePicPending}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (!file) return;
+                                if (coverPreviewUrl) {
+                                  URL.revokeObjectURL(coverPreviewUrl);
+                                }
+                                setSelectedCoverFile(file);
+                                setCoverPreviewUrl(URL.createObjectURL(file));
+                                setEditCover(true);
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="absolute left-1/10 z-10 w-3/14 min-w-22 -bottom-2/9">
+                          <Image
+                            src={displayedProfileSrc}
+                            alt="Profile preview"
+                            width={200}
+                            height={200}
+                            className="aspect-square w-full rounded-full border-[1vw] border-white bg-gray-300 object-cover dark:border-neutral-900 md:border-[0.6vw] lg:border-[clamp(5px,1vw,7px)]"
+                          />
+                          <span className="absolute bottom-1/10 right-1/10 aspect-square w-4 rounded-full border bg-green-500 sm:w-5" />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 px-4 pb-5">
                         <label className="inline-flex h-11 cursor-pointer items-center rounded-2xl bg-blue-300 px-4 text-sm font-semibold text-neutral-950 transition hover:bg-blue-400 hover:text-white active:bg-blue-500 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black">
                           Choose Photo
                           <input
@@ -739,6 +785,34 @@ const Profile = ({ username, isPortal = false }: ProfileProps) => {
                               className="inline-flex h-11 items-center rounded-2xl border border-black/10 bg-white px-4 text-sm font-semibold text-black transition hover:bg-blue-300 hover:text-neutral-900 active:bg-blue-400 disabled:opacity-50 dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black"
                             >
                               Cancel
+                            </button>
+                          </>
+                        )}
+
+                        {selectedCoverFile && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={isCoverPending}
+                              onClick={saveCoverPicture}
+                              className="inline-flex h-11 items-center rounded-2xl bg-blue-300 px-4 text-sm font-semibold text-neutral-950 transition hover:bg-blue-400 hover:text-white active:bg-blue-500 disabled:opacity-50 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black"
+                            >
+                              {isCoverPending ? "Updating..." : "Update Banner"}
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isCoverPending}
+                              onClick={() => {
+                                setEditCover(false);
+                                setSelectedCoverFile(null);
+                                if (coverPreviewUrl) {
+                                  URL.revokeObjectURL(coverPreviewUrl);
+                                  setCoverPreviewUrl(null);
+                                }
+                              }}
+                              className="inline-flex h-11 items-center rounded-2xl border border-black/10 bg-white px-4 text-sm font-semibold text-black transition hover:bg-blue-300 hover:text-neutral-900 active:bg-blue-400 disabled:opacity-50 dark:border-white/10 dark:bg-neutral-900 dark:text-white dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black"
+                            >
+                              Cancel Banner
                             </button>
                           </>
                         )}

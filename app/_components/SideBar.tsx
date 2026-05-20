@@ -41,6 +41,10 @@ const SideBar = () => {
   const user = useAuthStore((state) => state.user);
   const profileSlug = getProfileSlug(user);
   const MenuArr = getMenuArr(profileSlug).filter((item) => item.name !== "Profile");
+  const openProfile = () => {
+    if (window.innerWidth >= 768) return;
+    router.push(`/users/${getProfileSlug(user)}`);
+  };
 
   return (
     <div className="hidden lg:flex w-9/10 h-full flex-col">
@@ -80,9 +84,7 @@ const SideBar = () => {
       <div className="mt-auto space-y-3">
         {user && (
           <div
-            onClick={() => {
-              router.push(`/users/${getProfileSlug(user)}`);
-            }}
+            onClick={openProfile}
             className="cursor-pointer rounded-xl overflow-hidden border border-blue-200 dark:border-neutral-700 bg-white dark:bg-neutral-900"
           >
             <div className="relative h-20 bg-gray-200 dark:bg-neutral-800">

@@ -112,11 +112,7 @@ const ImageViewer = ({
       video.currentTime = nextTime;
     }
 
-    if (videoState.isPlaying) {
-      void video.play().catch(() => {});
-    } else {
-      video.pause();
-    }
+    void video.play().catch(() => {});
     syncedPlaybackKeyRef.current = mediaKey;
   }, [image, isVideo, mediaKey, videoState]);
 
@@ -208,6 +204,9 @@ const ImageViewer = ({
                   autoPlay
                   playsInline
                   preload="metadata"
+                  onLoadedMetadata={(event) => {
+                    void event.currentTarget.play().catch(() => {});
+                  }}
                   onTimeUpdate={(event) => {
                     onVideoStateChange?.({
                       mediaId: image.id,
