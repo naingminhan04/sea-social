@@ -12,7 +12,6 @@ import {
 import { useLockBodyScroll } from "../../hooks/useLockBodyScroll";
 import OverlayPortal from "./OverlayPortal";
 import { isVideoMedia } from "@/utils/media";
-import { useVideoThumbnail } from "@/hooks/useVideoThumbnail";
 
 type ImageType = {
   id: string;
@@ -96,7 +95,6 @@ const ImageViewer = ({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const syncedPlaybackKeyRef = useRef<string | null>(null);
   const isVideo = image ? isVideoMedia(image) : false;
-  const videoThumbnail = useVideoThumbnail(isVideo ? image?.url : null);
 
   useEffect(() => {
     if (!isVideo || !videoRef.current || !image) return;
@@ -206,7 +204,6 @@ const ImageViewer = ({
                   autoPlay
                   playsInline
                   preload="metadata"
-                  poster={videoThumbnail ?? undefined}
                   onLoadedMetadata={(event) => {
                     void event.currentTarget.play().catch(() => {});
                   }}
