@@ -3,11 +3,12 @@
 import {
   createChatAction,
   deleteMessageAction,
+  getChatByIdAction,
   getChatMessagesAction,
   getChatsAction,
   getChatSocketConfigAction,
+  getPrivateChatByUserIdAction,
   getMessageReactionsAction,
-  getUnreadMessagesCountAction,
   getPrivateMessagesAction,
   markMessageReadAction,
   removeMessageReactionAction,
@@ -17,6 +18,8 @@ import {
   updateMessageAction,
 } from "@/app/_actions/chat";
 import { searchAction } from "@/app/_actions/search";
+import { getUserAction } from "@/app/_actions/user";
+import { useChatNavigation } from "@/app/_components/chat/ChatNavigation";
 import OverlayPortal from "@/app/_components/OverlayPortal";
 import ImageViewer from "@/app/_components/ImageViewer";
 import RecoverableImage from "@/app/_components/RecoverableImage";
@@ -25,24 +28,35 @@ import type {
   Chat,
   ChatMedia,
   ChatMessage,
+  ChatMessagesResponse,
   ChatReactionType,
-  DraftPrivateChat,
   SendMessageInput,
   SelectedChat,
 } from "@/types/chat";
 import type { SearchUserType } from "@/types/search";
 import { formatDate } from "@/utils/formatDate";
+import {
+  chatMatchesId,
+  findChatById,
+  userToDraftChatUser,
+} from "@/utils/chatRoutes";
+import {
+  getChatTitle,
+  isDraftChat,
+  visibleChatHasMessage,
+} from "@/utils/chatDisplay";
 import { uploadFiles, type UploadedFile } from "@/utils/uploadUtils";
 import {
+  useInfiniteQuery,
   useMutation,
   useQuery,
   useQueryClient,
   type UseMutationResult,
 } from "@tanstack/react-query";
 import {
-  ArrowLeft,
   Check,
   CheckCheck,
+  ChevronDown,
   Edit3,
   FileText,
   Loader2,
@@ -64,14 +78,17 @@ import {
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import {
+  useCallback,
   useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type Dispatch,
+  type RefObject,
   type SetStateAction,
 } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { io, type Socket } from "socket.io-client";
 
@@ -165,36 +182,9 @@ const toMessageInputMedia = (media: ChatMedia): ChatMedia => ({
   ...(media.thumbnailKey ? { thumbnailKey: media.thumbnailKey } : {}),
 });
 
-const isDraftChat = (chat: SelectedChat | null): chat is DraftPrivateChat =>
-  chat?.type === "PRIVATE_DRAFT";
-
-const visibleChatHasMessage = (chat: Chat) =>
-  Boolean(chat.lastMessage) || chat.messagesCount > 0;
-
-const getChatTitle = (chat: SelectedChat) => {
-  if (isDraftChat(chat)) return chat.user.name;
-  if (chat.type === "PRIVATE") return chat.otherUser?.user.name ?? chat.name ?? "Private chat";
-  return chat.name || "Group chat";
-};
-
-const getChatSubtitle = (chat: Chat, viewerId?: string) => {
-  const message = chat.lastMessage;
-  if (!message) return chat.type === "GROUP" ? `${chat.participantsCount} members` : "";
-
-  const content = message.content?.trim() || "Attachment";
-  if (message.senderId === viewerId) return `You: ${content}`;
-  return content;
-};
-
-const getChatImage = (chat: SelectedChat) => {
-  if (isDraftChat(chat)) return chat.user.profilePic;
-  if (chat.type === "PRIVATE") return chat.otherUser?.user.profilePic ?? null;
-  return chat.chatImage;
-};
-
 const getSelectedKey = (chat: SelectedChat | null) => {
   if (!chat) return "none";
-  if (isDraftChat(chat)) return `draft-${chat.user.id}`;
+  if (isDraftChat(chat)) return `draft-${chat.user.id || chat.user.username}`;
   return chat.id;
 };
 
@@ -215,35 +205,254 @@ const sortMessages = (messages: ChatMessage[]) =>
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
 
-const ChatClient = () => {
+const getOlderCursor = (cursors?: Record<string, unknown> | null) => {
+  if (!cursors) return null;
+
+  for (const key of ["older", "before", "prev", "previous"] as const) {
+    const value = cursors[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+
+  return null;
+};
+
+const getOldestMessageId = (messages: ChatMessage[]) =>
+  sortMessages(messages)[0]?.id ?? null;
+
+const inferHasMoreOlder = (page: ChatMessagesPage) => {
+  if (page.hasMore === true) return true;
+  if (page.hasMore === false) return false;
+  return page.messages.length >= MESSAGES_PAGE_SIZE;
+};
+
+const getParentMessageId = (message: ChatMessage) => {
+  if (message.parentMessageId) return message.parentMessageId;
+  if (message.parentMessage && typeof message.parentMessage === "object") {
+    return message.parentMessage.id;
+  }
+  return null;
+};
+
+/** Whether a message you sent was read by someone else (not just delivered). */
+const isMessageReadByRecipients = (
+  message: ChatMessage,
+  chat: Chat | SelectedChat | null,
+) => {
+  if (message.isRead === true) return true;
+  if (message.isRead === false) return false;
+
+  // In DMs, readCount is unreliable (often counts the sender); only trust isRead.
+  if (!chat || isDraftChat(chat) || chat.type === "PRIVATE") return false;
+
+  return (message.readCount ?? 0) > 0;
+};
+
+const SCROLL_NEAR_BOTTOM_THRESHOLD = 120;
+const MESSAGES_PAGE_SIZE = 20;
+const LOAD_OLDER_SCROLL_THRESHOLD = 80;
+
+type ChatMessagesPage = {
+  messages: ChatMessage[];
+  cursors: Record<string, unknown> | null;
+  hasMore?: boolean;
+};
+
+type MessagesPagePayload = ChatMessagesResponse & { hasMore?: boolean };
+
+const requestMessagesPage = async (
+  chat: SelectedChat,
+  options: { limit: number; direction: "older" | "newer"; cursor?: string },
+): Promise<MessagesPagePayload> => {
+  const primaryResult = isDraftChat(chat)
+    ? await getPrivateMessagesAction(chat.user.id, options)
+    : chat.type === "PRIVATE" && chat.otherUser
+      ? await getPrivateMessagesAction(chat.otherUser.userId, options)
+      : await getChatMessagesAction(chat.id, options);
+
+  if (primaryResult.success) {
+    return primaryResult.data as MessagesPagePayload;
+  }
+
+  if (!isDraftChat(chat) && chat.type === "PRIVATE") {
+    const fallbackResult = await getChatMessagesAction(chat.id, options);
+    if (fallbackResult.success) {
+      return fallbackResult.data as MessagesPagePayload;
+    }
+  }
+
+  throw new Error(primaryResult.error);
+};
+
+const toMessagesPage = (payload: MessagesPagePayload): ChatMessagesPage => {
+  const page: ChatMessagesPage = {
+    messages: sortMessages(payload.messages ?? []),
+    cursors: payload.cursors ?? null,
+    hasMore: payload.hasMore,
+  };
+  if (page.hasMore === undefined) {
+    page.hasMore = inferHasMoreOlder(page);
+  }
+  return page;
+};
+
+const fetchChatMessagesPage = async (
+  chat: SelectedChat,
+  pageParam?: string,
+): Promise<ChatMessagesPage> => {
+  const payload = await requestMessagesPage(chat, {
+    limit: MESSAGES_PAGE_SIZE,
+    direction: "older",
+    ...(pageParam ? { cursor: pageParam } : {}),
+  });
+  let page = toMessagesPage(payload);
+
+  const anchorMessage =
+    !pageParam && !isDraftChat(chat) ? chat.lastMessage : null;
+
+  if (
+    anchorMessage &&
+    !page.messages.some((message) => message.id === anchorMessage.id)
+  ) {
+    const anchoredPayload = await requestMessagesPage(chat, {
+      limit: MESSAGES_PAGE_SIZE,
+      direction: "older",
+      cursor: anchorMessage.id,
+    });
+
+    const merged = new Map<string, ChatMessage>();
+    [...sortMessages(anchoredPayload.messages), anchorMessage].forEach((message) =>
+      merged.set(message.id, message),
+    );
+
+    page = {
+      messages: sortMessages([...merged.values()]),
+      cursors: anchoredPayload.cursors ?? page.cursors,
+      hasMore: anchoredPayload.hasMore ?? page.hasMore,
+    };
+    if (page.hasMore === undefined) {
+      page.hasMore = inferHasMoreOlder(page);
+    }
+  }
+
+  return page;
+};
+
+function ChatMessageSkeleton({ isMine = false }: { isMine?: boolean }) {
+  return (
+    <div
+      className={`flex animate-pulse gap-2 ${isMine ? "justify-end" : "justify-start"}`}
+    >
+      <div
+        className={`max-w-[60%] space-y-2 rounded-2xl px-3 py-3 ${
+          isMine
+            ? "rounded-br-md bg-neutral-200 dark:bg-neutral-800"
+            : "rounded-bl-md bg-neutral-200 dark:bg-neutral-800"
+        }`}
+      >
+        <div className="h-3 w-28 rounded bg-neutral-300 dark:bg-neutral-700" />
+        <div className="h-3 w-40 rounded bg-neutral-300/80 dark:bg-neutral-700/80" />
+      </div>
+    </div>
+  );
+}
+
+function ChatMessagesLoadingSkeleton() {
+  return (
+    <div className="space-y-4 py-2">
+      <ChatMessageSkeleton />
+      <ChatMessageSkeleton isMine />
+      <ChatMessageSkeleton />
+      <ChatMessageSkeleton isMine />
+      <ChatMessageSkeleton />
+    </div>
+  );
+}
+
+const composerFieldClass =
+  "max-h-28 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition scrollbar-none focus:border-2 focus:border-black dark:border-neutral-700 dark:bg-black dark:text-neutral-100 dark:focus:border-white";
+
+const composerBannerClass =
+  "mb-2 flex min-w-0 items-center gap-2 rounded-lg border border-gray-300 border-l-4 border-l-blue-300 bg-blue-50 px-3 py-2 text-xs text-neutral-800 dark:border-neutral-700 dark:border-l-neutral-500 dark:bg-neutral-900 dark:text-neutral-100";
+
+const composerBannerDismissClass =
+  "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full transition hover:bg-blue-300 hover:text-neutral-900 active:bg-blue-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100 dark:active:bg-black";
+
+const scrollMessageIntoView = (
+  viewport: HTMLElement,
+  messageId: string,
+  behavior: ScrollBehavior = "smooth",
+) => {
+  const target = viewport.querySelector<HTMLElement>(
+    `[data-chat-message-id="${messageId}"]`,
+  );
+  if (!target) return false;
+
+  const viewportRect = viewport.getBoundingClientRect();
+  const targetRect = target.getBoundingClientRect();
+  const nextTop = viewport.scrollTop + (targetRect.top - viewportRect.top) - 16;
+
+  viewport.scrollTo({ top: Math.max(nextTop, 0), behavior });
+  return true;
+};
+
+type ChatClientProps = {
+  initialChats: Chat[];
+  initialChatId: string | null;
+};
+
+export const ChatClient = ({
+  initialChats,
+  initialChatId,
+}: ChatClientProps) => {
   const queryClient = useQueryClient();
   const searchParams = useSearchParams();
+  const {
+    activeChatId,
+    isLeavingChat,
+    leaveChat,
+    openChat,
+    selectedChat,
+    setChats: setNavChats,
+    setSelectedChat,
+    setIsSocketConnected,
+    showPanel,
+    syncReplyInUrl,
+  } = useChatNavigation();
   const viewer = useAuthStore((state) => state.user);
-  const [selectedChat, setSelectedChat] = useState<SelectedChat | null>(() => {
-    const draftUser = makeDraftUser(searchParams);
-    return draftUser ? { type: "PRIVATE_DRAFT", user: draftUser } : null;
-  });
+  const replyMsgIdParam = searchParams.get("replyMsgId")?.trim() || null;
+  const [isResolvingRoute, setIsResolvingRoute] = useState(Boolean(initialChatId));
+  const handledReplyMsgIdRef = useRef<string | null>(null);
+  const isResolvingRouteRef = useRef(false);
   const [composeMode, setComposeMode] = useState<ComposeMode>(null);
   const [isComposeMenuOpen, setIsComposeMenuOpen] = useState(false);
   const [messageText, setMessageText] = useState("");
   const [draftFiles, setDraftFiles] = useState<DraftFile[]>([]);
   const [replyToMessage, setReplyToMessage] = useState<ChatMessage | null>(null);
-  const [isVoiceTypingSupported] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
-  );
+  const [isVoiceTypingSupported, setIsVoiceTypingSupported] = useState(false);
   const [isVoiceTyping, setIsVoiceTyping] = useState(false);
+  const [hasMounted, setHasMounted] = useState(false);
   const [privateSearch, setPrivateSearch] = useState("");
   const [groupSearch, setGroupSearch] = useState("");
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    setIsVoiceTypingSupported(
+      Boolean(window.SpeechRecognition || window.webkitSpeechRecognition),
+    );
+  }, []);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   const [groupName, setGroupName] = useState("");
   const [groupUsers, setGroupUsers] = useState<SearchUserType[]>([]);
-  const [isSocketConnected, setIsSocketConnected] = useState(false);
   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const [editingImages, setEditingImages] = useState<ChatMedia[]>([]);
   const [editingAttachments, setEditingAttachments] = useState<ChatMedia[]>([]);
   const [openReactionMessageId, setOpenReactionMessageId] = useState<string | null>(null);
+  const [deletingMessageIds, setDeletingMessageIds] = useState<string[]>([]);
   const [reactionUsersMessage, setReactionUsersMessage] = useState<ChatMessage | null>(null);
   const [mediaViewer, setMediaViewer] = useState<{
     items: { id: string; url: string; fileName?: string | null; mimeType?: string | null }[];
@@ -252,12 +461,22 @@ const ChatClient = () => {
   const [localReactions, setLocalReactions] = useState<
     Record<string, ChatReactionType | null>
   >({});
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [jumpToMessageId, setJumpToMessageId] = useState<string | null>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const lastPositionedChatRef = useRef<string | null>(null);
+  const pendingScrollPreserveRef = useRef<{
+    scrollHeight: number;
+    scrollTop: number;
+  } | null>(null);
+  const loadOlderSentinelRef = useRef<HTMLDivElement | null>(null);
+  const isNearBottomRef = useRef(true);
   const socketRef = useRef<Socket | null>(null);
   const readMessageIdsRef = useRef<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const composerTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const speechRecognitionRef = useRef<SpeechRecognitionLike | null>(null);
   const draftFilesRef = useRef<DraftFile[]>([]);
 
@@ -268,19 +487,24 @@ const ChatClient = () => {
       if (!result.success) throw new Error(result.error);
       return result.data.chats.filter(visibleChatHasMessage);
     },
+    initialData: initialChats,
+    staleTime: 30_000,
   });
 
-  const chats = useMemo(() => chatsQuery.data ?? [], [chatsQuery.data]);
-  const selectedKey = getSelectedKey(selectedChat);
+  const chats = useMemo(() => chatsQuery.data ?? initialChats, [chatsQuery.data, initialChats]);
 
-  const unreadQuery = useQuery({
-    queryKey: ["chatUnreadCount"],
-    queryFn: async () => {
-      const result = await getUnreadMessagesCountAction();
-      if (!result.success) throw new Error(result.error);
-      return result.data.unreadMessagesCount;
-    },
-  });
+  useEffect(() => {
+    setNavChats(chats);
+  }, [chats, setNavChats]);
+
+  const activeChat = useMemo((): SelectedChat | null => {
+    if (!showPanel) return null;
+    if (selectedChat) return selectedChat;
+    if (!activeChatId) return null;
+    return findChatById(chats, activeChatId) ?? null;
+  }, [activeChatId, chats, selectedChat, showPanel]);
+
+  const activeKey = getSelectedKey(activeChat);
 
   useEffect(() => {
     let isMounted = true;
@@ -301,6 +525,7 @@ const ChatClient = () => {
       const refreshChat = () => {
         queryClient.invalidateQueries({ queryKey: ["chats"] });
         queryClient.invalidateQueries({ queryKey: ["chatMessages"] });
+        queryClient.invalidateQueries({ queryKey: ["chatUnreadCount"] });
       };
 
       [
@@ -321,7 +546,7 @@ const ChatClient = () => {
       socketRef.current?.disconnect();
       socketRef.current = null;
     };
-  }, [queryClient]);
+  }, [queryClient, setIsSocketConnected]);
 
   useEffect(() => {
     draftFilesRef.current = draftFiles;
@@ -337,37 +562,73 @@ const ChatClient = () => {
   }, []);
 
   useEffect(() => {
-    if (!selectedChat || isDraftChat(selectedChat)) return;
-    socketRef.current?.emit("join-chat", { chatId: selectedChat.id });
-    socketRef.current?.emit("chat:join", selectedChat.id);
+    if (!activeChat || isDraftChat(activeChat)) return;
+    socketRef.current?.emit("join-chat", { chatId: activeChat.id });
+    socketRef.current?.emit("chat:join", activeChat.id);
 
     return () => {
-      socketRef.current?.emit("leave-chat", { chatId: selectedChat.id });
-      socketRef.current?.emit("chat:leave", selectedChat.id);
+      socketRef.current?.emit("leave-chat", { chatId: activeChat.id });
+      socketRef.current?.emit("chat:leave", activeChat.id);
     };
-  }, [selectedChat]);
+  }, [activeChat]);
 
-  const messagesQuery = useQuery({
-    queryKey: ["chatMessages", selectedKey],
-    queryFn: async () => {
-      if (!selectedChat) return [];
-
-      const result = isDraftChat(selectedChat)
-        ? await getPrivateMessagesAction(selectedChat.user.id)
-        : selectedChat.type === "PRIVATE" && selectedChat.otherUser
-          ? await getPrivateMessagesAction(selectedChat.otherUser.userId)
-          : await getChatMessagesAction(selectedChat.id);
-
-      if (!result.success) throw new Error(result.error);
-
-      if (isDraftChat(selectedChat) && result.data.chat?.id) {
-        setSelectedChat(result.data.chat);
+  const messagesQuery = useInfiniteQuery({
+    queryKey: ["chatMessages", activeKey],
+    queryFn: async ({ pageParam }) => {
+      if (!activeChat) {
+        return { messages: [], cursors: null };
       }
 
-      return sortMessages(result.data.messages);
+      if (isDraftChat(activeChat) && !pageParam) {
+        const bootstrap = await getPrivateMessagesAction(activeChat.user.id, {
+          limit: MESSAGES_PAGE_SIZE,
+          direction: "older",
+        });
+        if (!bootstrap.success) throw new Error(bootstrap.error);
+        if (bootstrap.data.chat?.id) {
+          setSelectedChat(bootstrap.data.chat);
+        }
+        return toMessagesPage(bootstrap.data as MessagesPagePayload);
+      }
+
+      return fetchChatMessagesPage(activeChat, pageParam as string | undefined);
     },
-    enabled: Boolean(selectedChat),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.messages.length === 0) return undefined;
+      if (!inferHasMoreOlder(lastPage)) return undefined;
+
+      const olderCursor = getOlderCursor(lastPage.cursors);
+      if (olderCursor) return olderCursor;
+
+      return getOldestMessageId(lastPage.messages) ?? undefined;
+    },
+    enabled:
+      Boolean(activeChat) &&
+      (!isDraftChat(activeChat) || Boolean(activeChat.user.id)),
   });
+
+  useEffect(() => {
+    lastPositionedChatRef.current = null;
+    pendingScrollPreserveRef.current = null;
+    handledReplyMsgIdRef.current = null;
+    setJumpToMessageId(null);
+    setHighlightedMessageId(null);
+    setShowScrollToBottom(false);
+    setOpenReactionMessageId(null);
+    setReactionUsersMessage(null);
+  }, [activeKey]);
+
+  useLayoutEffect(() => {
+    const preserve = pendingScrollPreserveRef.current;
+    if (!preserve) return;
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+
+    viewport.scrollTop =
+      viewport.scrollHeight - preserve.scrollHeight + preserve.scrollTop;
+    pendingScrollPreserveRef.current = null;
+  }, [messagesQuery.data?.pages.length, messagesQuery.isFetchingNextPage]);
 
   const reactionUsersQuery = useQuery({
     queryKey: ["chatMessageReactions", reactionUsersMessage?.id],
@@ -451,6 +712,10 @@ const ChatClient = () => {
       socketRef.current?.emit("message:sent", message);
       await queryClient.invalidateQueries({ queryKey: ["chats"] });
       await queryClient.invalidateQueries({ queryKey: ["chatMessages"] });
+      if (activeKey) {
+        await queryClient.invalidateQueries({ queryKey: ["chatMessages", activeKey] });
+      }
+      await queryClient.invalidateQueries({ queryKey: ["chatUnreadCount"] });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to send message");
@@ -506,7 +771,7 @@ const ChatClient = () => {
         return [];
       });
       await queryClient.invalidateQueries({ queryKey: ["chats"] });
-      await queryClient.invalidateQueries({ queryKey: ["chatMessages", selectedKey] });
+      await queryClient.invalidateQueries({ queryKey: ["chatMessages", activeKey] });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to edit message");
@@ -519,9 +784,21 @@ const ChatClient = () => {
       if (!result.success) throw new Error(result.error);
       return result.data.messageId;
     },
+    onMutate: async (messageId: string) => {
+      setDeletingMessageIds((current) =>
+        current.includes(messageId) ? current : [...current, messageId],
+      );
+      setOpenReactionMessageId((current) =>
+        current === messageId ? null : current,
+      );
+    },
+    onSettled: (_data, _error, messageId) => {
+      if (!messageId) return;
+      setDeletingMessageIds((current) => current.filter((id) => id !== messageId));
+    },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ["chats"] });
-      await queryClient.invalidateQueries({ queryKey: ["chatMessages", selectedKey] });
+      await queryClient.invalidateQueries({ queryKey: ["chatMessages", activeKey] });
     },
     onError: (error) => {
       toast.error(error instanceof Error ? error.message : "Failed to delete message");
@@ -561,7 +838,7 @@ const ChatClient = () => {
     },
     onSuccess: async ({ messageId, reactionType }) => {
       setLocalReactions((current) => ({ ...current, [messageId]: reactionType }));
-      await queryClient.invalidateQueries({ queryKey: ["chatMessages", selectedKey] });
+      await queryClient.invalidateQueries({ queryKey: ["chatMessages", activeKey] });
       await queryClient.invalidateQueries({ queryKey: ["chats"] });
     },
     onError: (error) => {
@@ -585,7 +862,7 @@ const ChatClient = () => {
       return result.data.chat;
     },
     onSuccess: async (chat) => {
-      setSelectedChat(chat);
+      openChat(chat);
       setComposeMode(null);
       setGroupName("");
       setGroupSearch("");
@@ -598,9 +875,213 @@ const ChatClient = () => {
     },
   });
 
-  const messages = useMemo(() => messagesQuery.data ?? [], [messagesQuery.data]);
-  const selectedTitle = selectedChat ? getChatTitle(selectedChat) : "Messages";
-  const selectedImage = selectedChat ? getChatImage(selectedChat) : null;
+  const messages = useMemo(() => {
+    const pages = messagesQuery.data?.pages ?? [];
+    const unique = new Map<string, ChatMessage>();
+    pages.forEach((page) => {
+      page.messages.forEach((message) => unique.set(message.id, message));
+    });
+    return sortMessages(Array.from(unique.values()));
+  }, [messagesQuery.data?.pages]);
+
+  const updateScrollToBottomVisibility = useCallback(() => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+
+    const distanceFromBottom =
+      viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+    const nearBottom = distanceFromBottom <= SCROLL_NEAR_BOTTOM_THRESHOLD;
+    isNearBottomRef.current = nearBottom;
+    setShowScrollToBottom(!nearBottom);
+  }, []);
+
+  const dismissMessageOverlays = useCallback(() => {
+    setOpenReactionMessageId(null);
+    setReactionUsersMessage(null);
+  }, []);
+
+  const startReplyToMessage = useCallback((message: ChatMessage) => {
+    dismissMessageOverlays();
+    setReplyToMessage(message);
+    requestAnimationFrame(() => {
+      composerTextareaRef.current?.focus({ preventScroll: true });
+    });
+  }, [dismissMessageOverlays]);
+
+  useEffect(() => {
+    if (!replyToMessage) return;
+    composerTextareaRef.current?.focus({ preventScroll: true });
+  }, [replyToMessage]);
+
+  useEffect(() => {
+    if (!editingMessageId) return;
+    requestAnimationFrame(() => {
+      composerTextareaRef.current?.focus({ preventScroll: true });
+    });
+  }, [editingMessageId]);
+
+  const loadOlderMessages = useCallback(() => {
+    const viewport = messagesViewportRef.current;
+    if (
+      !viewport ||
+      messagesQuery.isFetchingNextPage ||
+      !messagesQuery.hasNextPage
+    ) {
+      return;
+    }
+
+    pendingScrollPreserveRef.current = {
+      scrollHeight: viewport.scrollHeight,
+      scrollTop: viewport.scrollTop,
+    };
+    void messagesQuery.fetchNextPage();
+  }, [messagesQuery]);
+
+  const handleMessagesScroll = useCallback(() => {
+    dismissMessageOverlays();
+    updateScrollToBottomVisibility();
+
+    const viewport = messagesViewportRef.current;
+    if (!viewport || messagesQuery.isFetchingNextPage || !messagesQuery.hasNextPage) {
+      return;
+    }
+
+    if (viewport.scrollTop > LOAD_OLDER_SCROLL_THRESHOLD) return;
+
+    loadOlderMessages();
+  }, [
+    dismissMessageOverlays,
+    loadOlderMessages,
+    messagesQuery.hasNextPage,
+    messagesQuery.isFetchingNextPage,
+    updateScrollToBottomVisibility,
+  ]);
+
+  useEffect(() => {
+    const viewport = messagesViewportRef.current;
+    const sentinel = loadOlderSentinelRef.current;
+    if (!viewport || !sentinel || !showPanel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        loadOlderMessages();
+      },
+      { root: viewport, rootMargin: "120px 0px 0px 0px", threshold: 0 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadOlderMessages, showPanel, activeKey]);
+
+  const scrollMessagesToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+
+    viewport.scrollTo({ top: viewport.scrollHeight, behavior });
+    setShowScrollToBottom(false);
+  }, []);
+
+  const updateReplyMsgIdInUrl = useCallback(
+    (messageId: string | null) => {
+      syncReplyInUrl(messageId);
+    },
+    [syncReplyInUrl],
+  );
+
+  const scrollToChatMessage = (messageId: string) => {
+    updateReplyMsgIdInUrl(messageId);
+    setJumpToMessageId(messageId);
+  };
+
+  useEffect(() => {
+    if (activeChatId) return;
+
+    const draftUser = makeDraftUser(searchParams);
+    if (draftUser) {
+      openChat({ type: "PRIVATE_DRAFT", user: draftUser });
+    }
+  }, [activeChatId, openChat, searchParams]);
+
+  useEffect(() => {
+    if (!activeChatId) {
+      setIsResolvingRoute(false);
+      return;
+    }
+
+    if (isLeavingChat) return;
+
+    if (selectedChat && chatMatchesId(selectedChat, activeChatId)) {
+      setIsResolvingRoute(false);
+      return;
+    }
+
+    const matched = findChatById(chats, activeChatId);
+    if (matched) {
+      setSelectedChat(matched);
+      setIsResolvingRoute(false);
+      return;
+    }
+
+    if (!chatsQuery.isFetched || isResolvingRouteRef.current) return;
+
+    isResolvingRouteRef.current = true;
+    setIsResolvingRoute(true);
+
+    void (async () => {
+      try {
+        const chatById = await getChatByIdAction(activeChatId);
+        if (chatById.success) {
+          openChat(chatById.data);
+          return;
+        }
+
+        const privateChat = await getPrivateChatByUserIdAction(activeChatId);
+        if (privateChat.success) {
+          openChat(privateChat.data.chat);
+          return;
+        }
+
+        const userResult = await getUserAction(activeChatId);
+        if (userResult.success) {
+          openChat({
+            type: "PRIVATE_DRAFT",
+            user: userToDraftChatUser(userResult.data),
+          });
+          return;
+        }
+
+        toast.error("Chat not found");
+        leaveChat();
+      } finally {
+        isResolvingRouteRef.current = false;
+        setIsResolvingRoute(false);
+      }
+    })();
+  }, [
+    activeChatId,
+    chats,
+    chatsQuery.isFetched,
+    isLeavingChat,
+    leaveChat,
+    openChat,
+    selectedChat,
+    setSelectedChat,
+  ]);
+
+  useEffect(() => {
+    if (!replyMsgIdParam || !activeChat || messagesQuery.isPending) return;
+
+    const handledKey = `${activeKey}:${replyMsgIdParam}`;
+    if (handledReplyMsgIdRef.current === handledKey) return;
+
+    handledReplyMsgIdRef.current = handledKey;
+    setJumpToMessageId(replyMsgIdParam);
+  }, [activeChat, activeKey, messagesQuery.isPending, replyMsgIdParam]);
+
+  const composerSubmitEnabled =
+    Boolean(activeChat) &&
+    (!isDraftChat(activeChat) || Boolean(activeChat.user.id));
 
   const selectedUserIds = useMemo(
     () => new Set(groupUsers.map((user) => user.id)),
@@ -608,7 +1089,7 @@ const ChatClient = () => {
   );
 
   const openPrivateDraft = (user: SearchUserType) => {
-    setSelectedChat({ type: "PRIVATE_DRAFT", user });
+    openChat({ type: "PRIVATE_DRAFT", user });
     setComposeMode(null);
     setPrivateSearch("");
   };
@@ -621,8 +1102,7 @@ const ChatClient = () => {
     );
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files ?? []);
+  const addDraftFiles = (files: File[]) => {
     if (files.length === 0) return;
 
     setDraftFiles((current) => [
@@ -634,7 +1114,34 @@ const ChatClient = () => {
         kind: getDraftFileKind(file),
       })),
     ]);
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    addDraftFiles(Array.from(event.target.files ?? []));
     event.target.value = "";
+  };
+
+  const handleComposerPaste = (event: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const pastedFiles = Array.from(event.clipboardData.items)
+      .filter((item) => item.kind === "file")
+      .map((item) => item.getAsFile())
+      .filter((file): file is File => Boolean(file));
+
+    const files =
+      pastedFiles.length > 0 ? pastedFiles : Array.from(event.clipboardData.files);
+
+    if (files.length === 0) return;
+
+    event.preventDefault();
+    addDraftFiles(files);
+  };
+
+  const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
+
+    event.preventDefault();
+    if (composerIsPending || !composerCanSubmit || !composerSubmitEnabled) return;
+    submitComposer();
   };
 
   const clearComposer = () => {
@@ -643,11 +1150,28 @@ const ChatClient = () => {
     setEditingText("");
     setEditingImages([]);
     setEditingAttachments([]);
+    setReplyToMessage(null);
     setDraftFiles((current) => {
       current.forEach((draftFile) => URL.revokeObjectURL(draftFile.previewUrl));
       return [];
     });
   };
+
+  useEffect(() => {
+    if (showPanel) return;
+    clearComposer();
+    setOpenReactionMessageId(null);
+    setReactionUsersMessage(null);
+    setMediaViewer(null);
+    setHighlightedMessageId(null);
+    setJumpToMessageId(null);
+    setComposeMode(null);
+    setIsComposeMenuOpen(false);
+    setEditingMessageId(null);
+    setEditingText("");
+    setEditingImages([]);
+    setEditingAttachments([]);
+  }, [showPanel]);
 
   const removeDraftFile = (id: string) => {
     setDraftFiles((current) => {
@@ -708,34 +1232,81 @@ const ChatClient = () => {
     });
   }, [markReadMutation, messages, viewer?.id]);
 
+  useEffect(() => {
+    if (!jumpToMessageId || messagesQuery.isPending) return;
+
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+
+    if (scrollMessageIntoView(viewport, jumpToMessageId, "smooth")) {
+      setHighlightedMessageId(jumpToMessageId);
+      const timeoutId = window.setTimeout(() => setHighlightedMessageId(null), 2000);
+      setJumpToMessageId(null);
+      updateScrollToBottomVisibility();
+      return () => window.clearTimeout(timeoutId);
+    }
+
+    if (messagesQuery.isFetchingNextPage) return;
+
+    if (messagesQuery.hasNextPage) {
+      pendingScrollPreserveRef.current = {
+        scrollHeight: viewport.scrollHeight,
+        scrollTop: viewport.scrollTop,
+      };
+      void messagesQuery.fetchNextPage();
+      return;
+    }
+
+    toast.error("Original message is not available");
+    setJumpToMessageId(null);
+  }, [
+    jumpToMessageId,
+    messages,
+    messagesQuery,
+    messagesQuery.fetchNextPage,
+    messagesQuery.hasNextPage,
+    messagesQuery.isFetchingNextPage,
+    messagesQuery.isPending,
+    updateScrollToBottomVisibility,
+  ]);
+
+  useEffect(() => {
+    if (messagesQuery.isPending) return;
+    updateScrollToBottomVisibility();
+  }, [messages, messagesQuery.isPending, updateScrollToBottomVisibility]);
+
   useLayoutEffect(() => {
     const viewport = messagesViewportRef.current;
-    if (!selectedChat || !viewport || messagesQuery.isLoading) return;
+    if (!activeChat || !viewport || messagesQuery.isPending) return;
+    if (pendingScrollPreserveRef.current !== null) return;
 
-    const isInitialPosition = lastPositionedChatRef.current !== selectedKey;
-    const firstUnread = isInitialPosition
-      ? messages.find(
-          (message) => message.senderId !== viewer?.id && !message.isReadByMe,
-        )
-      : null;
-    const target = firstUnread
-      ? viewport.querySelector<HTMLElement>(
-          `[data-chat-message-id="${firstUnread.id}"]`,
-        )
-      : messagesEndRef.current;
+    const isInitialPosition = lastPositionedChatRef.current !== activeKey;
 
-    if (!target) return;
+    if (isInitialPosition) {
+      viewport.scrollTop = viewport.scrollHeight;
+      lastPositionedChatRef.current = activeKey;
+      isNearBottomRef.current = true;
+      setShowScrollToBottom(false);
+      return;
+    }
 
-    viewport.scrollTop =
-      target.offsetTop - viewport.offsetTop - (firstUnread ? 16 : 0);
-    lastPositionedChatRef.current = selectedKey;
+    if (sendMutation.isPending) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: "auto" });
+      isNearBottomRef.current = true;
+      setShowScrollToBottom(false);
+      return;
+    }
+
+    if (isNearBottomRef.current) {
+      viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
+      setShowScrollToBottom(false);
+    }
   }, [
+    activeChat,
+    activeKey,
     messages,
-    messagesQuery.isLoading,
-    selectedChat,
-    selectedKey,
+    messagesQuery.isPending,
     sendMutation.isPending,
-    viewer?.id,
   ]);
 
   const startEditing = (message: ChatMessage) => {
@@ -870,182 +1441,386 @@ const ChatClient = () => {
     );
   };
 
-  return (
-    <main className="relative h-[calc(100dvh-60px)] overflow-hidden bg-neutral-100 p-2 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-50 lg:h-dvh">
-      <div className="h-full overflow-hidden rounded-xl bg-white dark:bg-neutral-900">
-        <section
-          className={`border-black/5 dark:border-white/10 ${
-            selectedChat ? "hidden" : "block"
-          }`}
-        >
-          <div className="border-b border-black/5 px-4 py-5 dark:border-white/10">
-            <h2 className="text-2xl font-bold text-slate-700 dark:text-neutral-100">
-              Messages
-            </h2>
-            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-              {unreadQuery.data ?? 0} unread messages
-            </p>
-          </div>
+  const isMessagesLoading =
+    Boolean(activeChat) &&
+    messages.length === 0 &&
+    (messagesQuery.isPending || messagesQuery.isFetching);
+  const composerPlaceholderName = activeChat ? getChatTitle(activeChat) : "chat";
+  const isRouteResolving = Boolean(activeChatId && !activeChat && isResolvingRoute);
 
-          {chatsQuery.isLoading ? (
-            <div className="space-y-4 p-4">
-              {[0, 1, 2].map((item) => (
-                <div key={item} className="flex animate-pulse gap-3">
-                  <div className="h-13 w-13 rounded-full bg-neutral-200 dark:bg-neutral-800" />
-                  <div className="min-w-0 flex-1 space-y-2 py-1">
-                    <div className="h-4 w-2/3 rounded bg-neutral-200 dark:bg-neutral-800" />
-                    <div className="h-3 w-full rounded bg-neutral-100 dark:bg-neutral-900" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : chats.length === 0 ? (
-            <div className="px-5 py-10 text-sm text-neutral-500 dark:text-neutral-400">
-              No conversations yet. Start a chat and send the first message.
-            </div>
-          ) : (
-            <div className="divide-y divide-black/5 dark:divide-white/10">
-              {chats.map((chat) => {
-                const isActive = !isDraftChat(selectedChat) && selectedChat?.id === chat.id;
-                const avatar = getChatImage(chat);
-                return (
-                  <button
-                    key={chat.id}
-                    type="button"
-                    onClick={() => setSelectedChat(chat)}
-                    className={`flex w-full min-w-0 items-center gap-3 px-4 py-4 text-left transition ${
-                      isActive
-                        ? "bg-blue-50 dark:bg-neutral-900"
-                        : "hover:bg-neutral-50 dark:hover:bg-neutral-900"
-                    }`}
-                  >
-                    <RecoverableImage
-                      src={avatar || "/default-avatar.png"}
-                      alt={getChatTitle(chat)}
-                      width={54}
-                      height={54}
-                      className="h-13 w-13 rounded-full bg-neutral-200 object-cover"
-                      wrapperClassName="h-13 w-13 shrink-0 rounded-full"
-                      fallbackSrc="/default-avatar.png"
-                    />
-                    <span className="min-w-0 flex-1">
-                      <span className="flex min-w-0 items-center justify-between gap-2">
-                        <span className="truncate font-semibold text-slate-700 dark:text-neutral-100">
-                          {getChatTitle(chat)}
-                        </span>
-                        {chat.lastMessage && (
-                          <span className="flex shrink-0 items-center gap-1 text-xs text-neutral-400">
-                            {chat.lastMessage.senderId === viewer?.id &&
-                              (chat.lastMessage.readCount ?? 0) > 0 && (
-                                <CheckCheck size={13} className="text-blue-500" />
-                              )}
-                            <span>{formatDate(chat.lastMessage.createdAt, false, true)}</span>
-                          </span>
-                        )}
-                      </span>
-                      <span className="mt-1 block truncate text-sm text-neutral-400">
-                        {getChatSubtitle(chat, viewer?.id)}
-                      </span>
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        <section
-          className={`h-full flex-col overflow-hidden ${
-            selectedChat ? "flex" : "hidden"
-          }`}
-        >
-          {selectedChat ? (
-            <>
-              <div className="flex h-15 items-center gap-3 border-b border-black/5 px-3 dark:border-white/10">
+  const chatModals = (
+    <>
+      {composeMode && (
+        <OverlayPortal>
+          <div className="fixed inset-0 z-[130] flex items-end bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:justify-center">
+            <div className="max-h-[85dvh] w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-950">
+              <div className="flex h-14 items-center justify-between border-b border-black/5 px-4 dark:border-white/10">
+                <h2 className="font-semibold">
+                  {composeMode === "private" ? "New Chat" : "New Group"}
+                </h2>
                 <button
                   type="button"
-                  onClick={() => setSelectedChat(null)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-neutral-100 active:bg-neutral-200 dark:hover:bg-neutral-900"
-                  aria-label="Back to chats"
+                  onClick={() => setComposeMode(null)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                  aria-label="Close"
                 >
-                  <ArrowLeft size={20} />
+                  <X size={18} />
                 </button>
-                <RecoverableImage
-                  src={selectedImage || "/default-avatar.png"}
-                  alt={selectedTitle}
-                  width={42}
-                  height={42}
-                  className="h-10 w-10 rounded-full bg-neutral-200 object-cover"
-                  wrapperClassName="h-10 w-10 shrink-0 rounded-full"
-                  fallbackSrc="/default-avatar.png"
-                />
-                <div className="min-w-0 flex-1">
-                  <h2 className="truncate font-semibold text-slate-700 dark:text-neutral-100">
-                    {selectedTitle}
-                  </h2>
-                  <p className="truncate text-xs text-neutral-400">
-                    {isDraftChat(selectedChat)
-                      ? `@${selectedChat.user.username}`
-                      : selectedChat.type === "GROUP"
-                        ? `${selectedChat.participantsCount} members`
-                        : `@${selectedChat.otherUser?.user.username ?? "user"}`}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold ${
-                    isSocketConnected
-                      ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-300"
-                      : "bg-neutral-100 text-neutral-400 dark:bg-neutral-900"
-                  }`}
-                >
-                  {isSocketConnected ? "Live" : "Offline"}
-                </span>
               </div>
 
-              <div
-                ref={messagesViewportRef}
-                className="flex-1 space-y-3 overflow-y-auto bg-neutral-50 px-3 py-4 pb-5 scrollbar-none dark:bg-neutral-950 sm:px-4"
-              >
-                {messagesQuery.isLoading ? (
-                  <div className="flex h-full items-center justify-center gap-2 text-sm text-neutral-400">
-                    <Loader2 size={18} className="animate-spin" />
-                    <span>Loading messages...</span>
-                  </div>
-                ) : messages.length === 0 ? (
-                  <div className="flex h-full items-center justify-center px-8 text-center text-sm text-neutral-400">
-                    Send a message to start the conversation.
-                  </div>
+              <div className="max-h-[calc(85dvh-56px)] overflow-y-auto p-4 scrollbar-none">
+                {composeMode === "private" ? (
+                  <>
+                    <div className="flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-neutral-50 px-3 dark:border-white/10 dark:bg-neutral-900">
+                      <Search size={17} className="text-neutral-400" />
+                      <input
+                        value={privateSearch}
+                        onChange={(event) => setPrivateSearch(event.target.value)}
+                        placeholder="Search people"
+                        className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                      />
+                    </div>
+                    <div className="mt-3 divide-y divide-black/5 dark:divide-white/10">
+                      {privateSearchQuery.isLoading ? (
+                        <p className="py-6 text-center text-sm text-neutral-400">
+                          Searching...
+                        </p>
+                      ) : (
+                        (privateSearchQuery.data ?? []).map((user) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => openPrivateDraft(user)}
+                            className="flex w-full min-w-0 items-center gap-3 py-3 text-left"
+                          >
+                            <RecoverableImage
+                              src={user.profilePic || "/default-avatar.png"}
+                              alt={user.name}
+                              width={44}
+                              height={44}
+                              className="h-11 w-11 rounded-full object-cover"
+                              wrapperClassName="h-11 w-11 shrink-0 rounded-full"
+                              fallbackSrc="/default-avatar.png"
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate font-semibold">
+                                {user.name}
+                              </span>
+                              <span className="block truncate text-sm text-neutral-400">
+                                @{user.username}
+                              </span>
+                            </span>
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  </>
                 ) : (
-                  messages.map((message) => {
+                  <>
+                    <input
+                      value={groupName}
+                      onChange={(event) => setGroupName(event.target.value)}
+                      placeholder="Group name"
+                      className="h-11 w-full rounded-xl border border-black/10 bg-neutral-50 px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-neutral-900"
+                    />
+                    {groupUsers.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {groupUsers.map((user) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            onClick={() => toggleGroupUser(user)}
+                            className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-neutral-900 dark:text-neutral-100"
+                          >
+                            <span className="truncate">{user.name}</span>
+                            <X size={12} />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="mt-3 flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-neutral-50 px-3 dark:border-white/10 dark:bg-neutral-900">
+                      <Search size={17} className="text-neutral-400" />
+                      <input
+                        value={groupSearch}
+                        onChange={(event) => setGroupSearch(event.target.value)}
+                        placeholder="Add people"
+                        className="min-w-0 flex-1 bg-transparent text-sm outline-none"
+                      />
+                    </div>
+                    <div className="mt-3 divide-y divide-black/5 dark:divide-white/10">
+                      {(groupSearchQuery.data ?? []).map((user) => (
+                        <button
+                          key={user.id}
+                          type="button"
+                          onClick={() => toggleGroupUser(user)}
+                          className="flex w-full min-w-0 items-center gap-3 py-3 text-left"
+                        >
+                          <RecoverableImage
+                            src={user.profilePic || "/default-avatar.png"}
+                            alt={user.name}
+                            width={44}
+                            height={44}
+                            className="h-11 w-11 rounded-full object-cover"
+                            wrapperClassName="h-11 w-11 shrink-0 rounded-full"
+                            fallbackSrc="/default-avatar.png"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate font-semibold">{user.name}</span>
+                            <span className="block truncate text-sm text-neutral-400">
+                              @{user.username}
+                            </span>
+                          </span>
+                          <span
+                            className={`h-5 w-5 rounded-full border ${
+                              selectedUserIds.has(user.id)
+                                ? "border-blue-400 bg-blue-400"
+                                : "border-neutral-300 dark:border-neutral-600"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      type="button"
+                      disabled={createGroupMutation.isPending}
+                      onClick={() => createGroupMutation.mutate()}
+                      className="mt-4 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-400 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:opacity-50 dark:bg-white dark:text-black"
+                    >
+                      {createGroupMutation.isPending ? (
+                        <Loader2 size={17} className="animate-spin" />
+                      ) : (
+                        <Plus size={17} />
+                      )}
+                      <span>Create Group</span>
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </OverlayPortal>
+      )}
+
+      {reactionUsersMessage && (
+        <OverlayPortal>
+          <div className="fixed inset-0 z-[130] flex items-end bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:justify-center">
+            <div className="max-h-[85dvh] w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-neutral-950">
+              <div className="flex h-14 items-center justify-between border-b border-black/5 px-4 dark:border-white/10">
+                <h2 className="font-semibold text-slate-700 dark:text-neutral-100">
+                  Reactions
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setReactionUsersMessage(null)}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                  aria-label="Close reactions"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="max-h-[calc(85dvh-56px)] overflow-y-auto p-4 scrollbar-none">
+                {reactionUsersQuery.isLoading ? (
+                  <div className="flex items-center justify-center gap-2 py-8 text-sm text-neutral-400">
+                    <Loader2 size={17} className="animate-spin" />
+                    <span>Loading reactions...</span>
+                  </div>
+                ) : (reactionUsersQuery.data?.reactions ?? []).length === 0 ? (
+                  <p className="py-8 text-center text-sm text-neutral-400">
+                    No reactions yet.
+                  </p>
+                ) : (
+                  <div className="divide-y divide-black/5 dark:divide-white/10">
+                    {(reactionUsersQuery.data?.reactions ?? []).map((reaction) => {
+                      const reactionMeta = reactionOptions.find(
+                        (item) => item.type === reaction.reactionType,
+                      );
+
+                      return (
+                        <div
+                          key={reaction.id}
+                          className="flex min-w-0 items-center gap-3 py-3"
+                        >
+                          <RecoverableImage
+                            src={reaction.user.profilePic || "/default-avatar.png"}
+                            alt={reaction.user.name}
+                            width={44}
+                            height={44}
+                            className="h-11 w-11 rounded-full object-cover"
+                            wrapperClassName="h-11 w-11 shrink-0 rounded-full"
+                            fallbackSrc="/default-avatar.png"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate font-semibold text-slate-700 dark:text-neutral-100">
+                              {reaction.user.name}
+                            </p>
+                            <p className="truncate text-sm text-neutral-400">
+                              @{reaction.user.username}
+                            </p>
+                          </div>
+                          {reactionMeta && (
+                            <Image
+                              src={reactionMeta.image}
+                              alt={reactionMeta.label}
+                              width={28}
+                              height={28}
+                              className="h-7 w-7 shrink-0"
+                            />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </OverlayPortal>
+      )}
+
+      {mediaViewer && (
+        <ImageViewer
+          images={mediaViewer.items}
+          index={mediaViewer.index}
+          onClose={() => setMediaViewer(null)}
+          onChange={(index) =>
+            setMediaViewer((current) => (current ? { ...current, index } : current))
+          }
+          showPaginationOnVideo
+        />
+      )}
+    </>
+  );
+
+  const mountedChatModals = hasMounted ? chatModals : null;
+
+  if (!showPanel && !hasMounted) {
+    return null;
+  }
+
+  if (!showPanel) {
+    return (
+      <>
+        <OverlayPortal>
+          <div className="fixed bottom-5 right-5 z-30 md:absolute md:bottom-5 md:right-5 lg:bottom-5">
+            <div className="relative">
+              {isComposeMenuOpen && (
+                <div className="absolute bottom-full right-0 mb-3 w-44 overflow-hidden rounded-lg border border-black/10 bg-white py-1 text-sm shadow-xl dark:border-white/10 dark:bg-neutral-900">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setComposeMode("private");
+                      setIsComposeMenuOpen(false);
+                    }}
+                    className="flex h-11 w-full items-center gap-3 px-3 text-left transition hover:bg-blue-300 hover:text-neutral-900 active:bg-blue-400 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black"
+                  >
+                    <MessageCircle size={17} />
+                    <span>New Chat</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setComposeMode("group");
+                      setIsComposeMenuOpen(false);
+                    }}
+                    className="flex h-11 w-full items-center gap-3 px-3 text-left transition hover:bg-blue-300 hover:text-neutral-900 active:bg-blue-400 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black"
+                  >
+                    <UsersRound size={17} />
+                    <span>New Group</span>
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={() => setIsComposeMenuOpen((open) => !open)}
+                className="inline-flex h-14 w-14 items-center justify-center rounded-2xl border border-blue-300 bg-blue-300 text-neutral-950 shadow-xl transition hover:bg-blue-400 hover:text-white active:bg-blue-500 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black"
+                aria-label="Compose chat"
+                aria-expanded={isComposeMenuOpen}
+              >
+                <PenLine size={24} />
+              </button>
+            </div>
+          </div>
+        </OverlayPortal>
+        {mountedChatModals}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        {isRouteResolving ? (
+          <div className="flex h-full min-h-0 flex-1 items-center justify-center bg-neutral-50 px-3 py-4 text-sm text-neutral-500 dark:bg-neutral-950 dark:text-neutral-400">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-neutral-700 shadow-sm dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-200">
+                <Loader2 className="animate-spin" size={18} />
+              </div>
+              <p>Opening chat…</p>
+            </div>
+          </div>
+        ) : (
+          <div
+            ref={messagesViewportRef}
+            data-chat-messages-viewport=""
+            onScroll={handleMessagesScroll}
+            className="flex-1 space-y-3 overflow-y-auto bg-neutral-50 px-3 py-4 pb-5 scrollbar-none dark:bg-neutral-950 sm:px-4"
+          >
+            {/* Infinite scroll sentinel disabled for testing. */}
+            {/* <div ref={loadOlderSentinelRef} className="h-px w-full shrink-0" aria-hidden /> */}
+            {messagesQuery.isFetchingNextPage && (
+                  <div className="flex justify-center py-2">
+                    <Loader2
+                      size={18}
+                      className="animate-spin text-neutral-400 dark:text-neutral-500"
+                    />
+                  </div>
+                )}
+                {messages.map((message) => {
                     const isMine = message.senderId === viewer?.id;
                     const currentReaction = getCurrentReaction(message);
                     const reactionTotal = getReactionTotal(message);
                     const visibleReactions = getVisibleReactions(message);
+                    const isDeleting = deletingMessageIds.includes(message.id);
                     return (
                       <div
                         key={message.id}
                         data-chat-message-id={message.id}
                         className={`group/message flex items-center gap-2 ${isMine ? "justify-end" : "justify-start"}`}
+                        onMouseLeave={(event) => {
+                          const related = event.relatedTarget;
+                          if (related instanceof Element) {
+                            if (event.currentTarget.contains(related)) return;
+                            if (related.closest("[data-chat-reaction-picker]")) return;
+                          }
+                          if (openReactionMessageId === message.id) {
+                            setOpenReactionMessageId(null);
+                          }
+                        }}
                       >
-                        {isMine && !message.isDeleted && (
+                        {isMine && !message.isDeleted && !isDeleting && (
                           <MessageActions
                             isMine={isMine}
                             message={message}
                             currentReaction={currentReaction}
                             openReactionMessageId={openReactionMessageId}
                             setOpenReactionMessageId={setOpenReactionMessageId}
-                            setReplyToMessage={setReplyToMessage}
+                            onReply={startReplyToMessage}
                             startEditing={startEditing}
                             deleteMutation={deleteMutation}
                             reactionMutation={reactionMutation}
+                            isDeleting={isDeleting}
                           />
                         )}
                         <div className={`max-w-[75%] ${isMine ? "items-end" : "items-start"} flex flex-col`}>
                           <div
-                            className={`relative rounded-2xl px-3 py-2 text-sm ${
+                            className={`relative rounded-2xl px-3 py-2 text-sm transition-shadow ${
                               isMine
                                 ? "rounded-br-md bg-blue-400 text-white dark:bg-neutral-700"
                                 : "rounded-bl-md bg-neutral-100 text-neutral-800 dark:bg-neutral-900 dark:text-neutral-100"
+                            } ${isDeleting ? "opacity-70" : ""} ${
+                              highlightedMessageId === message.id
+                                ? "ring-2 ring-blue-300/90 dark:ring-white/35"
+                                : ""
                             }`}
                           >
                             <div className="flex min-w-0 items-start gap-2">
@@ -1056,17 +1831,24 @@ const ChatClient = () => {
                                   </p>
                                 )}
                                 {getReplyPreview(message) && (
-                                  <div
-                                    className={`border-l-2 py-1 pl-2 text-xs ${
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const parentId = getParentMessageId(message);
+                                      if (parentId) scrollToChatMessage(parentId);
+                                    }}
+                                    disabled={!getParentMessageId(message)}
+                                    className={`w-full border-l-2 py-1 pl-2 text-left text-xs transition hover:opacity-90 disabled:cursor-default disabled:hover:opacity-100 ${
                                       isMine
                                         ? "border-white/50 text-white/75"
-                                        : "border-blue-400 text-neutral-500 dark:text-neutral-400"
-                                    }`}
+                                        : "border-blue-300 text-neutral-600 dark:border-neutral-500 dark:text-neutral-300"
+                                    } ${getParentMessageId(message) ? "cursor-pointer" : ""}`}
+                                    aria-label="Jump to replied message"
                                   >
                                     <p className="line-clamp-2 break-words">
                                       {getReplyPreview(message)}
                                     </p>
-                                  </div>
+                                  </button>
                                 )}
                                 {(message.images.length > 0 ||
                                   message.attachments.length > 0) && (
@@ -1099,24 +1881,25 @@ const ChatClient = () => {
                               )}
                               <span>{formatDate(message.createdAt, false, true)}</span>
                               {isMine && (
-                                <span className="inline-flex items-center gap-0.5">
-                                  {(message.readCount ?? 0) > 0 ? (
-                                    <>
-                                      <CheckCheck size={12} />
-                                      Read
-                                    </>
+                                <span
+                                  className="inline-flex items-center"
+                                  aria-label={
+                                    isMessageReadByRecipients(message, activeChat)
+                                      ? "Read"
+                                      : "Sent"
+                                  }
+                                >
+                                  {isMessageReadByRecipients(message, activeChat) ? (
+                                    <CheckCheck size={12} />
                                   ) : (
-                                    <>
-                                      <Check size={12} />
-                                      Sent
-                                    </>
+                                    <Check size={12} />
                                   )}
                                 </span>
                               )}
                             </p>
                           </div>
 
-                          {!message.isDeleted && (
+                          {!message.isDeleted && !isDeleting && (
                             <div
                               className={`relative mt-1 flex max-w-full flex-wrap items-center gap-1.5 ${
                                 isMine ? "justify-end" : "justify-start"
@@ -1149,22 +1932,28 @@ const ChatClient = () => {
                             </div>
                           )}
                         </div>
-                        {!isMine && !message.isDeleted && (
+                        {!isMine && !message.isDeleted && !isDeleting && (
                           <MessageActions
                             isMine={isMine}
                             message={message}
                             currentReaction={currentReaction}
                             openReactionMessageId={openReactionMessageId}
                             setOpenReactionMessageId={setOpenReactionMessageId}
-                            setReplyToMessage={setReplyToMessage}
+                            onReply={startReplyToMessage}
                             startEditing={startEditing}
                             deleteMutation={deleteMutation}
                             reactionMutation={reactionMutation}
+                            isDeleting={isDeleting}
                           />
                         )}
                       </div>
                     );
-                  })
+                  })}
+                {isMessagesLoading && <ChatMessagesLoadingSkeleton />}
+                {!isMessagesLoading && messages.length === 0 && (
+                  <div className="flex min-h-40 items-center justify-center px-8 text-center text-sm text-neutral-400">
+                    Send a message to start the conversation.
+                  </div>
                 )}
                 {sendMutation.isPending && (
                   <div className="flex justify-end">
@@ -1181,7 +1970,21 @@ const ChatClient = () => {
                 )}
                 <div ref={messagesEndRef} />
               </div>
+            )}
 
+              {showScrollToBottom && (
+                <button
+                  type="button"
+                  onClick={() => scrollMessagesToBottom("smooth")}
+                  className="absolute bottom-24 right-4 z-10 inline-flex h-11 w-11 items-center justify-center rounded-full border border-black/10 bg-white text-neutral-800 shadow-lg transition hover:bg-blue-300 hover:text-neutral-900 active:bg-blue-400 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black"
+                  aria-label="Scroll to latest messages"
+                  title="Scroll to bottom"
+                >
+                  <ChevronDown size={20} />
+                </button>
+              )}
+
+              {showPanel && (
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
@@ -1190,7 +1993,7 @@ const ChatClient = () => {
                 className="sticky bottom-0 z-20 border-t border-black/5 bg-white/95 p-3 backdrop-blur dark:border-white/10 dark:bg-neutral-950/95"
               >
                 {isEditing && (
-                  <div className="mb-2 flex min-w-0 items-center gap-2 rounded-lg border border-black/10 bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-200">
+                  <div className={composerBannerClass}>
                     <Edit3 size={14} className="shrink-0" />
                     <span className="min-w-0 flex-1 truncate">
                       Editing message
@@ -1198,7 +2001,7 @@ const ChatClient = () => {
                     <button
                       type="button"
                       onClick={clearComposer}
-                      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-blue-100 dark:hover:bg-neutral-800"
+                      className={composerBannerDismissClass}
                       aria-label="Cancel edit"
                     >
                       <X size={14} />
@@ -1206,15 +2009,18 @@ const ChatClient = () => {
                   </div>
                 )}
                 {replyToMessage && (
-                  <div className="mb-2 flex min-w-0 items-center gap-2 rounded-lg border border-black/10 bg-neutral-50 px-3 py-2 text-xs text-neutral-600 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300">
+                  <div className={composerBannerClass}>
                     <Reply size={14} className="shrink-0" />
                     <span className="min-w-0 flex-1 truncate">
                       {replyToMessage.content || "Replying to attachment"}
                     </span>
                     <button
                       type="button"
-                      onClick={() => setReplyToMessage(null)}
-                      className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full hover:bg-neutral-200 dark:hover:bg-neutral-800"
+                      onClick={() => {
+                        setReplyToMessage(null);
+                        updateReplyMsgIdInUrl(null);
+                      }}
+                      className={composerBannerDismissClass}
                       aria-label="Cancel reply"
                     >
                       <X size={14} />
@@ -1346,11 +2152,14 @@ const ChatClient = () => {
                     <Paperclip size={18} />
                   </button>
                   <textarea
+                    ref={composerTextareaRef}
                     value={composerText}
                     onChange={(event) => setComposerText(event.target.value)}
-                    placeholder={isEditing ? "Edit message" : `Message ${selectedTitle}`}
+                    onKeyDown={handleComposerKeyDown}
+                    onPaste={handleComposerPaste}
+                    placeholder={isEditing ? "Edit message" : `Message ${composerPlaceholderName}`}
                     rows={1}
-                    className="max-h-28 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto rounded-2xl border border-black/10 bg-neutral-50 px-4 py-3 text-sm outline-none transition scrollbar-none focus:border-blue-400 dark:border-white/10 dark:bg-neutral-900"
+                    className={composerFieldClass}
                   />
                   {isVoiceTypingSupported && (
                     <button
@@ -1371,7 +2180,8 @@ const ChatClient = () => {
                     type="submit"
                     disabled={
                       composerIsPending ||
-                      !composerCanSubmit
+                      !composerCanSubmit ||
+                      !composerSubmitEnabled
                     }
                     className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-400 text-white transition hover:bg-blue-500 active:bg-blue-600 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-neutral-200"
                     aria-label="Send message"
@@ -1384,300 +2194,14 @@ const ChatClient = () => {
                   </button>
                 </div>
               </form>
-            </>
-          ) : (
-            <div className="flex flex-1 items-center justify-center px-8 text-center text-sm text-neutral-400">
-              Pick a conversation or start a new one.
-            </div>
-          )}
-        </section>
+              )}
       </div>
 
-      {!selectedChat && (
-        <div className="fixed bottom-5 right-5 z-30 md:absolute lg:bottom-5">
-          {isComposeMenuOpen && (
-            <div className="mb-3 w-44 overflow-hidden rounded-lg border border-black/10 bg-white py-1 text-sm shadow-xl dark:border-white/10 dark:bg-neutral-900">
-              <button
-                type="button"
-                onClick={() => {
-                  setComposeMode("private");
-                  setIsComposeMenuOpen(false);
-                }}
-                className="flex h-11 w-full items-center gap-3 px-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              >
-                <MessageCircle size={17} />
-                <span>New Chat</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setComposeMode("group");
-                  setIsComposeMenuOpen(false);
-                }}
-                className="flex h-11 w-full items-center gap-3 px-3 text-left hover:bg-neutral-100 dark:hover:bg-neutral-800"
-              >
-                <UsersRound size={17} />
-                <span>New Group</span>
-              </button>
-            </div>
-          )}
-          <button
-            type="button"
-            onClick={() => setIsComposeMenuOpen((open) => !open)}
-            className="inline-flex h-15 w-15 items-center justify-center rounded-2xl bg-slate-700 text-white shadow-xl transition hover:bg-slate-800 active:scale-95 dark:bg-neutral-100 dark:text-neutral-950"
-            aria-label="Compose chat"
-          >
-            <PenLine size={24} />
-          </button>
-        </div>
-      )}
-
-      {composeMode && (
-        <OverlayPortal>
-          <div className="fixed inset-0 z-[130] flex items-end bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:justify-center">
-            <div className="max-h-[85dvh] w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-950">
-              <div className="flex h-14 items-center justify-between border-b border-black/5 px-4 dark:border-white/10">
-                <h2 className="font-semibold">
-                  {composeMode === "private" ? "New Chat" : "New Group"}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setComposeMode(null)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                  aria-label="Close"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="max-h-[calc(85dvh-56px)] overflow-y-auto p-4 scrollbar-none">
-                {composeMode === "private" ? (
-                  <>
-                    <div className="flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-neutral-50 px-3 dark:border-white/10 dark:bg-neutral-900">
-                      <Search size={17} className="text-neutral-400" />
-                      <input
-                        value={privateSearch}
-                        onChange={(event) => setPrivateSearch(event.target.value)}
-                        placeholder="Search people"
-                        className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                      />
-                    </div>
-                    <div className="mt-3 divide-y divide-black/5 dark:divide-white/10">
-                      {privateSearchQuery.isLoading ? (
-                        <p className="py-6 text-center text-sm text-neutral-400">
-                          Searching...
-                        </p>
-                      ) : (
-                        (privateSearchQuery.data ?? []).map((user) => (
-                          <button
-                            key={user.id}
-                            type="button"
-                            onClick={() => openPrivateDraft(user)}
-                            className="flex w-full min-w-0 items-center gap-3 py-3 text-left"
-                          >
-                            <RecoverableImage
-                              src={user.profilePic || "/default-avatar.png"}
-                              alt={user.name}
-                              width={44}
-                              height={44}
-                              className="h-11 w-11 rounded-full object-cover"
-                              wrapperClassName="h-11 w-11 shrink-0 rounded-full"
-                              fallbackSrc="/default-avatar.png"
-                            />
-                            <span className="min-w-0">
-                              <span className="block truncate font-semibold">
-                                {user.name}
-                              </span>
-                              <span className="block truncate text-sm text-neutral-400">
-                                @{user.username}
-                              </span>
-                            </span>
-                          </button>
-                        ))
-                      )}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <input
-                      value={groupName}
-                      onChange={(event) => setGroupName(event.target.value)}
-                      placeholder="Group name"
-                      className="h-11 w-full rounded-xl border border-black/10 bg-neutral-50 px-3 text-sm outline-none focus:border-blue-400 dark:border-white/10 dark:bg-neutral-900"
-                    />
-                    {groupUsers.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {groupUsers.map((user) => (
-                          <button
-                            key={user.id}
-                            type="button"
-                            onClick={() => toggleGroupUser(user)}
-                            className="inline-flex min-w-0 max-w-full items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-medium text-blue-700 dark:bg-neutral-900 dark:text-neutral-100"
-                          >
-                            <span className="truncate">{user.name}</span>
-                            <X size={12} />
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    <div className="mt-3 flex h-11 items-center gap-2 rounded-xl border border-black/10 bg-neutral-50 px-3 dark:border-white/10 dark:bg-neutral-900">
-                      <Search size={17} className="text-neutral-400" />
-                      <input
-                        value={groupSearch}
-                        onChange={(event) => setGroupSearch(event.target.value)}
-                        placeholder="Add people"
-                        className="min-w-0 flex-1 bg-transparent text-sm outline-none"
-                      />
-                    </div>
-                    <div className="mt-3 divide-y divide-black/5 dark:divide-white/10">
-                      {(groupSearchQuery.data ?? []).map((user) => {
-                        const selected = selectedUserIds.has(user.id);
-                        return (
-                          <button
-                            key={user.id}
-                            type="button"
-                            onClick={() => toggleGroupUser(user)}
-                            className="flex w-full min-w-0 items-center gap-3 py-3 text-left"
-                          >
-                            <RecoverableImage
-                              src={user.profilePic || "/default-avatar.png"}
-                              alt={user.name}
-                              width={44}
-                              height={44}
-                              className="h-11 w-11 rounded-full object-cover"
-                              wrapperClassName="h-11 w-11 shrink-0 rounded-full"
-                              fallbackSrc="/default-avatar.png"
-                            />
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate font-semibold">
-                                {user.name}
-                              </span>
-                              <span className="block truncate text-sm text-neutral-400">
-                                @{user.username}
-                              </span>
-                            </span>
-                            <span
-                              className={`inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border ${
-                                selected
-                                  ? "border-blue-500 bg-blue-500 text-white"
-                                  : "border-neutral-300"
-                              }`}
-                            >
-                              {selected && <Check size={14} />}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <button
-                      type="button"
-                      disabled={createGroupMutation.isPending}
-                      onClick={() => createGroupMutation.mutate()}
-                      className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-slate-700 px-4 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50 dark:bg-neutral-100 dark:text-neutral-950"
-                    >
-                      {createGroupMutation.isPending ? (
-                        <Loader2 className="animate-spin" size={17} />
-                      ) : (
-                        <Plus size={17} />
-                      )}
-                      <span>Create Group</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </OverlayPortal>
-      )}
-
-      {reactionUsersMessage && (
-        <OverlayPortal>
-          <div className="fixed inset-0 z-[130] flex items-end bg-black/40 p-3 backdrop-blur-sm sm:items-center sm:justify-center">
-            <div className="max-h-[85dvh] w-full max-w-md overflow-hidden rounded-xl bg-white shadow-2xl dark:bg-neutral-950">
-              <div className="flex h-14 items-center justify-between border-b border-black/5 px-4 dark:border-white/10">
-                <h2 className="font-semibold text-slate-700 dark:text-neutral-100">
-                  Reactions
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => setReactionUsersMessage(null)}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-neutral-100 dark:hover:bg-neutral-900"
-                  aria-label="Close reactions"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-              <div className="max-h-[calc(85dvh-56px)] overflow-y-auto p-4 scrollbar-none">
-                {reactionUsersQuery.isLoading ? (
-                  <div className="flex items-center justify-center gap-2 py-8 text-sm text-neutral-400">
-                    <Loader2 size={17} className="animate-spin" />
-                    <span>Loading reactions...</span>
-                  </div>
-                ) : (reactionUsersQuery.data?.reactions ?? []).length === 0 ? (
-                  <p className="py-8 text-center text-sm text-neutral-400">
-                    No reactions yet.
-                  </p>
-                ) : (
-                  <div className="divide-y divide-black/5 dark:divide-white/10">
-                    {(reactionUsersQuery.data?.reactions ?? []).map((reaction) => {
-                      const reactionMeta = reactionOptions.find(
-                        (item) => item.type === reaction.reactionType,
-                      );
-
-                      return (
-                        <div
-                          key={reaction.id}
-                          className="flex min-w-0 items-center gap-3 py-3"
-                        >
-                          <RecoverableImage
-                            src={reaction.user.profilePic || "/default-avatar.png"}
-                            alt={reaction.user.name}
-                            width={44}
-                            height={44}
-                            className="h-11 w-11 rounded-full object-cover"
-                            wrapperClassName="h-11 w-11 shrink-0 rounded-full"
-                            fallbackSrc="/default-avatar.png"
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className="truncate font-semibold text-slate-700 dark:text-neutral-100">
-                              {reaction.user.name}
-                            </p>
-                            <p className="truncate text-sm text-neutral-400">
-                              @{reaction.user.username}
-                            </p>
-                          </div>
-                          {reactionMeta && (
-                            <Image
-                              src={reactionMeta.image}
-                              alt={reactionMeta.label}
-                              width={28}
-                              height={28}
-                              className="h-7 w-7 shrink-0"
-                            />
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </OverlayPortal>
-      )}
-
-      {mediaViewer && (
-        <ImageViewer
-          images={mediaViewer.items}
-          index={mediaViewer.index}
-          onClose={() => setMediaViewer(null)}
-          onChange={(index) => setMediaViewer((current) => current ? { ...current, index } : current)}
-          showPaginationOnVideo
-        />
-      )}
-    </main>
+      {mountedChatModals}
+    </>
   );
 };
+
 
 function ChatVideoTile({
   media,
@@ -1724,7 +2248,7 @@ type MessageActionsProps = {
   currentReaction: ChatReactionType | null;
   openReactionMessageId: string | null;
   setOpenReactionMessageId: Dispatch<SetStateAction<string | null>>;
-  setReplyToMessage: Dispatch<SetStateAction<ChatMessage | null>>;
+  onReply: (message: ChatMessage) => void;
   startEditing: (message: ChatMessage) => void;
   deleteMutation: UseMutationResult<string, Error, string>;
   reactionMutation: UseMutationResult<
@@ -1736,7 +2260,140 @@ type MessageActionsProps = {
       currentReaction?: ChatReactionType | null;
     }
   >;
+  isDeleting: boolean;
 };
+
+type ReactionPickerProps = {
+  anchorRef: RefObject<HTMLButtonElement | null>;
+  isOpen: boolean;
+  isMine: boolean;
+  currentReaction: ChatReactionType | null;
+  isPending: boolean;
+  onClose: () => void;
+  onSelect: (reactionType: ChatReactionType) => void;
+};
+
+function ReactionPicker({
+  anchorRef,
+  isOpen,
+  isMine,
+  currentReaction,
+  isPending,
+  onClose,
+  onSelect,
+}: ReactionPickerProps) {
+  const pickerRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(
+    null,
+  );
+
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setPosition(null);
+      return;
+    }
+
+    const anchor = anchorRef.current;
+    const picker = pickerRef.current;
+    if (!anchor || !picker) return;
+
+    const viewport = anchor.closest(
+      "[data-chat-messages-viewport]",
+    ) as HTMLElement | null;
+    const anchorRect = anchor.getBoundingClientRect();
+    const viewportRect = viewport?.getBoundingClientRect() ?? {
+      top: 0,
+      left: 8,
+      right: window.innerWidth - 8,
+      bottom: window.innerHeight,
+    };
+
+    const pickerWidth = picker.offsetWidth || 280;
+    const pickerHeight = picker.offsetHeight || 48;
+    const edgePadding = 8;
+
+    const spaceAbove = anchorRect.top - viewportRect.top;
+    const spaceBelow = viewportRect.bottom - anchorRect.bottom;
+    const openBelow = spaceAbove < pickerHeight + edgePadding && spaceBelow > spaceAbove;
+
+    let left = isMine ? anchorRect.right - pickerWidth : anchorRect.left;
+    const maxLeft = viewportRect.right - pickerWidth - edgePadding;
+    const minLeft = viewportRect.left + edgePadding;
+    left = Math.max(minLeft, Math.min(left, maxLeft));
+
+    const top = openBelow
+      ? anchorRect.bottom + edgePadding
+      : anchorRect.top - pickerHeight - edgePadding;
+
+    setPosition({ top, left });
+  }, [anchorRef, isMine, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (pickerRef.current?.contains(target)) return;
+      if (anchorRef.current?.contains(target)) return;
+      onClose();
+    };
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [anchorRef, isOpen, onClose]);
+
+  if (!isOpen || typeof document === "undefined") return null;
+
+  return createPortal(
+    <div
+      ref={pickerRef}
+      data-chat-reaction-picker=""
+      style={{
+        top: position?.top ?? 0,
+        left: position?.left ?? 0,
+        visibility: position ? "visible" : "hidden",
+        pointerEvents: position ? "auto" : "none",
+      }}
+      className="fixed z-[120] flex w-max max-w-[min(18rem,calc(100vw-1rem))] gap-0.5 overflow-x-auto rounded-full border border-black/10 bg-white p-1 shadow-xl scrollbar-none dark:border-white/10 dark:bg-neutral-900"
+      onMouseLeave={(event) => {
+        const related = event.relatedTarget;
+        if (related instanceof Element && pickerRef.current?.contains(related)) {
+          return;
+        }
+        if (related instanceof Element && anchorRef.current?.contains(related)) {
+          return;
+        }
+        onClose();
+      }}
+    >
+      {reactionOptions.map((reaction) => (
+        <button
+          key={reaction.type}
+          type="button"
+          disabled={isPending}
+          onClick={() => onSelect(reaction.type)}
+          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition hover:bg-neutral-100 active:scale-95 disabled:opacity-50 dark:hover:bg-neutral-800 ${
+            currentReaction === reaction.type
+              ? "bg-blue-50 ring-1 ring-blue-400 dark:bg-blue-500/10"
+              : ""
+          }`}
+          aria-label={`React ${reaction.label}`}
+          title={reaction.label}
+        >
+          <Image
+            src={reaction.image}
+            alt={reaction.label}
+            width={24}
+            height={24}
+            className="h-6 w-6"
+          />
+        </button>
+      ))}
+    </div>,
+    document.body,
+  );
+}
 
 function MessageActions({
   isMine,
@@ -1744,15 +2401,20 @@ function MessageActions({
   currentReaction,
   openReactionMessageId,
   setOpenReactionMessageId,
-  setReplyToMessage,
+  onReply,
   startEditing,
   deleteMutation,
   reactionMutation,
+  isDeleting,
 }: MessageActionsProps) {
+  const reactButtonRef = useRef<HTMLButtonElement>(null);
+  const isPickerOpen = openReactionMessageId === message.id;
+
   return (
     <div className="relative flex shrink-0 items-center rounded-lg border border-black/10 bg-white p-0.5 text-neutral-600 opacity-0 shadow-lg transition group-hover/message:opacity-100 group-focus-within/message:opacity-100 dark:border-white/10 dark:bg-neutral-900 dark:text-neutral-300">
       <div className="relative">
         <button
+          ref={reactButtonRef}
           type="button"
           onClick={() =>
             setOpenReactionMessageId((current) =>
@@ -1762,51 +2424,30 @@ function MessageActions({
           className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
           aria-label="React to message"
           title="React"
+          aria-expanded={isPickerOpen}
         >
           <SmilePlus size={16} />
         </button>
-        {openReactionMessageId === message.id && (
-          <div
-            className={`absolute bottom-full z-30 mb-2 flex gap-1 rounded-full border border-black/10 bg-white p-1.5 shadow-xl dark:border-white/10 dark:bg-neutral-900 ${
-              isMine ? "left-0" : "right-0"
-            }`}
-          >
-            {reactionOptions.map((reaction) => (
-              <button
-                key={reaction.type}
-                type="button"
-                disabled={reactionMutation.isPending}
-                onClick={() => {
-                  setOpenReactionMessageId(null);
-                  reactionMutation.mutate({
-                    messageId: message.id,
-                    reactionType: reaction.type,
-                    currentReaction,
-                  });
-                }}
-                className={`inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:-translate-y-1 hover:bg-neutral-100 active:scale-95 disabled:opacity-50 dark:hover:bg-neutral-800 ${
-                  currentReaction === reaction.type
-                    ? "bg-blue-50 ring-1 ring-blue-400 dark:bg-blue-500/10"
-                    : ""
-                }`}
-                aria-label={`React ${reaction.label}`}
-                title={reaction.label}
-              >
-                <Image
-                  src={reaction.image}
-                  alt={reaction.label}
-                  width={28}
-                  height={28}
-                  className="h-7 w-7"
-                />
-              </button>
-            ))}
-          </div>
-        )}
+        <ReactionPicker
+          anchorRef={reactButtonRef}
+          isOpen={isPickerOpen}
+          isMine={isMine}
+          currentReaction={currentReaction}
+          isPending={reactionMutation.isPending}
+          onClose={() => setOpenReactionMessageId(null)}
+          onSelect={(reactionType) => {
+            setOpenReactionMessageId(null);
+            reactionMutation.mutate({
+              messageId: message.id,
+              reactionType,
+              currentReaction,
+            });
+          }}
+        />
       </div>
       <button
         type="button"
-        onClick={() => setReplyToMessage(message)}
+        onClick={() => onReply(message)}
         className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800"
         aria-label="Reply to message"
         title="Reply"
@@ -1826,7 +2467,7 @@ function MessageActions({
           </button>
           <button
             type="button"
-            disabled={deleteMutation.isPending}
+            disabled={isDeleting}
             onClick={() => deleteMutation.mutate(message.id)}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md text-red-500 hover:bg-red-50 disabled:opacity-50 dark:hover:bg-red-950/30"
             aria-label="Delete message"
@@ -1839,6 +2480,3 @@ function MessageActions({
     </div>
   );
 }
-
-export default ChatClient;
-

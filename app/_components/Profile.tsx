@@ -392,19 +392,8 @@ const Profile = ({ username, isPortal = false }: ProfileProps) => {
   const displayedProfileSrc =
     profilePreviewUrl || user?.profilePic || "/default-avatar.png";
   const openMessage = () => {
-    if (!user?.id) return;
-
-    const params = new URLSearchParams({
-      userId: user.id,
-      name: user.name ?? "New chat",
-      username: user.username ?? user.id,
-    });
-
-    if (user.profilePic) {
-      params.set("profilePic", user.profilePic);
-    }
-
-    router.push(`/chat?${params.toString()}`);
+    if (!user?.username) return;
+    router.replace(`/chat?${new URLSearchParams({ chatId: user.id }).toString()}`);
   };
 
   return (

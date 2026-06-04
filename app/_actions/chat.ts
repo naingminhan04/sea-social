@@ -12,6 +12,7 @@ import type {
   CreateChatInput,
   CreateChatResponse,
   DeleteMessageResponse,
+  PrivateChatLookupResponse,
   MessageReactionResponse,
   MessageReactionStatusResponse,
   MessageReactionsResponse,
@@ -67,14 +68,52 @@ export async function createChatAction(
   }
 }
 
+type ChatMessagesQueryOptions = {
+  cursor?: string;
+  limit?: number;
+  direction?: "older" | "newer";
+};
+
+export async function getPrivateChatByUserIdAction(
+  userId: string,
+): Promise<ActionResponse<PrivateChatLookupResponse>> {
+  try {
+    const res = await api.get<PrivateChatLookupResponse>(
+      `/chats/private/${userId}`,
+    );
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: getApiErrorMessage(error, "Private chat not found"),
+    };
+  }
+}
+
+export async function getChatByIdAction(
+  chatId: string,
+): Promise<ActionResponse<Chat>> {
+  try {
+    const res = await api.get<Chat>(`/chats/${chatId}`);
+    return { success: true, data: res.data };
+  } catch (error) {
+    return {
+      success: false,
+      error: getApiErrorMessage(error, "Chat not found"),
+    };
+  }
+}
+
 export async function getChatMessagesAction(
   chatId: string,
+  options?: ChatMessagesQueryOptions,
 ): Promise<ActionResponse<ChatMessagesResponse>> {
   try {
     const res = await api.get<ChatMessagesResponse>(`/chats/${chatId}/messages`, {
       params: {
-        direction: "older",
-        limit: 50,
+        direction: options?.direction ?? "older",
+        limit: options?.limit ?? 50,
+        ...(options?.cursor ? { cursor: options.cursor } : {}),
       },
     });
 
@@ -89,14 +128,16 @@ export async function getChatMessagesAction(
 
 export async function getPrivateMessagesAction(
   userId: string,
+  options?: ChatMessagesQueryOptions,
 ): Promise<ActionResponse<ChatMessagesResponse>> {
   try {
     const res = await api.get<ChatMessagesResponse>(
       `/messages/private/${userId}`,
       {
         params: {
-          direction: "older",
-          limit: 50,
+          direction: options?.direction ?? "older",
+          limit: options?.limit ?? 50,
+          ...(options?.cursor ? { cursor: options.cursor } : {}),
         },
       },
     );

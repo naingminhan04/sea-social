@@ -110,6 +110,12 @@ export type ChatListResponse = {
 export type ChatMessagesResponse = {
   messages: ChatMessage[];
   cursors?: Record<string, unknown>;
+  hasMore?: boolean;
+  chat: Chat;
+};
+
+export type PrivateChatLookupResponse = {
+  message: string;
   chat: Chat;
 };
 
