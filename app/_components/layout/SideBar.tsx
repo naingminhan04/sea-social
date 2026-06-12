@@ -9,9 +9,12 @@ import { useAuthStore } from "@/store/auth";
 import HomeRefreshLink from "./HomeRefreshLink";
 import RecoverableImage from "../common/RecoverableImage";
 import { UserType } from "@/types/user";
+import { useQuery } from "@tanstack/react-query";
+import { getUnreadMessagesCountAction } from "@/app/_actions/chat";
 
-export const getProfileSlug = (user?: Pick<UserType, "id" | "username"> | null) =>
-  user?.username?.trim() || user?.id || "";
+export const getProfileSlug = (
+  user?: Pick<UserType, "id" | "username"> | null,
+) => user?.username?.trim() || user?.id || "";
 
 export const getMenuArr = (profileSlug: string) => [
   {
@@ -44,11 +47,28 @@ const SideBar = () => {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
   const profileSlug = getProfileSlug(user);
-  const MenuArr = getMenuArr(profileSlug).filter((item) => item.name !== "Profile");
+  const MenuArr = getMenuArr(profileSlug).filter(
+    (item) => item.name !== "Profile",
+  );
   const openProfile = () => {
     if (window.innerWidth >= 768) return;
     router.push(`/users/${getProfileSlug(user)}`);
   };
+
+  const { data: unreadCountData } = useQuery({
+    queryKey: ["chatUnreadCount"],
+    queryFn: async () => {
+      const result = await getUnreadMessagesCountAction();
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data.unreadMessagesCount;
+    },
+  });
+
+  const unreadCount = unreadCountData ?? 0;
 
   return (
     <div className="hidden lg:flex w-9/10 h-full flex-col">
@@ -56,29 +76,37 @@ const SideBar = () => {
         {MenuArr.map((item) => {
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
-          return (
-            item.href === "/home" ? (
-              <HomeRefreshLink
-                key={item.name}
-                className={`block rounded-md p-4 transition-colors ${isActive
-                    ? "bg-blue-400 dark:bg-black"
-                    : "hover:bg-blue-300 dark:hover:bg-neutral-950 active:bg-blue-400 dark:active:bg-black"
-                  }`}
-              >
-                {item.name}
-              </HomeRefreshLink>
-            ) : (
-              <Link
-                key={item.name}
-                className={`p-4 rounded-md transition-colors ${isActive
-                    ? "bg-blue-400 dark:bg-black"
-                    : "hover:bg-blue-300 dark:hover:bg-neutral-950 active:bg-blue-400 dark:active:bg-black"
-                  }`}
-                href={item.href}
-              >
-                {item.name}
-              </Link>
-            )
+          return item.href === "/home" ? (
+            <HomeRefreshLink
+              key={item.name}
+              className={`block rounded-md p-4 transition-colors ${
+                isActive
+                  ? "bg-blue-400 dark:bg-black"
+                  : "hover:bg-blue-300 dark:hover:bg-neutral-950 active:bg-blue-400 dark:active:bg-black"
+              }`}
+            >
+              {item.name}
+            </HomeRefreshLink>
+          ) : (
+            <Link
+              key={item.name}
+              className={`p-4 rounded-md transition-colors ${
+                isActive
+                  ? "bg-blue-400 dark:bg-black"
+                  : "hover:bg-blue-300 dark:hover:bg-neutral-950 active:bg-blue-400 dark:active:bg-black"
+              }`}
+              href={item.href}
+            >
+              <div className="flex items-center justify-between">
+                <span>{item.name}</span>
+
+                {item.name === "Chat" && unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                    {unreadCount}
+                  </span>
+                )} 
+              </div>
+            </Link>
           );
         })}
       </ul>

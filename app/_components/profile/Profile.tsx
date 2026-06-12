@@ -436,7 +436,7 @@ const Profile = ({ username, isPortal = false }: ProfileProps) => {
         {isOwner ? (
           <button
             onClick={() => setIsEditOpen(true)}
-            className="ml-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-blue-300 bg-blue-300 text-sm text-neutral-950 shadow-sm transition hover:bg-blue-400 hover:text-white active:bg-blue-500 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black sm:w-auto sm:gap-2 sm:px-4"
+            className="ml-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-blue-300 bg-white text-sm text-neutral-950 shadow-sm transition hover:bg-blue-300 active:bg-blue-400 dark:border-neutral-800 dark:bg-neutral-800 dark:text-neutral-100 dark:hover:bg-neutral-950 dark:hover:text-neutral-100 dark:active:bg-black sm:w-auto sm:gap-2 sm:px-4"
             aria-label="Edit profile"
           >
             <PencilLine size={16} />

@@ -11,6 +11,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { useAuthStore } from "@/store/auth";
 import HomeRefreshLink from "./HomeRefreshLink";
 import RecoverableImage from "../common/RecoverableImage";
+import { useQuery } from "@tanstack/react-query";
+import { getUnreadMessagesCountAction } from "@/app/_actions/chat";
 
 const MenuBtn = () => {
   const [menu, setMenu] = useState(false);
@@ -24,6 +26,21 @@ const MenuBtn = () => {
     if (window.innerWidth >= 768) return;
     router.push(`/users/${getProfileSlug(user)}`);
   };
+
+  const { data: unreadCountData } = useQuery({
+    queryKey: ["chatUnreadCount"],
+    queryFn: async () => {
+      const result = await getUnreadMessagesCountAction();
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      return result.data.unreadMessagesCount;
+    },
+  });
+
+  const unreadCount = unreadCountData ?? 0;
 
   return (
     <div className="flex lg:hidden">
@@ -45,34 +62,44 @@ const MenuBtn = () => {
           <div className="absolute flex flex-col top-15 left-0 h-[calc(100dvh-60px)] w-70 z-20 bg-white dark:bg-neutral-900">
             <ul className="cursor-pointer overflow-scroll scrollbar-none overscroll-contain flex flex-1 flex-col">
               {MenuArr.map((item) => {
-                const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+                const isActive =
+                  pathname === item.href ||
+                  pathname.startsWith(item.href + "/");
                 const profileVisibilityClass =
                   item.name === "Profile" ? "md:hidden" : "";
-                return (
-                  item.href === "/home" ? (
-                    <HomeRefreshLink
-                      key={item.name}
-                      onNavigate={() => setMenu(false)}
-                      className={`block p-4 transition-all active:bg-gray-200 ${profileVisibilityClass} ${isActive
-                          ? "bg-gray-300 dark:bg-neutral-800 text-black dark:text-white"
-                          : "hover:bg-gray-200 dark:hover:bg-neutral-900 active:bg-gray-300 dark:active:bg-neutral-800"
-                        }`}
-                    >
-                      {item.name}
-                    </HomeRefreshLink>
-                  ) : (
-                    <Link
-                      key={item.name}
-                      onClick={() => setMenu(false)}
-                      className={`p-4 transition-all active:bg-gray-200 ${profileVisibilityClass} ${isActive
-                          ? "bg-gray-300 dark:bg-neutral-800 text-black dark:text-white"
-                          : "hover:bg-gray-200 dark:hover:bg-neutral-900 active:bg-gray-300 dark:active:bg-neutral-800"
-                        }`}
-                      href={item.href}
-                    >
-                      {item.name}
-                    </Link>
-                  )
+                return item.href === "/home" ? (
+                  <HomeRefreshLink
+                    key={item.name}
+                    onNavigate={() => setMenu(false)}
+                    className={`block p-4 transition-all active:bg-gray-200 ${profileVisibilityClass} ${
+                      isActive
+                        ? "bg-gray-300 dark:bg-neutral-800 text-black dark:text-white"
+                        : "hover:bg-gray-200 dark:hover:bg-neutral-900 active:bg-gray-300 dark:active:bg-neutral-800"
+                    }`}
+                  >
+                    {item.name}
+                  </HomeRefreshLink>
+                ) : (
+                  <Link
+                    key={item.name}
+                    onClick={() => setMenu(false)}
+                    className={`p-4 transition-all active:bg-gray-200 ${profileVisibilityClass} ${
+                      isActive
+                        ? "bg-gray-300 dark:bg-neutral-800 text-black dark:text-white"
+                        : "hover:bg-gray-200 dark:hover:bg-neutral-900 active:bg-gray-300 dark:active:bg-neutral-800"
+                    }`}
+                    href={item.href}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span>{item.name}</span>
+
+                      {item.name === "Chat" && unreadCount > 0 && (
+                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                          {unreadCount}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
                 );
               })}
             </ul>
